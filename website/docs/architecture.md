@@ -113,9 +113,10 @@ GTKX uses different node types for different widget categories:
 | Node Type | Purpose |
 |-----------|---------|
 | `WidgetNode` | Standard GTK widgets (Button, Box, Label) |
+| `TextNode` | Text nodes rendered as Labels |
 | `DialogNode` | Non-widget dialogs (FileDialog, AlertDialog) |
 | `SlotNode` | Named child slots (HeaderBar.TitleWidget) |
-| `ListNode` | List widgets with data models |
+| `ListItemNode` | List item handling for ListView |
 
 ### Reconciler Operations
 

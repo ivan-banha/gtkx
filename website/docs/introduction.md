@@ -63,5 +63,6 @@ GTKX is organized as a monorepo with the following packages:
 ## Next Steps
 
 - [Getting Started](/docs/getting-started) - Install and create your first app
+- [Components Guide](/docs/guides/components) - Core API and component patterns
+- [API Reference](/docs/api) - Generated API documentation
 - [Architecture](/docs/architecture) - Deep dive into how GTKX works
-- [Components Guide](/docs/guides/components) - Explore available components

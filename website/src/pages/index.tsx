@@ -89,28 +89,6 @@ function HomepageFeatures(): ReactNode {
     );
 }
 
-function Showcase(): ReactNode {
-    const screenshotUrl = useBaseUrl("/img/screenshot.png");
-    return (
-        <section className={styles.showcase}>
-            <div className="container">
-                <Heading as="h2" className="text--center margin-bottom--lg">
-                    Native GTK4 Widgets
-                </Heading>
-                <div className="row">
-                    <div className="col col--10 col--offset-1">
-                        <img
-                            src={screenshotUrl}
-                            alt="GTKX Kitchen Sink Demo"
-                            className={styles.screenshot}
-                        />
-                    </div>
-                </div>
-            </div>
-        </section>
-    );
-}
-
 function CodeExample(): ReactNode {
     return (
         <section className={styles.codeExample}>
@@ -154,7 +132,6 @@ export default function Home(): ReactNode {
             <main>
                 <HomepageFeatures />
                 <CodeExample />
-                <Showcase />
             </main>
         </Layout>
     );

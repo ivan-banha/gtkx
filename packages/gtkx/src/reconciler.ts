@@ -2,10 +2,11 @@ import React from "react";
 import Reconciler from "react-reconciler";
 import { createNode, type Props } from "./factory.js";
 import type { Node } from "./node.js";
+import { TextNode } from "./nodes/text.js";
 
 /** The React reconciler container type. */
 type Container = unknown;
-type TextInstance = never;
+type TextInstance = TextNode;
 type SuspenseInstance = never;
 type HydratableInstance = never;
 type PublicInstance = Node;
@@ -82,8 +83,8 @@ export class GtkReconciler {
 
             createInstance: (type: string, props: Props): Node => createNode(type, props, this.currentApp),
 
-            createTextInstance: (): TextInstance => {
-                throw new Error("Text nodes are not supported. Use Label widget instead.");
+            createTextInstance: (text: string): TextInstance => {
+                return new TextNode(text);
             },
 
             appendInitialChild: (parent: Node, child: Node): void => parent.appendChild(child),
@@ -114,8 +115,8 @@ export class GtkReconciler {
 
             prepareForCommit: (): null => null,
             resetAfterCommit: (): void => {},
-            commitTextUpdate: (): void => {
-                throw new Error("Text nodes are not supported");
+            commitTextUpdate: (textInstance: TextInstance, _oldText: string, newText: string): void => {
+                textInstance.updateText(newText);
             },
             clearContainer: (): void => {},
             preparePortalMount: (): void => {},

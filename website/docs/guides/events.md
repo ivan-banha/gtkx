@@ -8,7 +8,7 @@ This guide covers how to handle user interactions and events in GTKX application
 
 ## Signal-Based Events
 
-GTK uses signals for event handling. In GTKX, signals become React props with the `on` prefix:
+GTK uses signals for event handling. In GTKX, signals become React props with the `on` prefix and camelCase naming:
 
 | GTK Signal | React Prop |
 |------------|------------|
@@ -18,7 +18,9 @@ GTK uses signals for event handling. In GTKX, signals become React props with th
 | `close-request` | `onCloseRequest` |
 | `state-set` | `onStateSet` |
 
-## Button Clicks
+## Basic Event Handlers
+
+Event handlers work like React event handlers:
 
 ```tsx
 <Button
@@ -29,21 +31,49 @@ GTK uses signals for event handling. In GTKX, signals become React props with th
 />
 ```
 
-## Toggle Events
+## Controlled Components
 
-For toggle buttons, switches, and check buttons:
+GTKX follows React's controlled component pattern. Set the value via props and update state in handlers:
 
 ```tsx
 const [active, setActive] = useState(false);
 
-// ToggleButton
 <ToggleButton.Root
   label={active ? "ON" : "OFF"}
   active={active}
   onToggled={() => setActive(a => !a)}
 />
+```
 
-// Switch - returns true to indicate the signal was handled
+## Handler Return Values
+
+Some GTK signals expect a return value to control default behavior:
+
+| Signal | Return Value |
+|--------|--------------|
+| `onCloseRequest` | `false` to allow closing, `true` to prevent |
+| `onStateSet` | `true` to indicate the signal was handled |
+
+### Example: Preventing Window Close
+
+```tsx
+<ApplicationWindow
+  onCloseRequest={() => {
+    if (hasUnsavedChanges) {
+      return true; // Prevent closing
+    }
+    quit();
+    return false; // Allow closing
+  }}
+/>
+```
+
+### Example: Switch State Handling
+
+```tsx
+const [active, setActive] = useState(false);
+
+// Must return true to indicate handling
 <Switch
   active={active}
   onStateSet={() => {
@@ -51,99 +81,11 @@ const [active, setActive] = useState(false);
     return true;
   }}
 />
-
-// CheckButton
-<CheckButton.Root
-  label="Enable"
-  active={active}
-  onToggled={() => setActive(a => !a)}
-/>
 ```
-
-## Input Events
-
-### Entry (Text Input)
-
-```tsx
-const [text, setText] = useState("");
-
-<Entry
-  text={text}
-  placeholderText="Type here..."
-  onChanged={() => {
-    // Note: You may need to read the value from the widget
-    setText(text);
-  }}
-  onActivate={() => {
-    // Called when Enter is pressed
-    console.log("Submitted:", text);
-  }}
-/>
-```
-
-### SearchEntry
-
-```tsx
-<SearchEntry
-  placeholderText="Search..."
-  onSearchChanged={() => {
-    console.log("Search query changed");
-  }}
-/>
-```
-
-### Scale (Slider)
-
-```tsx
-const [value, setValue] = useState(50);
-
-<Scale
-  value={value}
-  onValueChanged={() => {
-    setValue(value);
-  }}
-  drawValue
-/>
-```
-
-### SpinButton
-
-```tsx
-<SpinButton
-  onValueChanged={() => {
-    console.log("Value changed");
-  }}
-/>
-```
-
-## Window Events
-
-### Close Request
-
-Handle window close to clean up resources:
-
-```tsx
-import { quit } from "@gtkx/gtkx";
-
-<ApplicationWindow
-  onCloseRequest={() => {
-    // Perform cleanup
-    quit();
-    return false; // Return false to allow closing
-  }}
->
-```
-
-### Returning Values from Handlers
-
-Some handlers expect a return value:
-
-- `onCloseRequest`: Return `false` to allow closing, `true` to prevent
-- `onStateSet`: Return `true` to indicate the signal was handled
 
 ## Selection Events
 
-### ListBox
+For selection-based widgets:
 
 ```tsx
 import * as Gtk from "@gtkx/ffi/gtk";
@@ -154,87 +96,28 @@ import * as Gtk from "@gtkx/ffi/gtk";
     console.log("Row selected");
   }}
 >
-  <ListBoxRow>
-    <Label.Root label="Item 1" />
-  </ListBoxRow>
-  <ListBoxRow>
-    <Label.Root label="Item 2" />
-  </ListBoxRow>
+  {/* ListBoxRow children */}
 </ListBox>
 ```
 
-### Calendar
+## Application Lifecycle
+
+### Closing the Application
+
+Use the `quit` function to cleanly shut down:
 
 ```tsx
-<Calendar
-  onDaySelected={() => {
-    console.log("Date selected");
-  }}
-/>
+import { quit } from "@gtkx/gtkx";
+
+<ApplicationWindow onCloseRequest={quit}>
+  {/* Content */}
+</ApplicationWindow>
 ```
 
-## Reveal/Expand Events
-
-### Revealer
-
-```tsx
-const [revealed, setRevealed] = useState(false);
-
-<Button
-  label={revealed ? "Hide" : "Show"}
-  onClicked={() => setRevealed(r => !r)}
-/>
-
-<Revealer revealChild={revealed}>
-  <Label.Root label="Revealed content" />
-</Revealer>
-```
-
-### Expander
-
-The expander handles its own toggle internally:
-
-```tsx
-<Expander.Root label="Click to expand">
-  <Expander.Child>
-    <Label.Root label="Expanded content" />
-  </Expander.Child>
-</Expander.Root>
-```
-
-## Dialog Events
-
-```tsx
-const [showDialog, setShowDialog] = useState(false);
-
-<Button label="Show Dialog" onClicked={() => setShowDialog(true)} />
-
-{showDialog && (
-  <AboutDialog
-    programName="My App"
-    version="1.0.0"
-    onCloseRequest={() => {
-      setShowDialog(false);
-      return false;
-    }}
-  />
-)}
-```
-
-## Emoji Picker
-
-```tsx
-const [emoji, setEmoji] = useState("😊");
-
-<EmojiChooser
-  onEmojiPicked={(selectedEmoji: string) => {
-    if (selectedEmoji) {
-      setEmoji(selectedEmoji);
-    }
-  }}
-/>
-<Label.Root label={`Selected: ${emoji}`} />
-```
+The `quit` function:
+1. Unmounts the React tree
+2. Stops the GTK main loop
+3. Returns `false` (useful as a direct handler)
 
 ## Best Practices
 
@@ -265,37 +148,14 @@ useEffect(() => {
 }, []);
 ```
 
-### Handler Return Values
+### Use Functional Updates
 
-Be mindful of handler return values:
-
-```tsx
-// Wrong - won't prevent default behavior
-<Switch onStateSet={() => setActive(a => !a)} />
-
-// Correct - returns true to indicate handling
-<Switch
-  onStateSet={() => {
-    setActive(a => !a);
-    return true;
-  }}
-/>
-```
-
-### Event Handler Naming
-
-Follow React conventions for handler props:
+When updating state based on previous state, use functional updates to avoid stale closures:
 
 ```tsx
-// Component props
-interface MyComponentProps {
-  onSave: () => void;
-  onCancel: () => void;
-}
+// Correct - uses functional update
+<Button onClicked={() => setCount(c => c + 1)} />
 
-// Using the handlers
-<MyComponent
-  onSave={() => save()}
-  onCancel={() => cancel()}
-/>
+// Avoid - may use stale value
+<Button onClicked={() => setCount(count + 1)} />
 ```

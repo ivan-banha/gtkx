@@ -4,16 +4,16 @@ sidebar_position: 1
 
 # Components Guide
 
-GTKX provides React components for GTK4 widgets. This guide covers the most commonly used components and patterns.
+GTKX provides React components for GTK4 widgets. This guide covers the core patterns and concepts.
 
-## Basic Components
+## Core API
 
-### ApplicationWindow
+### render
 
-The main window container for your application:
+The main entry point for GTKX applications:
 
 ```tsx
-import { ApplicationWindow, quit, render } from "@gtkx/gtkx";
+import { ApplicationWindow, Button, quit, render } from "@gtkx/gtkx";
 
 render(
   <ApplicationWindow
@@ -22,85 +22,198 @@ render(
     defaultHeight={600}
     onCloseRequest={quit}
   >
-    {/* Your app content */}
+    <Button label="Hello" onClicked={() => console.log("Clicked!")} />
   </ApplicationWindow>,
   "com.example.app"
 );
 ```
 
-### Button
+The `render` function:
+- Takes a React element tree as the first argument
+- Takes an application ID as the second argument (reverse domain notation)
+- Optionally accepts `ApplicationFlags` as the third argument
+- Starts the GTK main loop
 
-A clickable button widget:
+### quit
+
+Cleanly shuts down the application:
 
 ```tsx
-<Button
-  label="Click me"
-  onClicked={() => console.log("Clicked!")}
-  tooltipText="This is a tooltip"
-/>
+import { quit } from "@gtkx/gtkx";
+
+<ApplicationWindow onCloseRequest={quit}>
+  {/* Content */}
+</ApplicationWindow>
 ```
 
-### Label
+The `quit` function:
+- Unmounts the React tree
+- Stops the GTK main loop
+- Returns `false` (can be used directly as an event handler)
 
-Display text (GTKX doesn't support text nodes):
+### createPortal
+
+Renders children into a different widget container:
 
 ```tsx
-// Use Label.Root for compound component pattern
-<Label.Root label="Hello, World!" wrap />
+import { createPortal } from "@gtkx/gtkx";
+import type * as Gtk from "@gtkx/ffi/gtk";
 
-// Or the simple form
+function MyComponent() {
+  const containerRef = useRef<Gtk.Box>(null);
+
+  return (
+    <>
+      <Box ref={containerRef} />
+      {containerRef.current && createPortal(
+        <Label label="Rendered in the Box" />,
+        containerRef.current
+      )}
+    </>
+  );
+}
+```
+
+### createRef
+
+Creates references for callback-based GTK APIs:
+
+```tsx
+import { createRef } from "@gtkx/gtkx";
+
+const ref = createRef(myValue);
+```
+
+## Property Conventions
+
+### Naming
+
+GTK uses snake_case; GTKX converts to camelCase:
+
+| GTK Property | GTKX Prop |
+|--------------|-----------|
+| `default_width` | `defaultWidth` |
+| `margin_start` | `marginStart` |
+| `tooltip_text` | `tooltipText` |
+| `css_classes` | `cssClasses` |
+
+### Common Properties
+
+Most widgets support these properties:
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `hexpand` | boolean | Expand horizontally |
+| `vexpand` | boolean | Expand vertically |
+| `halign` | Gtk.Align | Horizontal alignment |
+| `valign` | Gtk.Align | Vertical alignment |
+| `marginTop` | number | Top margin in pixels |
+| `marginBottom` | number | Bottom margin |
+| `marginStart` | number | Start margin (left in LTR) |
+| `marginEnd` | number | End margin (right in LTR) |
+| `cssClasses` | string[] | CSS class names |
+| `tooltipText` | string | Tooltip text |
+| `sensitive` | boolean | Whether widget is interactive |
+| `visible` | boolean | Whether widget is visible |
+
+### Using GTK Enums
+
+Import enums from `@gtkx/ffi/gtk`:
+
+```tsx
+import * as Gtk from "@gtkx/ffi/gtk";
+
+<Box orientation={Gtk.Orientation.VERTICAL} />
+<ListBox selectionMode={Gtk.SelectionMode.SINGLE} />
+<Revealer transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN} />
+```
+
+## Component Patterns
+
+### Simple Components
+
+Basic widgets accept props directly:
+
+```tsx
+<Button label="Click me" onClicked={() => {}} />
 <Label label="Hello, World!" />
+<Spinner spinning={true} />
 ```
 
-### Entry
+### Compound Components
 
-Single-line text input:
+Widgets with named child slots use a compound pattern with `.Root` and slot components:
 
 ```tsx
-const [text, setText] = useState("");
-
-<Entry
-  text={text}
-  placeholderText="Type something..."
-  onChanged={() => setText(text)}
-/>
+<HeaderBar.Root>
+  <HeaderBar.TitleWidget>
+    <Label.Root label="My App" />
+  </HeaderBar.TitleWidget>
+  <HeaderBar.Start>
+    <Button label="Back" />
+  </HeaderBar.Start>
+  <HeaderBar.End>
+    <Button label="Menu" />
+  </HeaderBar.End>
+</HeaderBar.Root>
 ```
 
-### Switch
+This pattern maps to GTK widgets that have named child properties (like HeaderBar's title widget, start/end widgets).
 
-A toggle switch:
+Other examples:
 
 ```tsx
-const [active, setActive] = useState(false);
+// CenterBox with three slots
+<CenterBox.Root hexpand>
+  <CenterBox.StartWidget>
+    <Button label="Start" />
+  </CenterBox.StartWidget>
+  <CenterBox.CenterWidget>
+    <Label.Root label="Center" />
+  </CenterBox.CenterWidget>
+  <CenterBox.EndWidget>
+    <Button label="End" />
+  </CenterBox.EndWidget>
+</CenterBox.Root>
 
-<Switch
-  active={active}
-  onStateSet={() => {
-    setActive(a => !a);
-    return true; // Return true to prevent default handling
-  }}
-/>
+// Frame with label and child
+<Frame.Root>
+  <Frame.LabelWidget>
+    <Label.Root label="Settings" />
+  </Frame.LabelWidget>
+  <Frame.Child>
+    <Box>{/* Content */}</Box>
+  </Frame.Child>
+</Frame.Root>
+
+// Expander with collapsible content
+<Expander.Root label="Show more">
+  <Expander.Child>
+    <Label.Root label="Hidden content" />
+  </Expander.Child>
+</Expander.Root>
 ```
 
-### CheckButton
+### Container Components
 
-Checkbox or radio button:
+Containers accept children directly:
 
 ```tsx
-const [checked, setChecked] = useState(false);
+<Box spacing={10}>
+  <Button label="A" />
+  <Button label="B" />
+</Box>
 
-<CheckButton.Root
-  label="Enable feature"
-  active={checked}
-  onToggled={() => setChecked(c => !c)}
-/>
+<ScrolledWindow vexpand hexpand>
+  {/* Scrollable content */}
+</ScrolledWindow>
 ```
 
-## Layout Components
+## Layout
 
-### Box
+### Box Layout
 
-Arrange children horizontally or vertically:
+Horizontal or vertical arrangement:
 
 ```tsx
 import * as Gtk from "@gtkx/ffi/gtk";
@@ -118,210 +231,117 @@ import * as Gtk from "@gtkx/ffi/gtk";
 </Box>
 ```
 
-### Grid
+### Expansion and Alignment
 
-Two-dimensional grid layout:
-
-```tsx
-<Grid columnSpacing={10} rowSpacing={10}>
-  <Button label="(0,0)" />
-  <Button label="(1,0)" />
-  <Button label="(0,1)" />
-  <Button label="(1,1)" />
-</Grid>
-```
-
-### CenterBox
-
-Place widgets at start, center, and end:
+Control how widgets fill space:
 
 ```tsx
-<CenterBox.Root hexpand>
-  <CenterBox.StartWidget>
-    <Button label="Start" />
-  </CenterBox.StartWidget>
-  <CenterBox.CenterWidget>
-    <Label.Root label="Center" />
-  </CenterBox.CenterWidget>
-  <CenterBox.EndWidget>
-    <Button label="End" />
-  </CenterBox.EndWidget>
-</CenterBox.Root>
+// Expand to fill available space
+<Box hexpand vexpand>
+  <Label.Root label="Fills the space" hexpand vexpand />
+</Box>
+
+// Align within allocated space
+<Label.Root
+  label="Centered"
+  halign={Gtk.Align.CENTER}
+  valign={Gtk.Align.CENTER}
+/>
 ```
 
-### Paned
-
-Resizable split view:
+### Margins and Spacing
 
 ```tsx
-<Paned.Root wideHandle>
-  <Paned.StartChild>
-    <Box cssClasses={["card"]}>
-      <Label.Root label="Left pane" />
-    </Box>
-  </Paned.StartChild>
-  <Paned.EndChild>
-    <Box cssClasses={["card"]}>
-      <Label.Root label="Right pane" />
-    </Box>
-  </Paned.EndChild>
-</Paned.Root>
+<Box spacing={10}>
+  <Label.Root
+    label="With margins"
+    marginTop={20}
+    marginBottom={20}
+    marginStart={10}
+    marginEnd={10}
+  />
+</Box>
 ```
 
-### ScrolledWindow
+## Text Display
 
-Add scrollbars to content:
+GTKX supports React text nodes, which are automatically rendered as GTK Labels:
 
 ```tsx
-<ScrolledWindow vexpand hexpand>
-  {/* Scrollable content */}
-</ScrolledWindow>
+// Text nodes work directly
+<Box>Hello World</Box>
+
+// Equivalent to
+<Box>
+  <Label label="Hello World" />
+</Box>
 ```
 
-## Container Components
-
-### Frame
-
-Group related content with a label:
+You can also use dynamic text:
 
 ```tsx
-<Frame.Root>
-  <Frame.LabelWidget>
-    <Label.Root label="Settings" />
-  </Frame.LabelWidget>
-  <Frame.Child>
-    <Box spacing={10} marginTop={10} marginStart={10}>
-      {/* Frame content */}
-    </Box>
-  </Frame.Child>
-</Frame.Root>
+const [name, setName] = useState("World");
+
+<Box>Hello, {name}!</Box>
 ```
 
-### Expander
+For more control over text styling, use the Label component directly with its full set of props.
 
-Collapsible content:
+## Conditional Rendering
+
+Standard React conditional rendering works:
 
 ```tsx
-<Expander.Root label="Show more">
-  <Expander.Child>
-    <Label.Root label="Hidden content" />
-  </Expander.Child>
-</Expander.Root>
+const [showExtra, setShowExtra] = useState(false);
+
+<Box>
+  <Button label="Toggle" onClicked={() => setShowExtra(s => !s)} />
+  {showExtra && <Label.Root label="Extra content" />}
+</Box>
 ```
 
-### Revealer
+## Lists and Iteration
 
-Animate showing/hiding content:
+Map arrays to components with keys:
 
 ```tsx
-import * as Gtk from "@gtkx/ffi/gtk";
+const items = [
+  { id: 1, name: "Apple" },
+  { id: 2, name: "Banana" },
+];
 
-const [revealed, setRevealed] = useState(false);
-
-<Button label="Toggle" onClicked={() => setRevealed(r => !r)} />
-<Revealer
-  revealChild={revealed}
-  transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}
->
-  <Label.Root label="Revealed content" />
-</Revealer>
+<ListBox>
+  {items.map(item => (
+    <ListBoxRow key={item.id}>
+      <Label.Root label={item.name} />
+    </ListBoxRow>
+  ))}
+</ListBox>
 ```
 
-### Notebook
+## Refs
 
-Tabbed interface:
+Access underlying GTK widget instances with proper typing:
 
 ```tsx
-<Notebook>
-  <Box>
-    <Label.Root label="Tab 1 content" />
-  </Box>
-  <Box>
-    <Label.Root label="Tab 2 content" />
-  </Box>
-</Notebook>
+import type * as Gtk from "@gtkx/ffi/gtk";
+
+const buttonRef = useRef<Gtk.Button>(null);
+
+<Button ref={buttonRef} label="Click me" />
+
+// Later, access the GTK widget
+if (buttonRef.current) {
+  buttonRef.current.setLabel("Updated");
+}
 ```
 
-## Header Bar
+Each component's ref is typed to its corresponding GTK class from `@gtkx/ffi/gtk`:
 
-Modern application header:
-
-```tsx
-<ApplicationWindow onCloseRequest={quit}>
-  <HeaderBar.Root>
-    <HeaderBar.TitleWidget>
-      <Label.Root label="My App" />
-    </HeaderBar.TitleWidget>
-    <HeaderBar.Start>
-      <Button label="Back" />
-    </HeaderBar.Start>
-    <HeaderBar.End>
-      <MenuButton.Root label="Menu">
-        {/* Menu content */}
-      </MenuButton.Root>
-    </HeaderBar.End>
-  </HeaderBar.Root>
-  {/* Window content */}
-</ApplicationWindow>
-```
-
-## Progress Indicators
-
-### ProgressBar
-
-```tsx
-const [progress, setProgress] = useState(0);
-
-<ProgressBar fraction={progress} showText />
-```
-
-### Spinner
-
-```tsx
-const [loading, setLoading] = useState(true);
-
-<Spinner spinning={loading} />
-```
-
-### LevelBar
-
-```tsx
-<LevelBar value={0.7} />
-```
-
-## Common Props
-
-Most widgets support these common properties:
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `hexpand` | boolean | Expand horizontally |
-| `vexpand` | boolean | Expand vertically |
-| `halign` | Gtk.Align | Horizontal alignment |
-| `valign` | Gtk.Align | Vertical alignment |
-| `marginTop` | number | Top margin in pixels |
-| `marginBottom` | number | Bottom margin |
-| `marginStart` | number | Start margin (left in LTR) |
-| `marginEnd` | number | End margin (right in LTR) |
-| `cssClasses` | string[] | CSS class names |
-| `tooltipText` | string | Tooltip text |
-| `sensitive` | boolean | Whether widget is interactive |
-| `visible` | boolean | Whether widget is visible |
-
-## Compound Components Pattern
-
-Some widgets use a compound component pattern with `.Root` and slot components:
-
-```tsx
-// Widgets with named slots use this pattern
-<Widget.Root>
-  <Widget.SlotName>
-    {/* Slot content */}
-  </Widget.SlotName>
-  <Widget.Child>
-    {/* Main content */}
-  </Widget.Child>
-</Widget.Root>
-```
-
-This maps to GTK's concept of widget properties that accept child widgets (like `HeaderBar`'s title widget).
+| Component | Ref Type |
+|-----------|----------|
+| `Button` | `Gtk.Button` |
+| `Label` | `Gtk.Label` |
+| `Entry` | `Gtk.Entry` |
+| `Box` | `Gtk.Box` |
+| `ApplicationWindow` | `Gtk.ApplicationWindow` |

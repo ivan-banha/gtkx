@@ -13,32 +13,22 @@ GTKX provides several components for displaying lists:
 | Component | Use Case |
 |-----------|----------|
 | `ListBox` | Simple selectable lists |
-| `ListView` | Large dynamic lists with item factories |
+| `ListView` | Large virtualized lists |
 | `DropDown` | Dropdown selection |
-| `Notebook` | Tabbed lists |
 
 ## ListBox
 
-For simple, static lists:
+For simple lists where you control the content:
 
 ```tsx
 import * as Gtk from "@gtkx/ffi/gtk";
 
 <ListBox selectionMode={Gtk.SelectionMode.SINGLE}>
   <ListBoxRow>
-    <Box marginStart={10} marginEnd={10} marginTop={5} marginBottom={5}>
-      <Label.Root label="Item 1" />
-    </Box>
+    <Label.Root label="Item 1" />
   </ListBoxRow>
   <ListBoxRow>
-    <Box marginStart={10} marginEnd={10} marginTop={5} marginBottom={5}>
-      <Label.Root label="Item 2" />
-    </Box>
-  </ListBoxRow>
-  <ListBoxRow>
-    <Box marginStart={10} marginEnd={10} marginTop={5} marginBottom={5}>
-      <Label.Root label="Item 3" />
-    </Box>
+    <Label.Root label="Item 2" />
   </ListBoxRow>
 </ListBox>
 ```
@@ -48,19 +38,14 @@ import * as Gtk from "@gtkx/ffi/gtk";
 ```tsx
 import * as Gtk from "@gtkx/ffi/gtk";
 
-// No selection
-<ListBox selectionMode={Gtk.SelectionMode.NONE} />
-
-// Single selection (default)
-<ListBox selectionMode={Gtk.SelectionMode.SINGLE} />
-
-// Multiple selection
-<ListBox selectionMode={Gtk.SelectionMode.MULTIPLE} />
+<ListBox selectionMode={Gtk.SelectionMode.NONE} />     // No selection
+<ListBox selectionMode={Gtk.SelectionMode.SINGLE} />   // Single selection
+<ListBox selectionMode={Gtk.SelectionMode.MULTIPLE} /> // Multiple selection
 ```
 
-### Dynamic ListBox
+### Dynamic Lists
 
-Generate rows from data:
+Generate rows from data using map:
 
 ```tsx
 const items = [
@@ -72,9 +57,7 @@ const items = [
 <ListBox selectionMode={Gtk.SelectionMode.SINGLE}>
   {items.map(item => (
     <ListBoxRow key={item.id}>
-      <Box marginStart={10} marginEnd={10} marginTop={5} marginBottom={5}>
-        <Label.Root label={item.name} />
-      </Box>
+      <Label.Root label={item.name} marginStart={10} />
     </ListBoxRow>
   ))}
 </ListBox>
@@ -82,7 +65,7 @@ const items = [
 
 ## ListView
 
-For large lists with virtualization and custom item factories:
+For large lists with virtualization. ListView uses an item factory pattern for performance:
 
 ```tsx
 import * as Gtk from "@gtkx/ffi/gtk";
@@ -97,14 +80,11 @@ const [items, setItems] = useState([
   <ListView.Root
     vexpand
     itemFactory={(item: { id: number; text: string } | null) => {
-      // Create GTK widgets for each item
       const box = new Gtk.Box();
       const label = new Gtk.Label(item?.text ?? "");
       box.append(label.ptr);
       box.setMarginStart(10);
       box.setMarginEnd(10);
-      box.setMarginTop(5);
-      box.setMarginBottom(5);
       return box;
     }}
   >
@@ -115,12 +95,19 @@ const [items, setItems] = useState([
 </ScrolledWindow>
 ```
 
-### Adding and Removing Items
+The `itemFactory` function:
+- Receives the item data (or null during initialization)
+- Must return a GTK widget instance
+- Is called for each visible item
+- Uses imperative widget construction for performance
+
+## Adding and Removing Items
+
+Use React state to manage list data:
 
 ```tsx
 const [items, setItems] = useState([
   { id: 1, text: "Item 1" },
-  { id: 2, text: "Item 2" },
 ]);
 
 const addItem = () => {
@@ -130,180 +117,43 @@ const addItem = () => {
   ]);
 };
 
-const removeItem = () => {
-  setItems(prev => prev.slice(0, -1));
-};
-
-<Box spacing={5}>
-  <Button label="Add" onClicked={addItem} />
-  <Button label="Remove" onClicked={removeItem} sensitive={items.length > 0} />
-  <Label.Root label={`Total: ${items.length}`} />
-</Box>
-
-<ScrolledWindow vexpand>
-  <ListView.Root itemFactory={...}>
-    {items.map(item => (
-      <ListView.Item item={item} key={item.id} />
-    ))}
-  </ListView.Root>
-</ScrolledWindow>
-```
-
-## DropDown
-
-For dropdown selection:
-
-```tsx
-<Box spacing={10}>
-  <Label.Root label="Select an option:" />
-  <DropDown hexpand />
-</Box>
-```
-
-## Notebook (Tabs)
-
-For tabbed content (acts like a list of pages):
-
-```tsx
-<Notebook hexpand vexpand>
-  <Box>
-    <Label.Root label="Tab 1 Content" />
-  </Box>
-  <Box>
-    <Label.Root label="Tab 2 Content" />
-  </Box>
-  <Box>
-    <Label.Root label="Tab 3 Content" />
-  </Box>
-</Notebook>
-```
-
-## Common Patterns
-
-### Filterable List
-
-```tsx
-const allItems = [
-  { id: 1, name: "Apple" },
-  { id: 2, name: "Banana" },
-  { id: 3, name: "Cherry" },
-  { id: 4, name: "Date" },
-];
-
-const [filter, setFilter] = useState("");
-
-const filteredItems = allItems.filter(item =>
-  item.name.toLowerCase().includes(filter.toLowerCase())
-);
-
-<Box spacing={10}>
-  <SearchEntry
-    placeholderText="Filter..."
-    onSearchChanged={() => {
-      // Update filter state
-    }}
-  />
-  <ListBox>
-    {filteredItems.map(item => (
-      <ListBoxRow key={item.id}>
-        <Label.Root label={item.name} marginStart={10} />
-      </ListBoxRow>
-    ))}
-  </ListBox>
-</Box>
-```
-
-### Selectable List with State
-
-```tsx
-const [items] = useState([
-  { id: 1, name: "Option A" },
-  { id: 2, name: "Option B" },
-  { id: 3, name: "Option C" },
-]);
-
-const [selectedId, setSelectedId] = useState<number | null>(null);
-
-<ListBox selectionMode={Gtk.SelectionMode.SINGLE}>
-  {items.map(item => (
-    <ListBoxRow
-      key={item.id}
-      onActivated={() => setSelectedId(item.id)}
-    >
-      <Box marginStart={10} marginEnd={10} marginTop={5} marginBottom={5}>
-        <Label.Root label={item.name} />
-        {selectedId === item.id && (
-          <Label.Root label="✓" marginStart={10} />
-        )}
-      </Box>
-    </ListBoxRow>
-  ))}
-</ListBox>
-
-<Label.Root label={`Selected: ${selectedId ?? "None"}`} />
-```
-
-### List with Actions
-
-```tsx
-const [items, setItems] = useState([
-  { id: 1, text: "Task 1", done: false },
-  { id: 2, text: "Task 2", done: false },
-]);
-
-const toggleItem = (id: number) => {
-  setItems(prev =>
-    prev.map(item =>
-      item.id === id ? { ...item, done: !item.done } : item
-    )
-  );
-};
-
-const deleteItem = (id: number) => {
+const removeItem = (id: number) => {
   setItems(prev => prev.filter(item => item.id !== id));
 };
-
-<ListBox>
-  {items.map(item => (
-    <ListBoxRow key={item.id}>
-      <Box spacing={10} marginStart={10} marginEnd={10} marginTop={5} marginBottom={5}>
-        <CheckButton.Root
-          active={item.done}
-          onToggled={() => toggleItem(item.id)}
-        />
-        <Label.Root
-          label={item.text}
-          hexpand
-          cssClasses={item.done ? ["dim-label"] : []}
-        />
-        <Button
-          label="Delete"
-          onClicked={() => deleteItem(item.id)}
-        />
-      </Box>
-    </ListBoxRow>
-  ))}
-</ListBox>
 ```
 
 ## Scrolling
 
-Always wrap large lists in a `ScrolledWindow`:
+Wrap lists in ScrolledWindow for scrollable content:
 
 ```tsx
 <ScrolledWindow vexpand hexpand minContentHeight={200}>
   <ListBox>
-    {/* Many items */}
+    {/* Items */}
   </ListBox>
 </ScrolledWindow>
 ```
 
 ## Best Practices
 
-1. **Use Keys**: Always provide unique `key` props when mapping arrays
-2. **Virtualization**: Use `ListView` for large lists (100+ items)
-3. **Scroll Containers**: Wrap lists in `ScrolledWindow` when needed
-4. **Empty States**: Handle empty lists gracefully
+### Always Use Keys
+
+Provide unique `key` props when mapping arrays:
+
+```tsx
+{items.map(item => (
+  <ListBoxRow key={item.id}>  {/* Use a stable unique ID */}
+    <Label.Root label={item.name} />
+  </ListBoxRow>
+))}
+```
+
+### Choose the Right Component
+
+- **ListBox**: Small to medium lists, rich row content, selection handling
+- **ListView**: Large lists (100+ items), virtualization needed, simple item rendering
+
+### Handle Empty States
 
 ```tsx
 {items.length === 0 ? (

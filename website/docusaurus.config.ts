@@ -1,6 +1,7 @@
 import type * as Preset from "@docusaurus/preset-classic";
 import type { Config } from "@docusaurus/types";
 import { themes as prismThemes } from "prism-react-renderer";
+import type { PluginOptions } from "typedoc-plugin-markdown";
 
 const config: Config = {
     title: "GTKX",
@@ -47,6 +48,30 @@ const config: Config = {
         ],
     ],
 
+    plugins: [
+        [
+            "docusaurus-plugin-typedoc",
+            {
+                entryPoints: ["../packages/gtkx/src/index.ts"],
+                tsconfig: "../packages/gtkx/tsconfig.lib.json",
+                out: "docs/api",
+                sidebar: {
+                    autoConfiguration: true,
+                    pretty: true,
+                },
+                textContentMappings: {
+                    "title.indexPage": "API Reference",
+                    "title.memberPage": "{name}",
+                },
+                parametersFormat: "table",
+                enumMembersFormat: "table",
+                indexFormat: "table",
+                expandObjects: true,
+                useCodeBlocks: true,
+            } satisfies Partial<PluginOptions>,
+        ],
+    ],
+
     themeConfig: {
         image: "img/social-card.png",
         colorMode: {
@@ -66,6 +91,11 @@ const config: Config = {
                     label: "Docs",
                 },
                 {
+                    to: "/docs/api",
+                    position: "left",
+                    label: "API",
+                },
+                {
                     href: "https://github.com/eugeniodepalo/gtkx",
                     label: "GitHub",
                     position: "right",
@@ -81,6 +111,10 @@ const config: Config = {
                         {
                             label: "Getting Started",
                             to: "/docs/getting-started",
+                        },
+                        {
+                            label: "API Reference",
+                            to: "/docs/api",
                         },
                         {
                             label: "Architecture",

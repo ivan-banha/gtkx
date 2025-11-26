@@ -8,13 +8,100 @@ This guide covers how to display dialogs and modal windows in GTKX applications.
 
 ## Dialog Types
 
-GTKX supports several types of dialogs:
+GTKX supports several dialog types through special node handling:
 
-- **AboutDialog** - Application information
-- **FileDialog** - File selection (open/save)
-- **AlertDialog** - Alerts and confirmations
-- **ColorDialogButton** - Color picker
-- **FontDialogButton** - Font picker
+| Dialog | Purpose |
+|--------|---------|
+| `FileDialog` | File selection (open/save) |
+| `AlertDialog` | Alerts and confirmations |
+| `AboutDialog` | Application information |
+| `ColorDialog` | Color selection |
+| `FontDialog` | Font selection |
+
+## FileDialog
+
+FileDialog supports different modes for various file operations:
+
+| Mode | Description |
+|------|-------------|
+| `"open"` | Select a single file to open (default) |
+| `"openMultiple"` | Select multiple files |
+| `"save"` | Choose location to save a file |
+| `"selectFolder"` | Select a directory |
+
+### Opening a File
+
+```tsx
+const [showOpen, setShowOpen] = useState(false);
+
+<Button label="Open File" onClicked={() => setShowOpen(true)} />
+
+{showOpen && (
+  <FileDialog
+    mode="open"
+    title="Select a file"
+    onCloseRequest={() => {
+      setShowOpen(false);
+      return false;
+    }}
+  />
+)}
+```
+
+### Saving a File
+
+```tsx
+const [showSave, setShowSave] = useState(false);
+
+<Button label="Save As..." onClicked={() => setShowSave(true)} />
+
+{showSave && (
+  <FileDialog
+    mode="save"
+    title="Save file as"
+    onCloseRequest={() => {
+      setShowSave(false);
+      return false;
+    }}
+  />
+)}
+```
+
+### Selecting a Folder
+
+```tsx
+{showFolder && (
+  <FileDialog
+    mode="selectFolder"
+    title="Choose a directory"
+    onCloseRequest={() => {
+      setShowFolder(false);
+      return false;
+    }}
+  />
+)}
+```
+
+## AlertDialog
+
+Display alerts and confirmation dialogs:
+
+```tsx
+const [showAlert, setShowAlert] = useState(false);
+
+<Button label="Delete" onClicked={() => setShowAlert(true)} />
+
+{showAlert && (
+  <AlertDialog
+    message="Confirm Delete"
+    detail="Are you sure you want to delete this item?"
+    onCloseRequest={() => {
+      setShowAlert(false);
+      return false;
+    }}
+  />
+)}
+```
 
 ## AboutDialog
 
@@ -29,11 +116,10 @@ const [showAbout, setShowAbout] = useState(false);
   <AboutDialog
     programName="My Application"
     version="1.0.0"
-    comments="A great application built with GTKX"
+    comments="Built with GTKX"
     copyright="Copyright 2024"
     authors={["Developer Name"]}
     website="https://example.com"
-    license="MIT License"
     onCloseRequest={() => {
       setShowAbout(false);
       return false;
@@ -42,144 +128,55 @@ const [showAbout, setShowAbout] = useState(false);
 )}
 ```
 
-### AboutDialog Props
+## Dialog Buttons (ColorDialogButton, FontDialogButton)
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `programName` | string | Application name |
-| `version` | string | Version string |
-| `comments` | string | Short description |
-| `copyright` | string | Copyright notice |
-| `authors` | string[] | List of authors |
-| `website` | string | Application website |
-| `license` | string | License text |
-| `logo` | string | Path to logo image |
-
-## Color Dialog
-
-Use the built-in color dialog button:
+Some dialogs have built-in button widgets that handle showing the dialog:
 
 ```tsx
 <Box spacing={10}>
-  <Label.Root label="Choose a color:" />
+  <Label.Root label="Pick a color:" />
   <ColorDialogButton />
 </Box>
-```
 
-The `ColorDialogButton` opens a color chooser dialog when clicked.
-
-## Font Dialog
-
-Use the built-in font dialog button:
-
-```tsx
 <Box spacing={10}>
-  <Label.Root label="Choose a font:" />
+  <Label.Root label="Pick a font:" />
   <FontDialogButton />
 </Box>
 ```
 
-The `FontDialogButton` opens a font chooser dialog when clicked.
-
 ## Popover (Lightweight Dialog)
 
-For lightweight modal content, use popovers:
+For lightweight modal content attached to a widget:
 
 ```tsx
 <Popover.Root autohide>
   <Popover.Child>
     <Box spacing={10} marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
       <Label.Root label="Popover Content" />
-      <Button label="Action 1" onClicked={() => {}} />
-      <Button label="Action 2" onClicked={() => {}} />
+      <Button label="Action" onClicked={() => {}} />
     </Box>
   </Popover.Child>
   <Button label="Open Popover" />
 </Popover.Root>
 ```
 
-### Popover Props
+## Dialog State Management
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `autohide` | boolean | Close when clicking outside |
-| `hasArrow` | boolean | Show pointing arrow |
-| `position` | Gtk.PositionType | Where to show the popover |
-
-## MenuButton with Popover
-
-Combine a button with a popover menu:
+### Single Dialog
 
 ```tsx
-<MenuButton.Root label="Menu">
-  <MenuButton.Popover>
-    <Popover.Root>
-      <Popover.Child>
-        <Box spacing={5} marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
-          <Button label="New" onClicked={() => {}} />
-          <Button label="Open" onClicked={() => {}} />
-          <Separator />
-          <Button label="Save" onClicked={() => {}} />
-          <Button label="Save As..." onClicked={() => {}} />
-        </Box>
-      </Popover.Child>
-    </Popover.Root>
-  </MenuButton.Popover>
-</MenuButton.Root>
-```
+const [showDialog, setShowDialog] = useState(false);
 
-## Custom Dialog Patterns
+<Button label="Show" onClicked={() => setShowDialog(true)} />
 
-### Confirmation Dialog
-
-Build custom confirmation dialogs using state:
-
-```tsx
-const [showConfirm, setShowConfirm] = useState(false);
-const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-
-const confirmAction = (action: () => void) => {
-  setPendingAction(() => action);
-  setShowConfirm(true);
-};
-
-const handleConfirm = () => {
-  pendingAction?.();
-  setShowConfirm(false);
-  setPendingAction(null);
-};
-
-const handleCancel = () => {
-  setShowConfirm(false);
-  setPendingAction(null);
-};
-
-// Usage
-<Button
-  label="Delete"
-  onClicked={() => confirmAction(() => deleteItem())}
-/>
-
-{showConfirm && (
-  <Box cssClasses={["dialog-overlay"]}>
-    <Frame.Root>
-      <Frame.Child>
-        <Box spacing={10} marginTop={20} marginBottom={20} marginStart={20} marginEnd={20}>
-          <Label.Root label="Are you sure?" />
-          <Box spacing={10}>
-            <Button label="Cancel" onClicked={handleCancel} />
-            <Button label="Confirm" onClicked={handleConfirm} />
-          </Box>
-        </Box>
-      </Frame.Child>
-    </Frame.Root>
-  </Box>
+{showDialog && (
+  <MyDialog onClose={() => setShowDialog(false)} />
 )}
 ```
 
-### Modal State Management
+### Multiple Dialogs
 
-For complex applications, manage dialog state centrally:
+For applications with multiple dialog types:
 
 ```tsx
 type DialogType = "about" | "settings" | "confirm" | null;
@@ -189,7 +186,6 @@ const [activeDialog, setActiveDialog] = useState<DialogType>(null);
 const openDialog = (type: DialogType) => setActiveDialog(type);
 const closeDialog = () => setActiveDialog(null);
 
-// Render active dialog
 {activeDialog === "about" && (
   <AboutDialog onCloseRequest={() => { closeDialog(); return false; }} />
 )}
@@ -203,10 +199,10 @@ const closeDialog = () => setActiveDialog(null);
 
 ### Always Handle Close
 
-Always provide a way to close dialogs:
+Provide a way to close dialogs:
 
 ```tsx
-<AboutDialog
+<FileDialog
   onCloseRequest={() => {
     setShowDialog(false);
     return false; // Allow closing
@@ -214,22 +210,15 @@ Always provide a way to close dialogs:
 />
 ```
 
-### Conditional Rendering
+### Use Conditional Rendering
 
-Use conditional rendering for dialogs:
+Mount dialogs only when needed:
 
 ```tsx
-// Good - only mounts when needed
+// Preferred - only mounts when needed
 {showDialog && <MyDialog />}
-
-// Avoid - always mounted, just hidden
-<MyDialog visible={showDialog} />
 ```
 
 ### Focus Management
 
-Dialogs should grab focus when opened. GTK handles this automatically for most dialog types.
-
-### Escape Key
-
-Most GTK dialogs support closing with the Escape key by default.
+GTK handles focus management automatically for dialog types. When a dialog opens, it receives focus; when it closes, focus returns to the previous widget.

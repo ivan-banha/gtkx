@@ -1,0 +1,26 @@
+{
+    "files": [],
+    "compilerOptions": {
+        "composite": true,
+        "customConditions": ["development"],
+        "declaration": true,
+        "forceConsistentCasingInFileNames": true,
+        "incremental": true,
+        "jsx": "react-jsx",
+        "lib": ["ESNext"],
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "noUncheckedIndexedAccess": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "pretty": true,
+        "removeComments": true,
+        "resolveJsonModule": true,
+        "skipDefaultLibCheck": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "target": "ESNext",
+        "types": ["node"]
+    },
+    "include": []
+}

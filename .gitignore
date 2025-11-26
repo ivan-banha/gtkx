@@ -1,0 +1,6 @@
+.turbo
+*.log
+*.tsbuildinfo
+**/src/generated
+dist
+node_modules

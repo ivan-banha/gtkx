@@ -1,0 +1,119 @@
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { GirParser } from "@gtkx/gir";
+import { CodeGenerator } from "../src/codegen/ffi-generator.js";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+const workspaceRoot = resolve(__dirname, "../../..");
+const girsDir = join(workspaceRoot, "girs");
+const systemGirsDir = "/usr/share/gir-1.0";
+const outputDir = resolve(__dirname, "../src/generated");
+
+const IMPORTANT_GIRS = new Set([
+    "GLib-2.0.gir",
+    "GModule-2.0.gir",
+    "GObject-2.0.gir",
+    "Gdk-4.0.gir",
+    "GdkPixbuf-2.0.gir",
+    "Gio-2.0.gir",
+    "Graphene-1.0.gir",
+    "Gsk-4.0.gir",
+    "Gtk-4.0.gir",
+    "HarfBuzz-0.0.gir",
+    "Pango-1.0.gir",
+    "PangoCairo-1.0.gir",
+    "cairo-1.0.gir",
+    "freetype2-2.0.gir",
+]);
+
+const syncGirFiles = (): void => {
+    console.log("Syncing GIR files from system to workspace...");
+
+    if (!existsSync(girsDir)) {
+        mkdirSync(girsDir, { recursive: true });
+        console.log(`Created directory: ${girsDir}`);
+    }
+
+    const files = readdirSync(systemGirsDir).filter((f) => f.endsWith(".gir"));
+    console.log(`Found ${files.length} GIR files in ${systemGirsDir}`);
+
+    for (const file of files) {
+        if (!IMPORTANT_GIRS.has(file)) continue;
+        copyFileSync(join(systemGirsDir, file), join(girsDir, file));
+        console.log(`Copied ${file}`);
+    }
+
+    console.log(`✓ Synced ${files.length} GIR files to ${girsDir}`);
+};
+
+const processGirFile = async (filePath: string): Promise<{ name: string; fileCount: number }> => {
+    const girContent = readFileSync(filePath, "utf-8");
+    const parser = new GirParser();
+    const namespace = parser.parse(girContent);
+
+    const generator = new CodeGenerator({ outputDir, namespace: namespace.name });
+    const generatedFiles = await generator.generateNamespace(namespace);
+
+    const namespaceOutputDir = join(outputDir, namespace.name.toLowerCase());
+    mkdirSync(namespaceOutputDir, { recursive: true });
+
+    for (const [filename, content] of generatedFiles) {
+        writeFileSync(join(namespaceOutputDir, filename), content);
+    }
+
+    return { name: namespace.name, fileCount: generatedFiles.size };
+};
+
+const generateBindings = async (): Promise<void> => {
+    if (!existsSync(outputDir)) {
+        mkdirSync(outputDir, { recursive: true });
+        console.log(`Created output directory: ${outputDir}`);
+    }
+
+    if (!existsSync(girsDir)) {
+        console.error(`Error: GIR directory not found: ${girsDir}`);
+        console.error("Run with --sync flag to sync GIR files from system");
+        process.exit(1);
+    }
+
+    const girFiles = readdirSync(girsDir)
+        .filter((f) => f.endsWith(".gir"))
+        .filter((f) => IMPORTANT_GIRS.has(f));
+
+    console.log(`\nFound ${girFiles.length} GIR files in ${girsDir}`);
+
+    for (const file of girFiles) {
+        console.log(`\nProcessing ${file}...`);
+        try {
+            const result = await processGirFile(join(girsDir, file));
+            console.log(`✓ Generated ${result.fileCount} files for ${result.name}`);
+        } catch (error) {
+            console.error(`✗ Failed to process ${file}:`, error);
+        }
+    }
+
+    console.log("\n✓ Code generation complete!");
+};
+
+const main = async (): Promise<void> => {
+    const shouldSync = process.argv.includes("--sync");
+
+    if (shouldSync) {
+        try {
+            syncGirFiles();
+        } catch (error) {
+            console.error("Error syncing GIR files:", error);
+            process.exit(1);
+        }
+    }
+
+    try {
+        await generateBindings();
+    } catch (error) {
+        console.error("Error in batch generation:", error);
+        process.exit(1);
+    }
+};
+
+await main();

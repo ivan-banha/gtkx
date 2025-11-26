@@ -1,0 +1,23 @@
+{
+    "$schema": "https://turborepo.com/schema.json",
+    "tasks": {
+        "codegen": {
+            "outputs": ["src/generated/**"]
+        },
+        "build": {
+            "dependsOn": ["^codegen", "codegen", "native-build"],
+            "outputs": ["dist/**"]
+        },
+        "native-build": {
+            "outputs": ["target/**", "index.node", "cargo.log"]
+        },
+        "start": {
+            "dependsOn": ["@gtkx/native#build", "^build", "build"],
+            "persistent": true,
+            "cache": false
+        },
+        "test": {
+            "dependsOn": ["^codegen", "codegen"]
+        }
+    }
+}

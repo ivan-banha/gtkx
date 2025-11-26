@@ -1,0 +1,20 @@
+{
+    "$schema": "https://unpkg.com/knip@5/schema.json",
+    "workspaces": {
+        "packages/gir": {
+            "project": ["src/**/*.ts"]
+        },
+        "packages/native": {
+            "project": ["*.ts"]
+        },
+        "packages/ffi": {
+            "project": ["src/**/*.ts", "scripts/**/*.ts"]
+        },
+        "packages/gtkx": {
+            "project": ["src/**/*.ts", "scripts/**/*.ts"]
+        }
+    },
+    "ignore": ["**/dist/**", "**/node_modules/**", "**/*.d.ts", "**/src/generated/**"],
+    "ignoreDependencies": ["@biomejs/biome"],
+    "ignoreExportsUsedInFile": true
+}

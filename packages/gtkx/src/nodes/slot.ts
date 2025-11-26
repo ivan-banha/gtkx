@@ -8,16 +8,9 @@ import type { Node } from "../node.js";
  * like HeaderBar's start/end slots.
  */
 export class SlotNode implements Node {
-    /** Whether this node class requires a GTK widget to be created. */
     static needsWidget = false;
 
-    /**
-     * Checks if this node class handles the given element type.
-     * Matches types like "HeaderBar.Start" but not "ListView.Item" or "Box.Root".
-     * @param type - The element type to check
-     * @returns True if this is a named slot type
-     */
-    static matches(type: string): boolean {
+    static matches(type: string, _widget: gtk.Widget | null): _widget is gtk.Widget {
         if (!type.includes(".")) return false;
         const parts = type.split(".");
         if (parts.length !== 2) return false;
@@ -28,12 +21,6 @@ export class SlotNode implements Node {
     private child: Node | null = null;
     private slotName: string;
 
-    /**
-     * Creates a new slot node.
-     * @param type - The element type (e.g., "HeaderBar.Start")
-     * @param _widget - Unused (slots don't create widgets)
-     * @param _props - Unused
-     */
     constructor(type: string, _widget: gtk.Widget, _props: Props) {
         const dotIndex = type.indexOf(".");
         if (dotIndex === -1) {

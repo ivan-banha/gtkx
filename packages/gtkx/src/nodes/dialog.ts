@@ -4,33 +4,31 @@ import type { Node } from "../node.js";
 
 const DIALOG_TYPES = ["FileDialog", "ColorDialog", "FontDialog", "AlertDialog"];
 
+interface FileDialogWidget extends gtk.Widget {
+    open(parent: unknown, cancellable: null, callback: null, userData: null): void;
+    save(parent: unknown, cancellable: null, callback: null, userData: null): void;
+    selectFolder(parent: unknown, cancellable: null, callback: null, userData: null): void;
+    openMultiple(parent: unknown, cancellable: null, callback: null, userData: null): void;
+}
+
+const isFileDialog = (dialog: gtk.Widget): dialog is FileDialogWidget =>
+    "open" in dialog && typeof dialog.open === "function";
+
 /**
  * Node implementation for GTK dialog widgets.
  * Handles non-widget dialogs like FileDialog, ColorDialog, etc.
  */
 export class DialogNode implements Node {
-    /** Whether this node class requires a GTK widget to be created. */
     static needsWidget = true;
 
-    /**
-     * Checks if this node class handles the given element type.
-     * @param type - The element type to check
-     * @returns True if this is a dialog type
-     */
-    static matches(type: string): boolean {
-        return DIALOG_TYPES.includes(type);
+    static matches(type: string, widget: gtk.Widget | null): widget is gtk.Widget {
+        return DIALOG_TYPES.includes(type) && widget !== null;
     }
 
     private dialogType: string;
     private dialog: gtk.Widget;
     private initialProps: Props;
 
-    /**
-     * Creates a new dialog node.
-     * @param dialogType - The dialog type (e.g., "FileDialog")
-     * @param dialog - The GTK dialog instance
-     * @param initialProps - Initial props including dialog mode
-     */
     constructor(dialogType: string, dialog: gtk.Widget, initialProps: Props) {
         this.dialogType = dialogType;
         this.dialog = dialog;
@@ -63,28 +61,19 @@ export class DialogNode implements Node {
     }
 
     mount(): void {
+        if (this.dialogType !== "FileDialog" || !isFileDialog(this.dialog)) return;
+
         const mode = this.initialProps.mode as string | undefined;
         const parentWindow = undefined;
 
-        if (this.dialogType !== "FileDialog") return;
+        const methodMap = {
+            save: this.dialog.save,
+            selectFolder: this.dialog.selectFolder,
+            openMultiple: this.dialog.openMultiple,
+        } as const;
 
-        const methodName =
-            mode === "save"
-                ? "save"
-                : mode === "selectFolder"
-                  ? "selectFolder"
-                  : mode === "openMultiple"
-                    ? "openMultiple"
-                    : "open";
-
-        if (methodName in this.dialog && typeof this.dialog[methodName as keyof gtk.Widget] === "function") {
-            (this.dialog[methodName as keyof gtk.Widget] as (p: unknown, n1: null, n2: null, n3: null) => void)(
-                parentWindow,
-                null,
-                null,
-                null,
-            );
-        }
+        const method = (mode && methodMap[mode as keyof typeof methodMap]) || this.dialog.open;
+        method.call(this.dialog, parentWindow, null, null, null);
     }
 
     attachToParent(_parent: Node): void {}

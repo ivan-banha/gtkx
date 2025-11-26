@@ -1,8 +1,13 @@
 import * as gtk from "@gtkx/ffi/gtk";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
+import { appendChild, removeChild } from "../widget-capabilities.js";
 
-export class TextNode implements Node {
+/**
+ * Node implementation for text content.
+ * Wraps string children in a GTK Label widget.
+ */
+export class TextNode implements Node<gtk.Label> {
     private label: gtk.Label;
 
     constructor(text: string) {
@@ -29,23 +34,15 @@ export class TextNode implements Node {
 
     attachToParent(parent: Node): void {
         const parentWidget = parent.getWidget?.();
-        if (!parentWidget) return;
-
-        if ("setChild" in parentWidget && typeof parentWidget.setChild === "function") {
-            (parentWidget.setChild as (ptr: unknown) => void)(this.label.ptr);
-        } else if ("append" in parentWidget && typeof parentWidget.append === "function") {
-            (parentWidget.append as (ptr: unknown) => void)(this.label.ptr);
+        if (parentWidget) {
+            appendChild(parentWidget, this.label);
         }
     }
 
     detachFromParent(parent: Node): void {
         const parentWidget = parent.getWidget?.();
-        if (!parentWidget) return;
-
-        if ("remove" in parentWidget && typeof parentWidget.remove === "function") {
-            (parentWidget.remove as (ptr: unknown) => void)(this.label.ptr);
-        } else if ("setChild" in parentWidget && typeof parentWidget.setChild === "function") {
-            (parentWidget.setChild as (ptr: null) => void)(null);
+        if (parentWidget) {
+            removeChild(parentWidget, this.label);
         }
     }
 }

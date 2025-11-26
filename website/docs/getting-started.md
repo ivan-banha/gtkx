@@ -11,18 +11,20 @@ This guide will help you set up GTKX and create your first GTK4 application with
 Before you begin, ensure you have the following installed:
 
 - **Node.js** 20 or later
-- **GTK4** development libraries
+- **GTK4** runtime libraries (usually pre-installed on modern Linux desktops)
 
 ### Installing GTK4 on Linux
 
+GTK4 is typically pre-installed on GNOME-based distributions. If not, install the runtime:
+
 **Fedora:**
 ```bash
-sudo dnf install gtk4-devel
+sudo dnf install gtk4
 ```
 
 **Ubuntu/Debian:**
 ```bash
-sudo apt install libgtk-4-dev
+sudo apt install libgtk-4-1
 ```
 
 **Arch Linux:**
@@ -147,22 +149,27 @@ my-gtkx-app/
 
 ## Building from Source
 
-If you want to contribute or need the latest development version:
+If you want to contribute or need the latest development version, you'll need additional build dependencies:
+
+- **Rust toolchain** - For compiling the native FFI module
+- **GTK4 development headers** - For GObject introspection
+
+**Fedora:**
+```bash
+sudo dnf install gtk4-devel gobject-introspection-devel
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt install libgtk-4-dev gobject-introspection
+```
+
+Then clone and build:
 
 ```bash
-# Clone the repository
 git clone https://github.com/eugeniodepalo/gtkx.git
 cd gtkx
-
-# Install dependencies
 pnpm install
-
-# Install additional build dependencies
-# Fedora: sudo dnf install gobject-introspection-devel
-# Ubuntu: sudo apt install gobject-introspection
-# You also need Rust toolchain for the native module
-
-# Sync GIR files and build
 cd packages/ffi && pnpm run codegen --sync
 cd ../.. && pnpm build
 

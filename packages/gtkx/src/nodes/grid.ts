@@ -1,21 +1,41 @@
 import type * as gtk from "@gtkx/ffi/gtk";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
+import {
+    appendChild,
+    type GridAttachable,
+    isGridAttachable,
+    isRemovable,
+    type Removable,
+    removeChild,
+} from "../widget-capabilities.js";
 
-export class GridNode implements Node {
+interface GridWidget extends gtk.Widget, GridAttachable, Removable {}
+
+const isGridWidget = (widget: gtk.Widget): widget is GridWidget => isGridAttachable(widget) && isRemovable(widget);
+
+/**
+ * Node implementation for GTK Grid widgets.
+ * Manages grid layout with positioned children.
+ */
+export class GridNode implements Node<GridWidget> {
     static needsWidget = true;
 
-    static matches(type: string): boolean {
-        return type === "Grid" || type === "Grid.Root";
+    static matches(type: string, widget: gtk.Widget | null): widget is GridWidget {
+        if (type !== "Grid" && type !== "Grid.Root") return false;
+        return widget !== null && isGridWidget(widget);
     }
 
-    private widget: gtk.Grid;
+    private widget: GridWidget;
 
     constructor(_type: string, widget: gtk.Widget, _props: Props) {
-        this.widget = widget as gtk.Grid;
+        if (!isGridWidget(widget)) {
+            throw new Error("GridNode requires a Grid widget");
+        }
+        this.widget = widget;
     }
 
-    getWidget(): gtk.Widget {
+    getWidget(): GridWidget {
         return this.widget;
     }
 
@@ -33,21 +53,15 @@ export class GridNode implements Node {
 
     attachToParent(parent: Node): void {
         const parentWidget = parent.getWidget?.();
-        if (!parentWidget) return;
-
-        if ("setChild" in parentWidget && typeof parentWidget.setChild === "function") {
-            (parentWidget.setChild as (ptr: unknown) => void)(this.widget.ptr);
-        } else if ("append" in parentWidget && typeof parentWidget.append === "function") {
-            (parentWidget.append as (ptr: unknown) => void)(this.widget.ptr);
+        if (parentWidget) {
+            appendChild(parentWidget, this.widget);
         }
     }
 
     detachFromParent(parent: Node): void {
         const parentWidget = parent.getWidget?.();
-        if (!parentWidget) return;
-
-        if ("remove" in parentWidget && typeof parentWidget.remove === "function") {
-            (parentWidget.remove as (ptr: unknown) => void)(this.widget.ptr);
+        if (parentWidget) {
+            removeChild(parentWidget, this.widget);
         }
     }
 
@@ -78,10 +92,14 @@ export class GridNode implements Node {
     mount(): void {}
 }
 
+/**
+ * Node implementation for Grid child positioning.
+ * Manages column, row, and span properties for grid children.
+ */
 export class GridChildNode implements Node {
     static needsWidget = false;
 
-    static matches(type: string): boolean {
+    static matches(type: string, _widget: gtk.Widget | null): _widget is gtk.Widget {
         return type === "Grid.Child";
     }
 
@@ -122,21 +140,17 @@ export class GridChildNode implements Node {
     }
 
     private attachChildToGrid(): void {
-        if (this.parentGrid && this.childWidget) {
-            const grid = this.parentGrid.getWidget() as gtk.Grid;
-            if ("attach" in grid && typeof grid.attach === "function") {
-                grid.attach(this.childWidget.ptr, this.column, this.row, this.columnSpan, this.rowSpan);
-            }
-        }
+        if (!this.parentGrid || !this.childWidget) return;
+
+        const grid = this.parentGrid.getWidget();
+        grid.attach(this.childWidget.ptr, this.column, this.row, this.columnSpan, this.rowSpan);
     }
 
     private detachChildFromGrid(): void {
-        if (this.parentGrid && this.childWidget) {
-            const grid = this.parentGrid.getWidget() as gtk.Grid;
-            if ("remove" in grid && typeof grid.remove === "function") {
-                (grid.remove as (ptr: unknown) => void)(this.childWidget.ptr);
-            }
-        }
+        if (!this.parentGrid || !this.childWidget) return;
+
+        const grid = this.parentGrid.getWidget();
+        grid.remove(this.childWidget.ptr);
     }
 
     attachToParent(parent: Node): void {

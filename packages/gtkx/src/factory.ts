@@ -7,7 +7,6 @@ import { ListItemNode } from "./nodes/list.js";
 import { SlotNode } from "./nodes/slot.js";
 import { WidgetNode } from "./nodes/widget.js";
 
-/** Props type for React elements representing GTK widgets. */
 export type Props = Record<string, unknown>;
 
 const DEFAULT_PROPS: Record<string, Props> = {
@@ -31,13 +30,13 @@ const CONSTRUCTOR_ARGS: Record<string, (props: Props, currentApp?: unknown) => u
     LinkButton: (props) => [props.uri],
 };
 
-type NodeClass = {
+type AnyNodeClass = {
     needsWidget: boolean;
-    matches(type: string): boolean;
+    matches(type: string, widget: gtk.Widget | null): boolean;
     new (type: string, widget: gtk.Widget, props: Props): Node;
 };
 
-const NODE_CLASSES: NodeClass[] = [
+const NODE_CLASSES: AnyNodeClass[] = [
     SlotNode,
     ListItemNode,
     DropDownItemNode,
@@ -73,10 +72,6 @@ const applyDefaultProps = (type: string, props: Props): Props => ({
 /**
  * Creates a Node instance for a given React element type.
  * Maps React element types to appropriate GTK widgets and node handlers.
- * @param type - The React element type (e.g., "Button", "Box.Root")
- * @param props - The element props
- * @param currentApp - The GTK Application pointer
- * @returns A Node instance for the reconciler
  */
 export const createNode = (type: string, props: Props, currentApp: unknown): Node => {
     const normalizedType = normalizeType(type);
@@ -89,7 +84,7 @@ export const createNode = (type: string, props: Props, currentApp: unknown): Nod
             widget = createWidget(normalizedType, finalProps, currentApp);
         }
 
-        if (NodeClass.matches(type)) {
+        if (NodeClass.matches(type, widget)) {
             const node = new NodeClass(type, widget as gtk.Widget, finalProps);
             if (NodeClass.needsWidget) {
                 node.updateProps({}, finalProps);

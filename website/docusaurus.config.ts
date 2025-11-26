@@ -1,7 +1,6 @@
 import type * as Preset from "@docusaurus/preset-classic";
 import type { Config } from "@docusaurus/types";
 import { themes as prismThemes } from "prism-react-renderer";
-import type { PluginOptions } from "typedoc-plugin-markdown";
 
 const config: Config = {
     title: "GTKX",
@@ -60,6 +59,10 @@ const config: Config = {
                     autoConfiguration: true,
                     pretty: true,
                 },
+                plugin: ["typedoc-plugin-frontmatter"],
+                frontmatterGlobals: {
+                    displayed_sidebar: "apiSidebar",
+                },
                 textContentMappings: {
                     "title.indexPage": "API Reference",
                     "title.memberPage": "{name}",
@@ -69,7 +72,7 @@ const config: Config = {
                 indexFormat: "table",
                 expandObjects: true,
                 useCodeBlocks: true,
-            } satisfies Partial<PluginOptions>,
+            },
         ],
     ],
 
@@ -107,7 +110,7 @@ const config: Config = {
             style: "dark",
             links: [
                 {
-                    title: "Documentation",
+                    title: "Docs",
                     items: [
                         {
                             label: "Getting Started",
@@ -117,6 +120,11 @@ const config: Config = {
                             label: "API Reference",
                             to: "/docs/api",
                         },
+                    ],
+                },
+                {
+                    title: "Learn",
+                    items: [
                         {
                             label: "Architecture",
                             to: "/docs/architecture",
@@ -133,6 +141,10 @@ const config: Config = {
                         {
                             label: "GitHub",
                             href: "https://github.com/eugeniodepalo/gtkx",
+                        },
+                        {
+                            label: "llms.txt",
+                            href: "pathname:///llms.txt",
                         },
                     ],
                 },

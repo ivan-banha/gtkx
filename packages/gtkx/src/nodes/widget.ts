@@ -2,80 +2,44 @@ import type * as gtk from "@gtkx/ffi/gtk";
 import { call } from "@gtkx/native";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
+import { appendChild, isConnectable, isDefaultSizable, isPresentable, removeChild } from "../widget-capabilities.js";
 
 type CombinedPropHandler = {
     props: string[];
-    apply: (widget: gtk.Widget, values: Record<string, unknown>) => void;
+    apply: (widget: gtk.Widget) => (values: Record<string, unknown>) => void;
 };
 
 const COMBINED_PROPS: CombinedPropHandler[] = [
     {
         props: ["defaultWidth", "defaultHeight"],
-        apply: (widget, values) => {
-            if ("setDefaultSize" in widget && typeof widget.setDefaultSize === "function") {
+        apply: (widget) => (values) => {
+            if (isDefaultSizable(widget)) {
                 const width = (values.defaultWidth as number) ?? -1;
                 const height = (values.defaultHeight as number) ?? -1;
-                (widget.setDefaultSize as (w: number, h: number) => void)(width, height);
+                widget.setDefaultSize(width, height);
             }
         },
     },
 ];
 
-const appendChild = (parent: gtk.Widget, child: gtk.Widget): void => {
-    const childPtr = child.ptr;
-
-    if ("setChild" in parent && typeof parent.setChild === "function") {
-        (parent.setChild as (ptr: unknown) => void)(childPtr);
-    } else if ("append" in parent && typeof parent.append === "function") {
-        (parent.append as (ptr: unknown) => void)(childPtr);
-    } else if ("add" in parent && typeof parent.add === "function") {
-        (parent.add as (ptr: unknown) => void)(childPtr);
-    }
-};
-
-const removeChild = (parent: gtk.Widget, child: gtk.Widget): void => {
-    const childPtr = child.ptr;
-
-    if ("remove" in parent && typeof parent.remove === "function") {
-        (parent.remove as (ptr: unknown) => void)(childPtr);
-    } else if ("setChild" in parent && typeof parent.setChild === "function") {
-        (parent.setChild as (ptr: null) => void)(null);
-    }
-};
-
 /**
  * Node implementation for standard GTK widgets.
- * Handles property updates, signal connections, and parent-child relationships.
+ * Acts as the fallback handler that matches all widget types.
  */
 export class WidgetNode implements Node {
-    /** Whether this node class requires a GTK widget to be created. */
     static needsWidget = true;
 
-    /**
-     * Checks if this node class handles the given element type.
-     * WidgetNode is the fallback handler that matches all types.
-     */
-    static matches(): boolean {
-        return true;
+    static matches(_type: string, widget: gtk.Widget | null): widget is gtk.Widget {
+        return widget !== null;
     }
 
     private widget: gtk.Widget;
     private signalHandlers = new Map<string, number>();
 
-    /**
-     * Creates a new widget node.
-     * @param _type - The element type (unused)
-     * @param widget - The GTK widget instance
-     * @param _props - Initial props (unused, applied via updateProps)
-     */
     constructor(_type: string, widget: gtk.Widget, _props: Props) {
         this.widget = widget;
     }
 
-    /**
-     * Gets the underlying GTK widget.
-     * @returns The GTK widget instance
-     */
     getWidget(): gtk.Widget {
         return this.widget;
     }
@@ -93,14 +57,16 @@ export class WidgetNode implements Node {
     }
 
     attachToParent(parent: Node): void {
-        if (parent instanceof WidgetNode) {
-            appendChild(parent.widget, this.widget);
+        const parentWidget = parent.getWidget?.();
+        if (parentWidget) {
+            appendChild(parentWidget, this.widget);
         }
     }
 
     detachFromParent(parent: Node): void {
-        if (parent instanceof WidgetNode) {
-            removeChild(parent.widget, this.widget);
+        const parentWidget = parent.getWidget?.();
+        if (parentWidget) {
+            removeChild(parentWidget, this.widget);
         }
     }
 
@@ -115,7 +81,7 @@ export class WidgetNode implements Node {
                     values[prop] = newProps[prop];
                     consumedProps.add(prop);
                 }
-                handler.apply(this.widget, values);
+                handler.apply(this.widget)(values);
             } else {
                 for (const prop of handler.props) {
                     consumedProps.add(prop);
@@ -154,7 +120,7 @@ export class WidgetNode implements Node {
                     this.signalHandlers.delete(eventName);
                 }
 
-                if (typeof newValue === "function" && typeof this.widget.connect === "function") {
+                if (typeof newValue === "function" && isConnectable(this.widget)) {
                     const handlerId = this.widget.connect(eventName, newValue as (...args: unknown[]) => void);
                     this.signalHandlers.set(eventName, handlerId);
                 }
@@ -170,7 +136,7 @@ export class WidgetNode implements Node {
     }
 
     mount(): void {
-        if ("present" in this.widget && typeof this.widget.present === "function") {
+        if (isPresentable(this.widget)) {
             this.widget.present();
         }
     }

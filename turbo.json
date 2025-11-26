@@ -2,39 +2,25 @@
     "$schema": "https://turborepo.com/schema.json",
     "tasks": {
         "codegen": {
-            "outputs": [
-                "src/generated/**"
-            ]
+            "outputs": ["src/generated/**"]
         },
         "build": {
-            "dependsOn": [
-                "^build",
-                "codegen",
-                "native-build"
-            ],
-            "outputs": [
-                "dist/**",
-                "build/**"
-            ]
+            "dependsOn": ["^build", "codegen", "native-build"],
+            "outputs": ["dist/**", "build/**"]
         },
         "native-build": {
-            "outputs": [
-                "target/**",
-                "index.node",
-                "cargo.log"
-            ]
+            "outputs": ["target/**", "index.node", "cargo.log"]
         },
         "start": {
-            "dependsOn": [
-                "build"
-            ],
+            "dependsOn": ["build"],
             "persistent": true,
             "cache": false
         },
         "test": {
-            "dependsOn": [
-                "build"
-            ]
+            "dependsOn": ["build"]
+        },
+        "@gtkx/website#build": {
+            "dependsOn": ["@gtkx/gtkx#build"]
         }
     }
 }

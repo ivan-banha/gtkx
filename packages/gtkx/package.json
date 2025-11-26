@@ -48,6 +48,6 @@
         "@gtkx/gir": "workspace:*"
     },
     "peerDependencies": {
-        "react": "^19"
+        "react": "19"
     }
 }

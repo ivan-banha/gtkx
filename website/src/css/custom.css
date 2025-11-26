@@ -33,3 +33,7 @@
 [data-theme="dark"] .hero--primary {
     background: linear-gradient(135deg, #1a5fb4 0%, #1c71d8 40%, #2ec27e 100%);
 }
+
+.footer__links {
+    justify-content: center;
+}

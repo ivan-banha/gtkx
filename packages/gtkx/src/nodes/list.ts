@@ -2,7 +2,6 @@ import * as gtk from "@gtkx/ffi/gtk";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
 
-/** Internal store for managing list items with GTK StringList. */
 class StringListStore<T> {
     private store: gtk.StringList;
     private itemMap = new Map<string, T>();
@@ -73,15 +72,9 @@ const LIST_WIDGETS = ["ListView", "ColumnView", "GridView"];
  * Represents individual items in ListView, ColumnView, or GridView.
  */
 export class ListItemNode<T = unknown> implements Node {
-    /** Whether this node class requires a GTK widget to be created. */
     static needsWidget = false;
 
-    /**
-     * Checks if this node class handles the given element type.
-     * @param type - The element type to check
-     * @returns True if this is a list item type (e.g., "ListView.Item")
-     */
-    static matches(type: string): boolean {
+    static matches(type: string, _widget: gtk.Widget | null): _widget is gtk.Widget {
         const dotIndex = type.indexOf(".");
         if (dotIndex === -1) return false;
         const widgetType = type.slice(0, dotIndex);
@@ -91,20 +84,10 @@ export class ListItemNode<T = unknown> implements Node {
 
     private item: T;
 
-    /**
-     * Creates a new list item node.
-     * @param _type - The element type (unused)
-     * @param _widget - Unused (items don't create widgets)
-     * @param props - Props containing the item data
-     */
     constructor(_type: string, _widget: gtk.Widget, props: Props) {
         this.item = props.item as T;
     }
 
-    /**
-     * Gets the item data for this list item.
-     * @returns The item data
-     */
     getItem(): T {
         return this.item;
     }

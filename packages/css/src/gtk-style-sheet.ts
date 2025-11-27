@@ -1,3 +1,4 @@
+import { onReady } from "@gtkx/ffi";
 import { CssProvider, StyleContext } from "@gtkx/ffi/gtk";
 import { DisplayManager } from "@gtkx/ffi/gdk";
 
@@ -14,10 +15,7 @@ const STYLE_PROVIDER_PRIORITY_APPLICATION = 600;
 let isGtkReady = false;
 const pendingSheets: GtkStyleSheet[] = [];
 
-/**
- * Called by the reconciler after GTK is started to flush any queued styles.
- */
-export const flushPendingStyles = (): void => {
+const flushPendingStyles = (): void => {
     isGtkReady = true;
     for (const sheet of pendingSheets) {
         sheet.applyQueuedRules();
@@ -25,11 +23,13 @@ export const flushPendingStyles = (): void => {
     pendingSheets.length = 0;
 };
 
+onReady(flushPendingStyles);
+
 /**
  * Custom StyleSheet implementation for Emotion that outputs to GTK's CssProvider.
  * Implements Emotion's StyleSheet interface to enable CSS-in-JS with GTK widgets.
  *
- * Rules are queued until GTK is initialized, then applied when flushPendingStyles() is called.
+ * Rules are queued until GTK is initialized, then applied automatically.
  */
 export class GtkStyleSheet {
     key: string;

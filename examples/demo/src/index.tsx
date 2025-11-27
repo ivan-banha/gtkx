@@ -1,5 +1,6 @@
+import { css, injectGlobal } from "@gtkx/css";
 import * as Gtk from "@gtkx/ffi/gtk";
-import { ApplicationWindow, Box, Button, css, injectGlobal, Label, quit, render } from "@gtkx/gtkx";
+import { ApplicationWindow, Box, Button, Label, quit, render } from "@gtkx/gtkx";
 
 injectGlobal`
     window {

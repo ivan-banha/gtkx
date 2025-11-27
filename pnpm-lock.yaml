@@ -85,9 +85,6 @@ importers:
       '@gtkx/ffi':
         specifier: workspace:*
         version: link:../ffi
-      '@gtkx/gtkx':
-        specifier: workspace:*
-        version: link:../gtkx
 
   packages/ffi:
     dependencies:

@@ -36,4 +36,31 @@ export const start = native.start as (appId: string, flags?: number) => unknown;
  */
 export const stop = native.stop as () => void;
 
+/**
+ * Reads a field from a boxed record at the specified offset.
+ * @param objectId - The boxed object pointer
+ * @param type - Type descriptor for the field
+ * @param offset - Memory offset in bytes from the start of the struct
+ * @returns The field value
+ */
+export const read = native.read as (objectId: unknown, type: Type, offset: number) => unknown;
+
+/**
+ * Writes a value to a field in a boxed record at the specified offset.
+ * @param objectId - The boxed object pointer
+ * @param type - Type descriptor for the field
+ * @param offset - Memory offset in bytes from the start of the struct
+ * @param value - The value to write
+ */
+export const write = native.write as (objectId: unknown, type: Type, offset: number, value: unknown) => void;
+
+/**
+ * Allocates a zeroed struct of the specified size and registers it as a boxed type.
+ * @param size - Size of the struct in bytes
+ * @param glibTypeName - The GLib type name (e.g., "GdkRGBA")
+ * @param lib - Optional library name to look up the type registration function
+ * @returns The allocated boxed object pointer
+ */
+export const alloc = native.alloc as (size: number, glibTypeName: string, lib?: string) => unknown;
+
 export { Ref, Arg, Type };

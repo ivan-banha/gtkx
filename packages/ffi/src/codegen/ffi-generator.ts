@@ -3,12 +3,14 @@ import type {
     GirClass,
     GirConstructor,
     GirEnumeration,
+    GirField,
     GirFunction,
     GirInterface,
     GirMethod,
     GirNamespace,
     GirParameter,
     GirProperty,
+    GirRecord,
     GirSignal,
 } from "@gtkx/gir";
 import { TypeMapper, toCamelCase, toPascalCase } from "@gtkx/gir";
@@ -74,6 +76,8 @@ const RESERVED_WORDS = new Set([
     "public",
     "await",
     "async",
+    "eval",
+    "arguments",
 ]);
 
 const METHOD_RENAMES = new Map<string, Map<string, string>>([
@@ -95,7 +99,15 @@ const METHOD_RENAMES = new Map<string, Map<string, string>>([
     ],
 ]);
 
-const toKebabCase = (str: string): string => str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+const CLASS_RENAMES = new Map<string, string>([
+    ["Error", "GError"],
+]);
+
+const toKebabCase = (str: string): string =>
+    str
+        .replace(/([a-z])([A-Z])/g, "$1-$2")
+        .replace(/_/g, "-")
+        .toLowerCase();
 
 const toConstantCase = (str: string): string => str.replace(/-/g, "_").toUpperCase();
 
@@ -154,7 +166,16 @@ const toValidIdentifier = (str: string): string => {
     return result;
 };
 
-const normalizeClassName = (name: string): string => (name === "Object" ? "GObject" : toPascalCase(name));
+const normalizeClassName = (name: string): string => {
+    const pascalName = toPascalCase(name);
+    if (CLASS_RENAMES.has(pascalName)) {
+        return CLASS_RENAMES.get(pascalName)!;
+    }
+    if (pascalName === "Object") {
+        return "GObject";
+    }
+    return pascalName;
+};
 
 const hasOutParameter = (params: GirParameter[]): boolean =>
     params.some((p) => p.direction === "out" || p.direction === "inout");
@@ -171,8 +192,15 @@ export class CodeGenerator {
     private usesRef = false;
     private usesCall = false;
     private usesType = false;
+    private usesRead = false;
+    private usesWrite = false;
+    private usesAlloc = false;
+    private usesNativeError = false;
     private usedEnums = new Set<string>();
+    private usedRecords = new Set<string>();
     private signalClasses = new Set<string>();
+    private recordNameToFile = new Map<string, string>();
+    private currentSharedLibrary = "";
 
     /**
      * Creates a new code generator with the given options.
@@ -190,7 +218,9 @@ export class CodeGenerator {
     async generateNamespace(namespace: GirNamespace): Promise<Map<string, string>> {
         const files = new Map<string, string>();
 
+        this.currentSharedLibrary = namespace.sharedLibrary;
         this.registerEnumsAndBitfields(namespace);
+        this.registerRecords(namespace);
         const classMap = this.buildClassMap(namespace);
         this.attachConstructorFunctions(namespace, classMap);
 
@@ -203,6 +233,15 @@ export class CodeGenerator {
 
         for (const cls of namespace.classes) {
             files.set(`${toKebabCase(cls.name)}.ts`, await this.generateClass(cls, namespace.sharedLibrary, classMap));
+        }
+
+        for (const record of namespace.records) {
+            if (this.shouldGenerateRecord(record)) {
+                files.set(
+                    `${toKebabCase(record.name)}.ts`,
+                    await this.generateRecord(record, namespace.sharedLibrary),
+                );
+            }
         }
 
         const standaloneFunctions = this.getStandaloneFunctions(namespace, classMap);
@@ -227,6 +266,25 @@ export class CodeGenerator {
         for (const bitfield of namespace.bitfields) {
             this.typeMapper.registerEnum(bitfield.name, toPascalCase(bitfield.name));
         }
+    }
+
+    private registerRecords(namespace: GirNamespace): void {
+        for (const record of namespace.records) {
+            if (this.shouldGenerateRecord(record)) {
+                const normalizedName = normalizeClassName(record.name);
+                this.typeMapper.registerRecord(record.name, normalizedName, record.glibTypeName);
+                this.recordNameToFile.set(normalizedName, record.name);
+            }
+        }
+    }
+
+    private shouldGenerateRecord(record: GirRecord): boolean {
+        if (record.disguised) return false;
+        if (record.name.endsWith("Class")) return false;
+        if (record.name.endsWith("Private")) return false;
+        if (record.name.endsWith("Iface")) return false;
+        if (!record.glibTypeName) return false;
+        return true;
     }
 
     private buildClassMap(namespace: GirNamespace): Map<string, GirClass> {
@@ -277,9 +335,15 @@ export class CodeGenerator {
         this.usesRef = false;
         this.usesCall = false;
         this.usesType = false;
+        this.usesRead = false;
+        this.usesWrite = false;
+        this.usesAlloc = false;
+        this.usesNativeError = false;
         this.usedEnums.clear();
+        this.usedRecords.clear();
         this.signalClasses.clear();
         this.typeMapper.setEnumUsageCallback((enumName) => this.usedEnums.add(enumName));
+        this.typeMapper.setRecordUsageCallback((recordName) => this.usedRecords.add(recordName));
     }
 
     private async generateClass(
@@ -697,8 +761,10 @@ ${allArgs ? `${allArgs},` : ""}
     ): string {
         const methodName = hasConnectMethod ? "on" : "connect";
 
-        const savedCallback = this.typeMapper.getEnumUsageCallback();
+        const savedEnumCallback = this.typeMapper.getEnumUsageCallback();
+        const savedRecordCallback = this.typeMapper.getRecordUsageCallback();
         this.typeMapper.setEnumUsageCallback(null);
+        this.typeMapper.setRecordUsageCallback(null);
 
         const signalMetadata = signals.map((signal) => {
             const paramEntries = (signal.parameters ?? []).map((param) => {
@@ -713,7 +779,8 @@ ${allArgs ? `${allArgs},` : ""}
             return `    "${signal.name}": [${paramEntries.join(", ")}]`;
         });
 
-        this.typeMapper.setEnumUsageCallback(savedCallback);
+        this.typeMapper.setEnumUsageCallback(savedEnumCallback);
+        this.typeMapper.setRecordUsageCallback(savedRecordCallback);
 
         this.usesType = true;
 
@@ -791,6 +858,339 @@ ${allArgs ? `${allArgs},` : ""}
 
         const imports = this.generateImports(interfaceName);
         return this.formatCode(imports + sections.join("\n"));
+    }
+
+    private async generateRecord(record: GirRecord, sharedLibrary: string): Promise<string> {
+        this.resetState();
+
+        this.usesRef =
+            record.methods.some((m) => hasOutParameter(m.parameters)) ||
+            record.constructors.some((c) => hasOutParameter(c.parameters)) ||
+            record.functions.some((f) => hasOutParameter(f.parameters));
+        this.usesCall =
+            record.methods.length > 0 || record.constructors.length > 0 || record.functions.length > 0;
+
+        const hasReadableFields = record.fields.some((f) => f.readable !== false && !f.private);
+        if (hasReadableFields) {
+            this.usesRead = true;
+        }
+
+        const recordName = normalizeClassName(record.name);
+        const sections: string[] = [];
+
+        const initInterface = this.generateRecordInitInterface(record);
+        if (initInterface) {
+            sections.push(initInterface);
+        }
+
+        if (record.doc) {
+            sections.push(formatDoc(record.doc));
+        }
+        sections.push(`export class ${recordName} {`);
+        sections.push(`  ptr: unknown;\n`);
+
+        sections.push(this.generateRecordConstructors(record, sharedLibrary));
+        sections.push(this.generateRecordStaticFunctions(record.functions, sharedLibrary, recordName));
+        sections.push(this.generateRecordMethods(record.methods, sharedLibrary, record.name));
+        sections.push(this.generateRecordFields(record.fields, record.methods));
+
+        sections.push("}");
+
+        const imports = this.generateImports(recordName);
+        return this.formatCode(imports + sections.join("\n"));
+    }
+
+    private generateRecordInitInterface(record: GirRecord): string | null {
+        const mainConstructor = record.constructors.find((c) => !c.parameters.some(isVararg));
+        if (mainConstructor) return null;
+
+        const initFields = this.getWritableFields(record.fields);
+        if (initFields.length === 0) return null;
+
+        const recordName = normalizeClassName(record.name);
+        return this.generateFieldInitInterface(recordName, initFields);
+    }
+
+    private generateRecordConstructors(record: GirRecord, sharedLibrary: string): string {
+        const recordName = normalizeClassName(record.name);
+        const sections: string[] = [];
+
+        const mainConstructor = record.constructors.find((c) => !c.parameters.some(isVararg));
+        if (mainConstructor) {
+            const ctorDoc = formatMethodDoc(mainConstructor.doc, mainConstructor.parameters);
+            const filteredParams = mainConstructor.parameters.filter((p) => !isVararg(p));
+
+            if (filteredParams.length === 0) {
+                sections.push(`${ctorDoc}  constructor() {\n    this.ptr = this.createPtr([]);\n  }\n`);
+            } else {
+                const typedParams = this.generateParameterList(mainConstructor.parameters, false);
+                const paramNames = filteredParams.map((p) => toValidIdentifier(toCamelCase(p.name)));
+                const firstParamType = this.typeMapper.mapParameter(filteredParams[0] as GirParameter).ts;
+                const isFirstParamArray = firstParamType.endsWith("[]") || firstParamType.startsWith("Array<");
+
+                if (isFirstParamArray) {
+                    sections.push(`${ctorDoc}  constructor(${typedParams}) {
+    const _args = [${paramNames.join(", ")}];
+    this.ptr = this.createPtr(_args);
+  }
+`);
+                } else {
+                    sections.push(`${ctorDoc}  constructor(${typedParams});
+  constructor(_args: unknown[]);
+  constructor(...args: unknown[]) {
+    const _args = args.length === 1 && Array.isArray(args[0]) ? args[0] : args;
+    this.ptr = this.createPtr(_args);
+  }
+`);
+                }
+            }
+
+            for (const ctor of record.constructors) {
+                if (ctor !== mainConstructor) {
+                    sections.push(this.generateRecordStaticFactoryMethod(ctor, recordName, sharedLibrary));
+                }
+            }
+        } else {
+            const initFields = this.getWritableFields(record.fields);
+            if (initFields.length > 0) {
+                sections.push(`  constructor(init: ${recordName}Init = {}) {\n    this.ptr = this.createPtr(init);\n  }\n`);
+            } else {
+                sections.push(`  constructor() {\n    this.ptr = this.createPtr({});\n  }\n`);
+            }
+        }
+
+        sections.push(this.generateRecordCreatePtr(record, sharedLibrary));
+        return sections.join("\n");
+    }
+
+    private getWritableFields(fields: GirField[]): GirField[] {
+        return fields.filter((f) => !f.private && f.writable !== false && this.isWritableType(f.type));
+    }
+
+    private generateFieldInitInterface(recordName: string, fields: GirField[]): string {
+        const properties = fields.map((field) => {
+            const fieldName = toValidIdentifier(toCamelCase(field.name));
+            const typeMapping = this.typeMapper.mapType(field.type);
+            return `  ${fieldName}?: ${typeMapping.ts};`;
+        });
+        return `export interface ${recordName}Init {\n${properties.join("\n")}\n}\n\n`;
+    }
+
+    private generateRecordCreatePtr(record: GirRecord, sharedLibrary: string): string {
+        const recordName = normalizeClassName(record.name);
+        const mainConstructor = record.constructors.find((c) => !c.parameters.some(isVararg));
+
+        if (!mainConstructor) {
+            if (record.glibTypeName && record.fields.length > 0) {
+                const structSize = this.calculateStructSize(record.fields);
+                const initFields = this.getWritableFields(record.fields);
+                this.usesAlloc = true;
+
+                if (initFields.length > 0) {
+                    const fieldWrites = this.generateFieldWrites(record.fields);
+                    this.usesWrite = true;
+                    return `  protected createPtr(init: ${recordName}Init): unknown {
+    const ptr = alloc(${structSize}, "${record.glibTypeName}", "${sharedLibrary}");
+${fieldWrites}
+    return ptr;
+  }
+`;
+                }
+
+                return `  protected createPtr(_init: Record<string, unknown>): unknown {
+    return alloc(${structSize}, "${record.glibTypeName}", "${sharedLibrary}");
+  }
+`;
+            }
+            return `  protected createPtr(_init: Record<string, unknown>): unknown {\n    return null;\n  }\n`;
+        }
+
+        const filteredParams = mainConstructor.parameters.filter((p) => !isVararg(p));
+        const paramTypes = filteredParams.map((p) => this.typeMapper.mapParameter(p).ts);
+        const paramNames = filteredParams.map((p) => toValidIdentifier(toCamelCase(p.name)));
+
+        const destructuring =
+            paramNames.length > 0
+                ? `    const [${paramNames.join(", ")}] = _args as [${paramTypes.join(", ")}];\n`
+                : "";
+
+        const args = this.generateCallArguments(mainConstructor.parameters);
+        const glibTypeName = record.glibTypeName ?? record.cType;
+
+        return `  protected createPtr(_args: unknown[]): unknown {
+${destructuring}    return call(
+      "${sharedLibrary}",
+      "${mainConstructor.cIdentifier}",
+      [
+${args}
+      ],
+      { type: "boxed", borrowed: true, innerType: "${glibTypeName}" }
+    );
+  }
+`;
+    }
+
+    private generateFieldWrites(fields: GirField[]): string {
+        const writes: string[] = [];
+        let currentOffset = 0;
+
+        for (const field of fields) {
+            if (field.private) continue;
+            const fieldSize = this.getFieldSize(field.type);
+            const alignment = this.getFieldAlignment(field.type);
+            currentOffset = Math.ceil(currentOffset / alignment) * alignment;
+
+            if (field.writable !== false && this.isWritableType(field.type)) {
+                const fieldName = toValidIdentifier(toCamelCase(field.name));
+                const typeMapping = this.typeMapper.mapType(field.type);
+                writes.push(`    if (init.${fieldName} !== undefined) write(ptr, ${this.generateTypeDescriptor(typeMapping.ffi)}, ${currentOffset}, init.${fieldName});`);
+            }
+
+            currentOffset += fieldSize;
+        }
+
+        return writes.join("\n");
+    }
+
+    private calculateStructSize(fields: GirField[]): number {
+        let currentOffset = 0;
+        for (const field of fields) {
+            if (field.private) continue;
+            const fieldSize = this.getFieldSize(field.type);
+            const alignment = this.getFieldAlignment(field.type);
+            currentOffset = Math.ceil(currentOffset / alignment) * alignment;
+            currentOffset += fieldSize;
+        }
+        const maxAlignment = Math.max(...fields.map((f) => this.getFieldAlignment(f.type)), 1);
+        return Math.ceil(currentOffset / maxAlignment) * maxAlignment;
+    }
+
+    private generateRecordStaticFactoryMethod(ctor: GirConstructor, recordName: string, sharedLibrary: string): string {
+        let methodName = "new";
+        if (ctor.cIdentifier) {
+            const parts = ctor.cIdentifier.split("_");
+            const nameParts = parts.slice(2).join("_");
+            if (nameParts && nameParts !== "new") {
+                methodName = toCamelCase(nameParts);
+            }
+        }
+
+        const params = this.generateParameterList(ctor.parameters);
+        const args = this.generateCallArguments(ctor.parameters);
+        const ctorDoc = formatMethodDoc(ctor.doc, ctor.parameters);
+
+        return `${ctorDoc}  static ${methodName}(${params}): ${recordName} {
+    const ptr = call(
+      "${sharedLibrary}",
+      "${ctor.cIdentifier}",
+      [
+${args}
+      ],
+      { type: "boxed", borrowed: true, innerType: "${recordName}" }
+    );
+    const instance = Object.create(${recordName}.prototype) as ${recordName} & { ptr: unknown };
+    instance.ptr = ptr;
+    return instance;
+  }
+`;
+    }
+
+    private generateRecordStaticFunctions(functions: GirFunction[], sharedLibrary: string, recordName: string): string {
+        return this.generateStaticFunctions(functions, sharedLibrary, recordName);
+    }
+
+    private generateRecordMethods(methods: GirMethod[], sharedLibrary: string, recordName?: string): string {
+        return this.generateMethods(methods, sharedLibrary, recordName);
+    }
+
+    private generateRecordFields(fields: GirField[], methods: GirMethod[]): string {
+        const sections: string[] = [];
+        const fieldOffsets: { field: GirField; offset: number }[] = [];
+        const methodNames = new Set(methods.map((m) => toCamelCase(m.name)));
+
+        let currentOffset = 0;
+        for (const field of fields) {
+            if (field.private) continue;
+            const fieldSize = this.getFieldSize(field.type);
+            const alignment = this.getFieldAlignment(field.type);
+            currentOffset = Math.ceil(currentOffset / alignment) * alignment;
+            fieldOffsets.push({ field, offset: currentOffset });
+            currentOffset += fieldSize;
+        }
+
+        for (const { field, offset } of fieldOffsets) {
+            const isReadable = field.readable !== false;
+            const isWritable = field.writable !== false;
+
+            if (!isReadable && !isWritable) continue;
+
+            const fieldName = toValidIdentifier(toCamelCase(field.name));
+            if (methodNames.has(fieldName)) continue;
+
+            const typeMapping = this.typeMapper.mapType(field.type);
+
+            if (field.doc) {
+                sections.push(formatDoc(field.doc, "  ").trimEnd());
+            }
+
+            if (isReadable) {
+                sections.push(`  get ${fieldName}(): ${typeMapping.ts} {
+    return read(this.ptr, ${this.generateTypeDescriptor(typeMapping.ffi)}, ${offset}) as ${typeMapping.ts};
+  }
+`);
+            }
+
+            if (isWritable && this.isWritableType(field.type)) {
+                this.usesWrite = true;
+                sections.push(`  set ${fieldName}(value: ${typeMapping.ts}) {
+    write(this.ptr, ${this.generateTypeDescriptor(typeMapping.ffi)}, ${offset}, value);
+  }
+`);
+            }
+        }
+
+        return sections.join("\n");
+    }
+
+    private isWritableType(type: { name: string; cType?: string }): boolean {
+        const typeName = type.name;
+        if (typeName === "gboolean" || typeName === "guint8" || typeName === "gint8" || typeName === "guchar" || typeName === "gchar") {
+            return true;
+        }
+        if (typeName === "gint16" || typeName === "guint16" || typeName === "gshort" || typeName === "gushort") {
+            return true;
+        }
+        if (typeName === "gint" || typeName === "guint" || typeName === "gint32" || typeName === "guint32") {
+            return true;
+        }
+        if (typeName === "gint64" || typeName === "guint64" || typeName === "glong" || typeName === "gulong" || typeName === "gsize" || typeName === "gssize") {
+            return true;
+        }
+        if (typeName === "gfloat" || typeName === "float" || typeName === "gdouble" || typeName === "double") {
+            return true;
+        }
+        return false;
+    }
+
+    private getFieldSize(type: { name: string; cType?: string }): number {
+        const typeName = type.name;
+        if (typeName === "gboolean" || typeName === "guint8" || typeName === "gint8" || typeName === "guchar" || typeName === "gchar") {
+            return 1;
+        }
+        if (typeName === "gint16" || typeName === "guint16" || typeName === "gshort" || typeName === "gushort") {
+            return 2;
+        }
+        if (typeName === "gint" || typeName === "guint" || typeName === "gint32" || typeName === "guint32" || typeName === "gfloat" || typeName === "float" || typeName === "Quark" || typeName === "GQuark") {
+            return 4;
+        }
+        if (typeName === "gint64" || typeName === "guint64" || typeName === "gdouble" || typeName === "double" || typeName === "glong" || typeName === "gulong" || typeName === "gsize" || typeName === "gssize" || typeName === "GType") {
+            return 8;
+        }
+        return 8;
+    }
+
+    private getFieldAlignment(type: { name: string; cType?: string }): number {
+        return this.getFieldSize(type);
     }
 
     private async generateFunctions(functions: GirFunction[], sharedLibrary: string): Promise<string> {
@@ -912,14 +1312,13 @@ ${allArgs ? `${allArgs},` : ""}
     }
 
     private generateErrorArgument(indent = "      "): string {
-        return `${indent}  {\n${indent}    type: { type: "ref", innerType: { type: "gobject" } },\n${indent}    value: error,\n${indent}  }`;
+        return `${indent}  {\n${indent}    type: { type: "ref", innerType: { type: "boxed", innerType: "GError", lib: "libglib-2.0.so.0" } },\n${indent}    value: error,\n${indent}  }`;
     }
 
     private generateErrorCheck(indent = "  "): string {
+        this.usesNativeError = true;
         return `${indent}  if (error.value !== null) {
-${indent}    const jsError = new Error("GLib Error occurred");
-${indent}    (jsError as any).gError = error.value;
-${indent}    throw jsError;
+${indent}    throw new NativeError(error.value);
 ${indent}  }`;
     }
 
@@ -933,7 +1332,14 @@ ${indent}  }`;
         if (type.type === "gobject") {
             return type.borrowed ? `{ type: "gobject", borrowed: true }` : `{ type: "gobject" }`;
         }
-        if (type.type === "ref" && type.innerType) {
+        if (type.type === "boxed") {
+            const innerType = typeof type.innerType === "string" ? type.innerType : "";
+            const lib = this.currentSharedLibrary;
+            return type.borrowed
+                ? `{ type: "boxed", borrowed: true, innerType: "${innerType}", lib: "${lib}" }`
+                : `{ type: "boxed", innerType: "${innerType}", lib: "${lib}" }`;
+        }
+        if (type.type === "ref" && type.innerType && typeof type.innerType !== "string") {
             return `{ type: "ref", innerType: ${this.generateTypeDescriptor(type.innerType)} }`;
         }
         if (type.type === "array" && type.itemType) {
@@ -944,7 +1350,10 @@ ${indent}  }`;
 
     private generateImports(currentClassName?: string, parentClassName?: string): string {
         const nativeImports: string[] = [];
+        if (this.usesAlloc) nativeImports.push("alloc");
         if (this.usesCall) nativeImports.push("call");
+        if (this.usesRead) nativeImports.push("read");
+        if (this.usesWrite) nativeImports.push("write");
         if (this.usesRef) nativeImports.push("Ref");
         if (this.usesType) nativeImports.push("Type");
 
@@ -952,9 +1361,21 @@ ${indent}  }`;
         if (nativeImports.length > 0) {
             lines.push(`import { ${nativeImports.join(", ")} } from "@gtkx/native";`);
         }
+        if (this.usesNativeError) {
+            lines.push(`import { NativeError } from "@gtkx/ffi";`);
+        }
         if (this.usedEnums.size > 0) {
             const enumList = Array.from(this.usedEnums).sort().join(", ");
             lines.push(`import { ${enumList} } from "./enums.js";`);
+        }
+
+        for (const normalizedRecordName of Array.from(this.usedRecords).sort()) {
+            const normalizedCurrentClass = currentClassName ? normalizeClassName(currentClassName) : "";
+            const normalizedParentClass = parentClassName ? normalizeClassName(parentClassName) : "";
+            if (normalizedRecordName !== normalizedCurrentClass && normalizedRecordName !== normalizedParentClass) {
+                const originalName = this.recordNameToFile.get(normalizedRecordName) ?? normalizedRecordName;
+                lines.push(`import type { ${normalizedRecordName} } from "./${toKebabCase(originalName)}.js";`);
+            }
         }
 
         for (const className of Array.from(this.signalClasses).sort()) {

@@ -148,10 +148,8 @@ fn handle_call(
 
     for (i, arg) in args.iter().enumerate() {
         if let Value::Ref(r#ref) = &arg.value {
-            ref_updates.push((
-                r#ref.js_obj.clone(),
-                Value::from_cif_value(&cif_args[i], &arg.type_)?,
-            ));
+            let new_value = Value::from_cif_value(&cif_args[i], &arg.type_)?;
+            ref_updates.push((r#ref.js_obj.clone(), new_value));
         }
     }
 

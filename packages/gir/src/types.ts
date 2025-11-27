@@ -20,6 +20,8 @@ export interface GirNamespace {
     enumerations: GirEnumeration[];
     /** All bitfield enumerations defined in this namespace. */
     bitfields: GirEnumeration[];
+    /** All records (structs) defined in this namespace. */
+    records: GirRecord[];
     /** Documentation for the namespace. */
     doc?: string;
 }
@@ -67,6 +69,52 @@ export interface GirClass {
     /** Signals defined on this class. */
     signals: GirSignal[];
     /** Documentation for the class. */
+    doc?: string;
+}
+
+/**
+ * Represents a GIR record (struct) definition.
+ */
+export interface GirRecord {
+    /** The record name. */
+    name: string;
+    /** The C type name. */
+    cType: string;
+    /** Whether this record is opaque (no field access). */
+    opaque?: boolean;
+    /** Whether this record is disguised (typically internal). */
+    disguised?: boolean;
+    /** The GLib type name for boxed types. */
+    glibTypeName?: string;
+    /** The GLib get-type function. */
+    glibGetType?: string;
+    /** Fields defined in this record. */
+    fields: GirField[];
+    /** Methods defined on this record. */
+    methods: GirMethod[];
+    /** Constructor functions for this record. */
+    constructors: GirConstructor[];
+    /** Static functions defined on this record. */
+    functions: GirFunction[];
+    /** Documentation for the record. */
+    doc?: string;
+}
+
+/**
+ * Represents a GIR field definition in a record.
+ */
+export interface GirField {
+    /** The field name. */
+    name: string;
+    /** The field type. */
+    type: GirType;
+    /** Whether this field is writable. */
+    writable?: boolean;
+    /** Whether this field is readable. */
+    readable?: boolean;
+    /** Whether this field is private. */
+    private?: boolean;
+    /** Documentation for the field. */
     doc?: string;
 }
 
@@ -230,8 +278,8 @@ export interface FfiTypeDescriptor {
     unsigned?: boolean;
     /** Whether the pointer is borrowed (not owned). */
     borrowed?: boolean;
-    /** Inner type for ref types. */
-    innerType?: FfiTypeDescriptor;
+    /** Inner type for ref types (as descriptor) or boxed types (as GLib type name string). */
+    innerType?: FfiTypeDescriptor | string;
     /** Item type for array types. */
     itemType?: FfiTypeDescriptor;
 }
@@ -307,6 +355,8 @@ const BASIC_TYPE_MAP = new Map<string, TypeMapping>([
     ["filename", { ts: "string", ffi: { type: "string" } }],
     ["gpointer", { ts: "unknown", ffi: { type: "gobject" } }],
     ["gconstpointer", { ts: "unknown", ffi: { type: "gobject" } }],
+    ["Quark", { ts: "number", ffi: { type: "int", size: 32, unsigned: true } }],
+    ["GLib.Quark", { ts: "number", ffi: { type: "int", size: 32, unsigned: true } }],
     ["void", { ts: "void", ffi: { type: "undefined" } }],
     ["none", { ts: "void", ffi: { type: "undefined" } }],
     ["int", { ts: "number", ffi: { type: "int", size: 32, unsigned: false } }],
@@ -331,12 +381,16 @@ const LIBRARY_MAP: Record<string, string> = {
 
 /**
  * Maps GIR types to TypeScript types and FFI type descriptors.
- * Handles basic types, enumerations, arrays, and object references.
+ * Handles basic types, enumerations, records, arrays, and object references.
  */
 export class TypeMapper {
     private enumNames: Set<string> = new Set();
     private enumTransforms: Map<string, string> = new Map();
+    private recordNames: Set<string> = new Set();
+    private recordTransforms: Map<string, string> = new Map();
+    private recordGlibTypes: Map<string, string> = new Map();
     private onEnumUsed?: (enumName: string) => void;
+    private onRecordUsed?: (recordName: string) => void;
 
     /**
      * Registers an enumeration type for mapping.
@@ -347,6 +401,22 @@ export class TypeMapper {
         this.enumNames.add(originalName);
         if (transformedName) {
             this.enumTransforms.set(originalName, transformedName);
+        }
+    }
+
+    /**
+     * Registers a record type for mapping.
+     * @param originalName - The original GIR record name
+     * @param transformedName - The transformed TypeScript class name
+     * @param glibTypeName - The GLib type name for boxed type handling
+     */
+    registerRecord(originalName: string, transformedName?: string, glibTypeName?: string): void {
+        this.recordNames.add(originalName);
+        if (transformedName) {
+            this.recordTransforms.set(originalName, transformedName);
+        }
+        if (glibTypeName) {
+            this.recordGlibTypes.set(originalName, glibTypeName);
         }
     }
 
@@ -364,6 +434,22 @@ export class TypeMapper {
      */
     getEnumUsageCallback(): ((enumName: string) => void) | null {
         return this.onEnumUsed ?? null;
+    }
+
+    /**
+     * Sets a callback to track record usage during type mapping.
+     * @param callback - Called when a record is used, or null to clear
+     */
+    setRecordUsageCallback(callback: ((recordName: string) => void) | null): void {
+        this.onRecordUsed = callback ?? undefined;
+    }
+
+    /**
+     * Gets the current record usage callback.
+     * @returns The callback or null if not set
+     */
+    getRecordUsageCallback(): ((recordName: string) => void) | null {
+        return this.onRecordUsed ?? null;
     }
 
     /**
@@ -401,6 +487,16 @@ export class TypeMapper {
             };
         }
 
+        if (this.recordNames.has(girType.name)) {
+            const transformedName = this.recordTransforms.get(girType.name) ?? girType.name;
+            const glibTypeName = this.recordGlibTypes.get(girType.name) ?? transformedName;
+            this.onRecordUsed?.(transformedName);
+            return {
+                ts: transformedName,
+                ffi: { type: "boxed", borrowed: isReturn, innerType: glibTypeName },
+            };
+        }
+
         if (girType.name.includes(".")) {
             const [_ns, typeName] = girType.name.split(".", 2);
             if (typeName && this.enumNames.has(typeName)) {
@@ -409,6 +505,15 @@ export class TypeMapper {
                 return {
                     ts: transformedName,
                     ffi: { type: "int", size: 32, unsigned: false },
+                };
+            }
+            if (typeName && this.recordNames.has(typeName)) {
+                const transformedName = this.recordTransforms.get(typeName) ?? typeName;
+                const glibTypeName = this.recordGlibTypes.get(typeName) ?? transformedName;
+                this.onRecordUsed?.(transformedName);
+                return {
+                    ts: transformedName,
+                    ffi: { type: "boxed", borrowed: isReturn, innerType: glibTypeName },
                 };
             }
             return {

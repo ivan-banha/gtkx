@@ -360,11 +360,22 @@ impl Value {
         };
 
         let ref_arg = Arg::new(*type_.inner_type.clone(), *r#ref.value.clone());
-        let ref_value = Box::new(Value::try_from(ref_arg)?);
-        let ref_ptr = ref_value.as_ptr();
+        let inner_value = Value::try_from(ref_arg)?;
+
+        // Get the pointer value from the inner value
+        let inner_ptr: *mut c_void = match &inner_value {
+            Value::Ptr(ptr) => *ptr,
+            Value::OwnedPtr(owned) => owned.ptr,
+            _ => bail!("Ref inner type must resolve to a pointer"),
+        };
+
+        // Allocate stable storage for the pointer - this is what the native function writes to
+        // For out parameters like GError**, we pass the ADDRESS of this storage
+        let mut storage: Box<*mut c_void> = Box::new(inner_ptr);
+        let ref_ptr: *mut c_void = storage.as_mut() as *mut *mut c_void as *mut c_void;
 
         Ok(Value::OwnedPtr(OwnedPtr {
-            value: ref_value,
+            value: Box::new((inner_value, storage)),
             ptr: ref_ptr,
         }))
     }
@@ -382,7 +393,7 @@ impl<'a> From<&'a Value> for ffi::Arg<'a> {
             Value::F32(value) => ffi::arg(value),
             Value::F64(value) => ffi::arg(value),
             Value::Ptr(ptr) => ffi::arg(ptr),
-            Value::OwnedPtr(owned_ptr) => ffi::arg(owned_ptr),
+            Value::OwnedPtr(owned_ptr) => ffi::arg(&owned_ptr.ptr),
             Value::Void => ffi::arg(&()),
         }
     }

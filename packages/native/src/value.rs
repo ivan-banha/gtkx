@@ -168,6 +168,10 @@ impl Value {
                     }
                 };
 
+                if str_ptr.is_null() {
+                    return Ok(Value::Null);
+                }
+
                 let c_str = unsafe { CString::from_raw(str_ptr as *mut i8) };
                 let string = c_str.into_string()?;
 
@@ -221,19 +225,13 @@ impl Value {
                     }
                 };
 
-                let boxed = if type_.is_borrowed {
-                    let boxed = Boxed::from_glib_none(
-                        glib::Type::from_name(&type_.type_).unwrap(),
-                        boxed_ptr,
-                    );
+                let gtype = type_.get_gtype();
 
+                let boxed = if type_.is_borrowed {
+                    let boxed = Boxed::from_glib_none(gtype, boxed_ptr);
                     Object::Boxed(boxed)
                 } else {
-                    let boxed = Boxed::from_glib_full(
-                        glib::Type::from_name(&type_.type_).unwrap(),
-                        boxed_ptr,
-                    );
-
+                    let boxed = Boxed::from_glib_full(gtype, boxed_ptr);
                     Object::Boxed(boxed)
                 };
 
@@ -390,15 +388,48 @@ impl Value {
                     }
                 };
 
-                let inner_value =
-                    ref_ptr
-                        .value
-                        .downcast_ref::<cif::Value>()
-                        .ok_or(anyhow::anyhow!(
-                            "Failed to downcast ref inner value to Box<cif::Value>"
-                        ))?;
+                match &*type_.inner_type {
+                    Type::GObject(gobject_type) => {
+                        let actual_ptr = unsafe { *(ref_ptr.ptr as *const *mut c_void) };
+                        if actual_ptr.is_null() {
+                            return Ok(Value::Null);
+                        }
+                        let object = unsafe {
+                            glib::Object::from_glib_none(
+                                actual_ptr as *mut glib::gobject_ffi::GObject,
+                            )
+                        };
+                        if gobject_type.is_borrowed {
+                            Ok(Value::Object(ObjectId::new(Object::GObject(object))))
+                        } else {
+                            Ok(Value::Object(ObjectId::new(Object::GObject(object))))
+                        }
+                    }
+                    Type::Boxed(boxed_type) => {
+                        let actual_ptr = unsafe { *(ref_ptr.ptr as *const *mut c_void) };
+                        if actual_ptr.is_null() {
+                            return Ok(Value::Null);
+                        }
+                        let gtype = boxed_type.get_gtype();
+                        let boxed = if boxed_type.is_borrowed {
+                            Boxed::from_glib_none(gtype, actual_ptr)
+                        } else {
+                            Boxed::from_glib_full(gtype, actual_ptr)
+                        };
+                        Ok(Value::Object(ObjectId::new(Object::Boxed(boxed))))
+                    }
+                    _ => {
+                        let inner_value =
+                            ref_ptr
+                                .value
+                                .downcast_ref::<cif::Value>()
+                                .ok_or(anyhow::anyhow!(
+                                    "Failed to downcast ref inner value to Box<cif::Value>"
+                                ))?;
 
-                Value::from_cif_value(inner_value, &type_.inner_type)
+                        Value::from_cif_value(inner_value, &type_.inner_type)
+                    }
+                }
             }
             _ => bail!("Unsupported type for cif value conversion: {:?}", type_),
         }
@@ -447,7 +478,7 @@ impl Value {
             }
             Type::Boxed(boxed_type) => {
                 let boxed_ptr = gvalue.as_ptr();
-                let gtype = glib::Type::from_name(&boxed_type.type_).unwrap_or(gvalue.type_());
+                let gtype = boxed_type.get_gtype().or_else(|| Some(gvalue.type_()));
                 let boxed = if boxed_type.is_borrowed {
                     Boxed::from_glib_none(gtype, boxed_ptr as *mut c_void)
                 } else {
@@ -492,7 +523,7 @@ impl From<&glib::Value> for Value {
             Value::Object(object_id)
         } else if value.is_type(glib::types::Type::BOXED) {
             let boxed_ptr = value.as_ptr();
-            let boxed = Boxed::from_glib_none(value.type_(), boxed_ptr as *mut c_void);
+            let boxed = Boxed::from_glib_none(Some(value.type_()), boxed_ptr as *mut c_void);
             let object_id = ObjectId::new(Object::Boxed(boxed));
             Value::Object(object_id)
         } else if value.type_().is_a(glib::types::Type::PARAM_SPEC) {

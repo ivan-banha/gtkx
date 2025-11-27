@@ -38,12 +38,26 @@ impl GtkThreadState {
 
     pub fn get_library(&mut self, name: &str) -> anyhow::Result<&Library> {
         if !self.libraries.contains_key(name) {
-            match unsafe { Library::new(name) } {
-                Ok(lib) => {
-                    self.libraries.insert(name.to_string(), lib);
+            let lib_names: Vec<&str> = name.split(',').collect();
+            let mut last_error = None;
+
+            for lib_name in &lib_names {
+                match unsafe { Library::new(*lib_name) } {
+                    Ok(lib) => {
+                        self.libraries.insert(name.to_string(), lib);
+                        break;
+                    }
+                    Err(err) => {
+                        last_error = Some(err);
+                    }
                 }
-                Err(err) => {
+            }
+
+            if !self.libraries.contains_key(name) {
+                if let Some(err) = last_error {
                     anyhow::bail!("Failed to load library '{}': {}", name, err);
+                } else {
+                    anyhow::bail!("Failed to load library '{}': no libraries specified", name);
                 }
             }
         }

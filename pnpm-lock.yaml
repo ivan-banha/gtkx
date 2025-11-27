@@ -58,6 +58,15 @@ importers:
         specifier: 19.2.6
         version: 19.2.6
 
+  examples/ffi-test:
+    dependencies:
+      '@gtkx/ffi':
+        specifier: workspace:*
+        version: link:../../packages/ffi
+      '@gtkx/native':
+        specifier: workspace:*
+        version: link:../../packages/native
+
   examples/kitchen-sink:
     dependencies:
       '@gtkx/ffi':

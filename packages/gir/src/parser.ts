@@ -4,12 +4,14 @@ import type {
     GirConstructor,
     GirEnumeration,
     GirEnumerationMember,
+    GirField,
     GirFunction,
     GirInterface,
     GirMethod,
     GirNamespace,
     GirParameter,
     GirProperty,
+    GirRecord,
     GirSignal,
     GirType,
 } from "./types.js";
@@ -20,6 +22,7 @@ const ARRAY_ELEMENT_PATHS = new Set<string>([
     "namespace.function",
     "namespace.enumeration",
     "namespace.bitfield",
+    "namespace.record",
     "namespace.class.method",
     "namespace.class.constructor",
     "namespace.class.function",
@@ -30,6 +33,10 @@ const ARRAY_ELEMENT_PATHS = new Set<string>([
     "namespace.interface.property",
     "namespace.interface.signal",
     "namespace.interface.glib:signal",
+    "namespace.record.method",
+    "namespace.record.constructor",
+    "namespace.record.function",
+    "namespace.record.field",
     "namespace.class.method.parameters.parameter",
     "namespace.class.constructor.parameters.parameter",
     "namespace.class.function.parameters.parameter",
@@ -39,6 +46,9 @@ const ARRAY_ELEMENT_PATHS = new Set<string>([
     "namespace.interface.method.parameters.parameter",
     "namespace.class.glib:signal.parameters.parameter",
     "namespace.interface.glib:signal.parameters.parameter",
+    "namespace.record.method.parameters.parameter",
+    "namespace.record.constructor.parameters.parameter",
+    "namespace.record.function.parameters.parameter",
 ]);
 
 const extractDoc = (node: Record<string, unknown>): string | undefined => {
@@ -94,6 +104,7 @@ export class GirParser {
             functions: this.parseFunctions(namespace.function ?? []),
             enumerations: this.parseEnumerations(namespace.enumeration ?? []),
             bitfields: this.parseEnumerations(namespace.bitfield ?? []),
+            records: this.parseRecords(namespace.record ?? []),
         };
     }
 
@@ -288,6 +299,48 @@ export class GirParser {
                 doc: extractDoc(signal),
             };
         });
+    }
+
+    private parseRecords(records: Record<string, unknown>[]): GirRecord[] {
+        if (!records || !Array.isArray(records)) {
+            return [];
+        }
+        return records.map((record) => ({
+            name: String(record["@_name"] ?? ""),
+            cType: String(record["@_c:type"] ?? record["@_glib:type-name"] ?? ""),
+            opaque: record["@_opaque"] === "1",
+            disguised: record["@_disguised"] === "1",
+            glibTypeName: record["@_glib:type-name"] ? String(record["@_glib:type-name"]) : undefined,
+            glibGetType: record["@_glib:get-type"] ? String(record["@_glib:get-type"]) : undefined,
+            fields: this.parseFields(Array.isArray(record.field) ? (record.field as Record<string, unknown>[]) : []),
+            methods: this.parseMethods(Array.isArray(record.method) ? (record.method as Record<string, unknown>[]) : []),
+            constructors: this.parseConstructors(
+                Array.isArray(record.constructor) ? (record.constructor as Record<string, unknown>[]) : [],
+            ),
+            functions: this.parseFunctions(
+                Array.isArray(record.function) ? (record.function as Record<string, unknown>[]) : [],
+            ),
+            doc: extractDoc(record),
+        }));
+    }
+
+    private parseFields(fields: Record<string, unknown>[]): GirField[] {
+        if (!fields || !Array.isArray(fields)) {
+            return [];
+        }
+        return fields
+            .filter((field) => {
+                const hasCallback = field.callback !== undefined;
+                return !hasCallback;
+            })
+            .map((field) => ({
+                name: String(field["@_name"] ?? ""),
+                type: this.parseType((field.type ?? field.array) as Record<string, unknown> | undefined),
+                writable: field["@_writable"] === "1",
+                readable: field["@_readable"] !== "0",
+                private: field["@_private"] === "1",
+                doc: extractDoc(field),
+            }));
     }
 
     private parseEnumerations(enumerations: Record<string, unknown>[]): GirEnumeration[] {

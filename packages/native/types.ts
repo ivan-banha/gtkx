@@ -14,7 +14,7 @@ type StringType = { type: "string" };
 type GObjectType = { type: "gobject"; borrowed?: boolean };
 
 /** Boxed type descriptor for FFI calls. */
-type BoxedType = { type: "boxed"; borrowed?: boolean; innerType: string };
+type BoxedType = { type: "boxed"; borrowed?: boolean; innerType: string; lib?: string };
 
 /** Array type descriptor for FFI calls. */
 type ArrayType = { type: "array"; itemType: Type };

@@ -1,4 +1,5 @@
 import type {
+    ExternalTypeUsage,
     FfiTypeDescriptor,
     GirClass,
     GirConstructor,
@@ -12,6 +13,7 @@ import type {
     GirProperty,
     GirRecord,
     GirSignal,
+    TypeRegistry,
 } from "@gtkx/gir";
 import { TypeMapper, toCamelCase, toPascalCase } from "@gtkx/gir";
 import { format } from "prettier";
@@ -26,6 +28,8 @@ export interface GeneratorOptions {
     namespace: string;
     /** Optional Prettier configuration for formatting output. */
     prettierConfig?: unknown;
+    /** Optional type registry for cross-namespace type resolution. */
+    typeRegistry?: TypeRegistry;
 }
 
 const RESERVED_WORDS = new Set([
@@ -81,8 +85,8 @@ const RESERVED_WORDS = new Set([
 ]);
 
 const METHOD_RENAMES = new Map<string, Map<string, string>>([
-    ["IconView", new Map([["setCursor", "setCursorPath"]])],
-    ["TreeView", new Map([["setCursor", "setCursorPath"]])],
+    ["IconView", new Map([["setCursor", "setCursorPath"], ["getCursor", "getCursorPath"]])],
+    ["TreeView", new Map([["setCursor", "setCursorPath"], ["getCursor", "getCursorPath"]])],
     ["HSV", new Map([["getColor", "getHsvColor"]])],
     ["Layout", new Map([["getSize", "getLayoutSize"]])],
     ["Table", new Map([["getSize", "getTableSize"]])],
@@ -198,6 +202,7 @@ export class CodeGenerator {
     private usesNativeError = false;
     private usedEnums = new Set<string>();
     private usedRecords = new Set<string>();
+    private usedExternalTypes = new Map<string, ExternalTypeUsage>();
     private signalClasses = new Set<string>();
     private recordNameToFile = new Map<string, string>();
     private currentSharedLibrary = "";
@@ -208,6 +213,9 @@ export class CodeGenerator {
      */
     constructor(private options: GeneratorOptions) {
         this.typeMapper = new TypeMapper();
+        if (options.typeRegistry) {
+            this.typeMapper.setTypeRegistry(options.typeRegistry, options.namespace);
+        }
     }
 
     /**
@@ -341,9 +349,14 @@ export class CodeGenerator {
         this.usesNativeError = false;
         this.usedEnums.clear();
         this.usedRecords.clear();
+        this.usedExternalTypes.clear();
         this.signalClasses.clear();
         this.typeMapper.setEnumUsageCallback((enumName) => this.usedEnums.add(enumName));
         this.typeMapper.setRecordUsageCallback((recordName) => this.usedRecords.add(recordName));
+        this.typeMapper.setExternalTypeUsageCallback((usage) => {
+            const key = `${usage.namespace}.${usage.transformedName}`;
+            this.usedExternalTypes.set(key, usage);
+        });
     }
 
     private async generateClass(
@@ -765,6 +778,7 @@ ${allArgs ? `${allArgs},` : ""}
         const savedRecordCallback = this.typeMapper.getRecordUsageCallback();
         this.typeMapper.setEnumUsageCallback(null);
         this.typeMapper.setRecordUsageCallback(null);
+        this.typeMapper.setExternalTypeUsageCallback(null);
 
         const signalMetadata = signals.map((signal) => {
             const paramEntries = (signal.parameters ?? []).map((param) => {
@@ -781,6 +795,10 @@ ${allArgs ? `${allArgs},` : ""}
 
         this.typeMapper.setEnumUsageCallback(savedEnumCallback);
         this.typeMapper.setRecordUsageCallback(savedRecordCallback);
+        this.typeMapper.setExternalTypeUsageCallback((usage) => {
+            const key = `${usage.namespace}.${usage.transformedName}`;
+            this.usedExternalTypes.set(key, usage);
+        });
 
         this.usesType = true;
 
@@ -1381,6 +1399,42 @@ ${indent}  }`;
         for (const className of Array.from(this.signalClasses).sort()) {
             if (className !== currentClassName && className !== parentClassName) {
                 lines.push(`import { ${className} } from "./${toKebabCase(className)}.js";`);
+            }
+        }
+
+        const externalByNamespace = new Map<string, ExternalTypeUsage[]>();
+        const importedNames = new Set<string>();
+        for (const usage of this.usedExternalTypes.values()) {
+            if (usage.namespace === this.options.namespace) continue;
+            if (usage.transformedName === currentClassName || usage.transformedName === parentClassName) continue;
+            const existing = externalByNamespace.get(usage.namespace) ?? [];
+            existing.push(usage);
+            externalByNamespace.set(usage.namespace, existing);
+        }
+        for (const [namespace, usages] of Array.from(externalByNamespace.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+            const typesByKind = {
+                classes: usages.filter((u) => u.kind === "class" || u.kind === "interface"),
+                enums: usages.filter((u) => u.kind === "enum"),
+                records: usages.filter((u) => u.kind === "record"),
+            };
+            const nsLower = namespace.toLowerCase();
+            if (typesByKind.enums.length > 0) {
+                const nonConflictingEnums = typesByKind.enums.filter((u) => !importedNames.has(u.transformedName));
+                if (nonConflictingEnums.length > 0) {
+                    const enumNames = nonConflictingEnums.map((u) => u.transformedName).sort().join(", ");
+                    lines.push(`import { ${enumNames} } from "../${nsLower}/enums.js";`);
+                    for (const e of nonConflictingEnums) importedNames.add(e.transformedName);
+                }
+            }
+            for (const usage of typesByKind.classes.sort((a, b) => a.transformedName.localeCompare(b.transformedName))) {
+                if (importedNames.has(usage.transformedName)) continue;
+                lines.push(`import type { ${usage.transformedName} } from "../${nsLower}/${toKebabCase(usage.name)}.js";`);
+                importedNames.add(usage.transformedName);
+            }
+            for (const usage of typesByKind.records.sort((a, b) => a.transformedName.localeCompare(b.transformedName))) {
+                if (importedNames.has(usage.transformedName)) continue;
+                lines.push(`import type { ${usage.transformedName} } from "../${nsLower}/${toKebabCase(usage.name)}.js";`);
+                importedNames.add(usage.transformedName);
             }
         }
 

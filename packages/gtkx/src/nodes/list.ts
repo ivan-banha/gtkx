@@ -42,7 +42,7 @@ export class ListViewNode<T = unknown> implements Node<ListViewWidget> {
         this.widget = widget;
 
         this.stringList = new gtk.StringList([]);
-        this.selectionModel = new gtk.SingleSelection(this.stringList.ptr);
+        this.selectionModel = new gtk.SingleSelection([this.stringList.ptr]);
         this.factory = new gtk.SignalListItemFactory();
 
         this.renderItem = props.renderItem as RenderItemFn<T> | null;

@@ -1,7 +1,8 @@
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { GirParser } from "@gtkx/gir";
+import { GirParser, TypeRegistry } from "@gtkx/gir";
+import type { GirNamespace } from "@gtkx/gir";
 import { CodeGenerator } from "../src/codegen/ffi-generator.js";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
@@ -47,12 +48,17 @@ const syncGirFiles = (): void => {
     console.log(`✓ Synced ${files.length} GIR files to ${girsDir}`);
 };
 
-const processGirFile = async (filePath: string): Promise<{ name: string; fileCount: number }> => {
+const parseGirFile = (filePath: string): GirNamespace => {
     const girContent = readFileSync(filePath, "utf-8");
     const parser = new GirParser();
-    const namespace = parser.parse(girContent);
+    return parser.parse(girContent);
+};
 
-    const generator = new CodeGenerator({ outputDir, namespace: namespace.name });
+const generateForNamespace = async (
+    namespace: GirNamespace,
+    typeRegistry: TypeRegistry,
+): Promise<{ name: string; fileCount: number }> => {
+    const generator = new CodeGenerator({ outputDir, namespace: namespace.name, typeRegistry });
     const generatedFiles = await generator.generateNamespace(namespace);
 
     const namespaceOutputDir = join(outputDir, namespace.name.toLowerCase());
@@ -83,13 +89,28 @@ const generateBindings = async (): Promise<void> => {
 
     console.log(`\nFound ${girFiles.length} GIR files in ${girsDir}`);
 
+    console.log("\nParsing all GIR files to build type registry...");
+    const namespaces: GirNamespace[] = [];
     for (const file of girFiles) {
-        console.log(`\nProcessing ${file}...`);
         try {
-            const result = await processGirFile(join(girsDir, file));
-            console.log(`✓ Generated ${result.fileCount} files for ${result.name}`);
+            const namespace = parseGirFile(join(girsDir, file));
+            namespaces.push(namespace);
+            console.log(`  ✓ Parsed ${namespace.name}`);
         } catch (error) {
-            console.error(`✗ Failed to process ${file}:`, error);
+            console.error(`  ✗ Failed to parse ${file}:`, error);
+        }
+    }
+
+    const typeRegistry = TypeRegistry.fromNamespaces(namespaces);
+    console.log(`\nBuilt type registry with ${namespaces.length} namespaces`);
+
+    console.log("\nGenerating bindings...");
+    for (const namespace of namespaces) {
+        try {
+            const result = await generateForNamespace(namespace, typeRegistry);
+            console.log(`  ✓ Generated ${result.fileCount} files for ${result.name}`);
+        } catch (error) {
+            console.error(`  ✗ Failed to generate ${namespace.name}:`, error);
         }
     }
 

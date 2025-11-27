@@ -330,6 +330,106 @@ export const registerEnumsFromNamespace = (typeMapper: TypeMapper, namespace: Gi
 
 type TypeMapping = { ts: string; ffi: FfiTypeDescriptor };
 
+export type TypeKind = "class" | "interface" | "enum" | "record";
+
+export interface RegisteredType {
+    kind: TypeKind;
+    name: string;
+    namespace: string;
+    transformedName: string;
+    glibTypeName?: string;
+}
+
+const CLASS_RENAMES = new Map<string, string>([
+    ["Error", "GError"],
+    ["Object", "GObject"],
+]);
+
+const normalizeTypeName = (name: string): string => {
+    const pascalName = toPascalCase(name);
+    return CLASS_RENAMES.get(pascalName) ?? pascalName;
+};
+
+export class TypeRegistry {
+    private types = new Map<string, RegisteredType>();
+
+    registerClass(namespace: string, name: string): void {
+        const transformedName = normalizeTypeName(name);
+        this.types.set(`${namespace}.${name}`, {
+            kind: "class",
+            name,
+            namespace,
+            transformedName,
+        });
+    }
+
+    registerInterface(namespace: string, name: string): void {
+        const transformedName = normalizeTypeName(name);
+        this.types.set(`${namespace}.${name}`, {
+            kind: "interface",
+            name,
+            namespace,
+            transformedName,
+        });
+    }
+
+    registerEnum(namespace: string, name: string): void {
+        const transformedName = toPascalCase(name);
+        this.types.set(`${namespace}.${name}`, {
+            kind: "enum",
+            name,
+            namespace,
+            transformedName,
+        });
+    }
+
+    registerRecord(namespace: string, name: string, glibTypeName?: string): void {
+        const transformedName = normalizeTypeName(name);
+        this.types.set(`${namespace}.${name}`, {
+            kind: "record",
+            name,
+            namespace,
+            transformedName,
+            glibTypeName,
+        });
+    }
+
+    resolve(qualifiedName: string): RegisteredType | undefined {
+        return this.types.get(qualifiedName);
+    }
+
+    resolveInNamespace(name: string, currentNamespace: string): RegisteredType | undefined {
+        if (name.includes(".")) {
+            return this.resolve(name);
+        }
+        return this.resolve(`${currentNamespace}.${name}`);
+    }
+
+    static fromNamespaces(namespaces: GirNamespace[]): TypeRegistry {
+        const registry = new TypeRegistry();
+        for (const ns of namespaces) {
+            for (const cls of ns.classes) {
+                registry.registerClass(ns.name, cls.name);
+            }
+            for (const iface of ns.interfaces) {
+                registry.registerInterface(ns.name, iface.name);
+            }
+            for (const enumeration of ns.enumerations) {
+                registry.registerEnum(ns.name, enumeration.name);
+            }
+            for (const bitfield of ns.bitfields) {
+                registry.registerEnum(ns.name, bitfield.name);
+            }
+            for (const record of ns.records) {
+                if (record.glibTypeName && !record.disguised && !record.name.endsWith("Class") && !record.name.endsWith("Private") && !record.name.endsWith("Iface")) {
+                    registry.registerRecord(ns.name, record.name, record.glibTypeName);
+                }
+            }
+        }
+        return registry;
+    }
+}
+
 const BASIC_TYPE_MAP = new Map<string, TypeMapping>([
     ["gboolean", { ts: "boolean", ffi: { type: "boolean" } }],
     ["gchar", { ts: "number", ffi: { type: "int", size: 8, unsigned: false } }],
@@ -379,6 +479,19 @@ const LIBRARY_MAP: Record<string, string> = {
     Cairo: "libcairo.so.2",
 };
 
+export interface ExternalTypeUsage {
+    namespace: string;
+    name: string;
+    transformedName: string;
+    kind: TypeKind;
+}
+
+export interface MappedType {
+    ts: string;
+    ffi: FfiTypeDescriptor;
+    externalType?: ExternalTypeUsage;
+}
+
 /**
  * Maps GIR types to TypeScript types and FFI type descriptors.
  * Handles basic types, enumerations, records, arrays, and object references.
@@ -391,6 +504,9 @@ export class TypeMapper {
     private recordGlibTypes: Map<string, string> = new Map();
     private onEnumUsed?: (enumName: string) => void;
     private onRecordUsed?: (recordName: string) => void;
+    private onExternalTypeUsed?: (usage: ExternalTypeUsage) => void;
+    private typeRegistry?: TypeRegistry;
+    private currentNamespace?: string;
 
     /**
      * Registers an enumeration type for mapping.
@@ -453,12 +569,30 @@ export class TypeMapper {
     }
 
     /**
+     * Sets a callback to track external type usage during type mapping.
+     * @param callback - Called when an external type is used, or null to clear
+     */
+    setExternalTypeUsageCallback(callback: ((usage: ExternalTypeUsage) => void) | null): void {
+        this.onExternalTypeUsed = callback ?? undefined;
+    }
+
+    /**
+     * Sets the type registry for cross-namespace type resolution.
+     * @param registry - The TypeRegistry instance
+     * @param currentNamespace - The current namespace being processed
+     */
+    setTypeRegistry(registry: TypeRegistry, currentNamespace: string): void {
+        this.typeRegistry = registry;
+        this.currentNamespace = currentNamespace;
+    }
+
+    /**
      * Maps a GIR type to TypeScript and FFI type descriptors.
      * @param girType - The GIR type to map
      * @param isReturn - Whether this is a return type (affects pointer ownership)
      * @returns The TypeScript type string and FFI descriptor
      */
-    mapType(girType: GirType, isReturn = false): TypeMapping {
+    mapType(girType: GirType, isReturn = false): MappedType {
         if (girType.isArray || girType.name === "array") {
             if (girType.elementType) {
                 const elementType = this.mapType(girType.elementType);
@@ -498,28 +632,93 @@ export class TypeMapper {
         }
 
         if (girType.name.includes(".")) {
-            const [_ns, typeName] = girType.name.split(".", 2);
-            if (typeName && this.enumNames.has(typeName)) {
-                const transformedName = this.enumTransforms.get(typeName) ?? typeName;
-                this.onEnumUsed?.(transformedName);
-                return {
-                    ts: transformedName,
-                    ffi: { type: "int", size: 32, unsigned: false },
-                };
+            const [ns, typeName] = girType.name.split(".", 2);
+            if (typeName && ns === this.currentNamespace) {
+                if (this.enumNames.has(typeName)) {
+                    const transformedName = this.enumTransforms.get(typeName) ?? typeName;
+                    this.onEnumUsed?.(transformedName);
+                    return {
+                        ts: transformedName,
+                        ffi: { type: "int", size: 32, unsigned: false },
+                    };
+                }
+                if (this.recordNames.has(typeName)) {
+                    const transformedName = this.recordTransforms.get(typeName) ?? typeName;
+                    const glibTypeName = this.recordGlibTypes.get(typeName) ?? transformedName;
+                    this.onRecordUsed?.(transformedName);
+                    return {
+                        ts: transformedName,
+                        ffi: { type: "boxed", borrowed: isReturn, innerType: glibTypeName },
+                    };
+                }
             }
-            if (typeName && this.recordNames.has(typeName)) {
-                const transformedName = this.recordTransforms.get(typeName) ?? typeName;
-                const glibTypeName = this.recordGlibTypes.get(typeName) ?? transformedName;
-                this.onRecordUsed?.(transformedName);
-                return {
-                    ts: transformedName,
-                    ffi: { type: "boxed", borrowed: isReturn, innerType: glibTypeName },
-                };
+            if (this.typeRegistry && ns && typeName) {
+                const registered = this.typeRegistry.resolve(girType.name);
+                if (registered) {
+                    const externalType: ExternalTypeUsage = {
+                        namespace: registered.namespace,
+                        name: registered.name,
+                        transformedName: registered.transformedName,
+                        kind: registered.kind,
+                    };
+                    this.onExternalTypeUsed?.(externalType);
+                    if (registered.kind === "enum") {
+                        return {
+                            ts: registered.transformedName,
+                            ffi: { type: "int", size: 32, unsigned: false },
+                            externalType,
+                        };
+                    }
+                    if (registered.kind === "record") {
+                        return {
+                            ts: registered.transformedName,
+                            ffi: { type: "boxed", borrowed: isReturn, innerType: registered.glibTypeName ?? registered.transformedName },
+                            externalType,
+                        };
+                    }
+                    return {
+                        ts: registered.transformedName,
+                        ffi: { type: "gobject", borrowed: isReturn },
+                        externalType,
+                    };
+                }
             }
             return {
                 ts: "unknown",
                 ffi: { type: "gobject", borrowed: isReturn },
             };
+        }
+
+        if (this.typeRegistry && this.currentNamespace) {
+            const registered = this.typeRegistry.resolveInNamespace(girType.name, this.currentNamespace);
+            if (registered && registered.namespace !== this.currentNamespace) {
+                const externalType: ExternalTypeUsage = {
+                    namespace: registered.namespace,
+                    name: registered.name,
+                    transformedName: registered.transformedName,
+                    kind: registered.kind,
+                };
+                this.onExternalTypeUsed?.(externalType);
+                if (registered.kind === "enum") {
+                    return {
+                        ts: registered.transformedName,
+                        ffi: { type: "int", size: 32, unsigned: false },
+                        externalType,
+                    };
+                }
+                if (registered.kind === "record") {
+                    return {
+                        ts: registered.transformedName,
+                        ffi: { type: "boxed", borrowed: isReturn, innerType: registered.glibTypeName ?? registered.transformedName },
+                        externalType,
+                    };
+                }
+                return {
+                    ts: registered.transformedName,
+                    ffi: { type: "gobject", borrowed: isReturn },
+                    externalType,
+                };
+            }
         }
 
         return {
@@ -534,7 +733,7 @@ export class TypeMapper {
      * @param param - The GIR parameter to map
      * @returns The TypeScript type string and FFI descriptor
      */
-    mapParameter(param: GirParameter): TypeMapping {
+    mapParameter(param: GirParameter): MappedType {
         if (param.direction === "out" || param.direction === "inout") {
             const innerType = this.mapType(param.type);
             return {

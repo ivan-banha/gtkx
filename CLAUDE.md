@@ -196,6 +196,24 @@ const [showAbout, setShowAbout] = useState(false);
 - **Text children**: Automatically wrapped in `<Label>` widgets
 - **Property names**: Use camelCase (GTK's snake_case is converted)
 
+### Error Handling
+
+Native GTK/GLib errors are thrown as `NativeError`, which wraps GLib's `GError`:
+
+```tsx
+import { NativeError } from "@gtkx/ffi";
+
+try {
+    keyFile.getString("NonExistentGroup", "key");
+} catch (err) {
+    if (err instanceof NativeError) {
+        console.error(err.message);  // Human-readable error message
+        console.error(err.domain);   // GLib error domain (GQuark)
+        console.error(err.code);     // Error code within domain
+    }
+}
+```
+
 ## Build Commands
 
 ```bash

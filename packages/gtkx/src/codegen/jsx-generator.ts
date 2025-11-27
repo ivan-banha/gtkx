@@ -205,7 +205,6 @@ export class JsxGenerator {
         ].join("\n");
     }
 
-
     private generateCommonTypes(widgetClass: GirClass | undefined): string {
         const widgetPropsContent = this.generateWidgetPropsContent(widgetClass);
 
@@ -612,7 +611,9 @@ ${widgetPropsContent}
             if (hasMeaningfulSlots) {
                 const valueMembers = [
                     `Root: "${widgetName}.Root" as const`,
-                    ...metadata.namedChildSlots.map((slot) => `${slot.slotName}: "${widgetName}.${slot.slotName}" as const`),
+                    ...metadata.namedChildSlots.map(
+                        (slot) => `${slot.slotName}: "${widgetName}.${slot.slotName}" as const`,
+                    ),
                     ...(isListWidget(widget.name) ? [`Item: "${widgetName}.Item" as const`] : []),
                     ...(isDropDownWidget(widget.name) ? [`Item: "${widgetName}.Item" as const`] : []),
                     ...(isGridWidget(widget.name) ? [`Child: "${widgetName}.Child" as const`] : []),

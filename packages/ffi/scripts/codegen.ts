@@ -1,8 +1,8 @@
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { GirParser, TypeRegistry } from "@gtkx/gir";
 import type { GirNamespace } from "@gtkx/gir";
+import { GirParser, TypeRegistry } from "@gtkx/gir";
 import { CodeGenerator } from "../src/codegen/ffi-generator.js";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));

@@ -1,6 +1,6 @@
 import { onReady } from "@gtkx/ffi";
+import { type Display, DisplayManager } from "@gtkx/ffi/gdk";
 import { CssProvider, StyleContext } from "@gtkx/ffi/gtk";
-import { DisplayManager } from "@gtkx/ffi/gdk";
 
 type StyleSheetOptions = {
     key: string;
@@ -35,7 +35,7 @@ export class GtkStyleSheet {
     key: string;
     private rules: string[] = [];
     private provider: CssProvider | null = null;
-    private display: unknown = null;
+    private display: Display | null = null;
     private isRegistered = false;
     private hasPendingRules = false;
 
@@ -49,11 +49,7 @@ export class GtkStyleSheet {
             this.display = DisplayManager.get().getDefaultDisplay();
 
             if (this.display) {
-                StyleContext.addProviderForDisplay(
-                    this.display,
-                    this.provider.ptr,
-                    STYLE_PROVIDER_PRIORITY_APPLICATION,
-                );
+                StyleContext.addProviderForDisplay(this.display, this.provider, STYLE_PROVIDER_PRIORITY_APPLICATION);
                 this.isRegistered = true;
             }
         }
@@ -88,7 +84,7 @@ export class GtkStyleSheet {
 
     flush(): void {
         if (this.provider && this.display && this.isRegistered) {
-            StyleContext.removeProviderForDisplay(this.display, this.provider.ptr);
+            StyleContext.removeProviderForDisplay(this.display, this.provider);
             this.isRegistered = false;
         }
 

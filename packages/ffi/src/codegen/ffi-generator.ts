@@ -85,8 +85,20 @@ const RESERVED_WORDS = new Set([
 ]);
 
 const METHOD_RENAMES = new Map<string, Map<string, string>>([
-    ["IconView", new Map([["setCursor", "setCursorPath"], ["getCursor", "getCursorPath"]])],
-    ["TreeView", new Map([["setCursor", "setCursorPath"], ["getCursor", "getCursorPath"]])],
+    [
+        "IconView",
+        new Map([
+            ["setCursor", "setCursorPath"],
+            ["getCursor", "getCursorPath"],
+        ]),
+    ],
+    [
+        "TreeView",
+        new Map([
+            ["setCursor", "setCursorPath"],
+            ["getCursor", "getCursorPath"],
+        ]),
+    ],
     ["HSV", new Map([["getColor", "getHsvColor"]])],
     ["Layout", new Map([["getSize", "getLayoutSize"]])],
     ["Table", new Map([["getSize", "getTableSize"]])],
@@ -101,11 +113,10 @@ const METHOD_RENAMES = new Map<string, Map<string, string>>([
             ["setDirection", "setArrowDirection"],
         ]),
     ],
+    ["PrintUnixDialog", new Map([["getSettings", "getPrintSettings"]])],
 ]);
 
-const CLASS_RENAMES = new Map<string, string>([
-    ["Error", "GError"],
-]);
+const CLASS_RENAMES = new Map<string, string>([["Error", "GError"]]);
 
 const toKebabCase = (str: string): string =>
     str
@@ -173,7 +184,7 @@ const toValidIdentifier = (str: string): string => {
 const normalizeClassName = (name: string): string => {
     const pascalName = toPascalCase(name);
     if (CLASS_RENAMES.has(pascalName)) {
-        return CLASS_RENAMES.get(pascalName)!;
+        return CLASS_RENAMES.get(pascalName) as string;
     }
     if (pascalName === "Object") {
         return "GObject";
@@ -203,8 +214,11 @@ export class CodeGenerator {
     private usedEnums = new Set<string>();
     private usedRecords = new Set<string>();
     private usedExternalTypes = new Map<string, ExternalTypeUsage>();
+    private usedSameNamespaceClasses = new Map<string, string>();
+    private usedInterfaces = new Map<string, string>();
     private signalClasses = new Set<string>();
     private recordNameToFile = new Map<string, string>();
+    private interfaceNameToFile = new Map<string, string>();
     private currentSharedLibrary = "";
 
     /**
@@ -229,7 +243,9 @@ export class CodeGenerator {
         this.currentSharedLibrary = namespace.sharedLibrary;
         this.registerEnumsAndBitfields(namespace);
         this.registerRecords(namespace);
+        this.registerInterfaces(namespace);
         const classMap = this.buildClassMap(namespace);
+        const interfaceMap = this.buildInterfaceMap(namespace);
         this.attachConstructorFunctions(namespace, classMap);
 
         for (const iface of namespace.interfaces) {
@@ -240,15 +256,15 @@ export class CodeGenerator {
         }
 
         for (const cls of namespace.classes) {
-            files.set(`${toKebabCase(cls.name)}.ts`, await this.generateClass(cls, namespace.sharedLibrary, classMap));
+            files.set(
+                `${toKebabCase(cls.name)}.ts`,
+                await this.generateClass(cls, namespace.sharedLibrary, classMap, interfaceMap),
+            );
         }
 
         for (const record of namespace.records) {
             if (this.shouldGenerateRecord(record)) {
-                files.set(
-                    `${toKebabCase(record.name)}.ts`,
-                    await this.generateRecord(record, namespace.sharedLibrary),
-                );
+                files.set(`${toKebabCase(record.name)}.ts`, await this.generateRecord(record, namespace.sharedLibrary));
             }
         }
 
@@ -303,6 +319,21 @@ export class CodeGenerator {
         return classMap;
     }
 
+    private registerInterfaces(namespace: GirNamespace): void {
+        for (const iface of namespace.interfaces) {
+            const normalizedName = toPascalCase(iface.name);
+            this.interfaceNameToFile.set(normalizedName, iface.name);
+        }
+    }
+
+    private buildInterfaceMap(namespace: GirNamespace): Map<string, GirInterface> {
+        const interfaceMap = new Map<string, GirInterface>();
+        for (const iface of namespace.interfaces) {
+            interfaceMap.set(iface.name, iface);
+        }
+        return interfaceMap;
+    }
+
     private attachConstructorFunctions(namespace: GirNamespace, classMap: Map<string, GirClass>): void {
         for (const func of namespace.functions) {
             const match = func.cIdentifier?.match(/^[a-z_]+_([a-z_]+)_new(_.*)?$/);
@@ -350,6 +381,8 @@ export class CodeGenerator {
         this.usedEnums.clear();
         this.usedRecords.clear();
         this.usedExternalTypes.clear();
+        this.usedSameNamespaceClasses.clear();
+        this.usedInterfaces.clear();
         this.signalClasses.clear();
         this.typeMapper.setEnumUsageCallback((enumName) => this.usedEnums.add(enumName));
         this.typeMapper.setRecordUsageCallback((recordName) => this.usedRecords.add(recordName));
@@ -357,12 +390,16 @@ export class CodeGenerator {
             const key = `${usage.namespace}.${usage.transformedName}`;
             this.usedExternalTypes.set(key, usage);
         });
+        this.typeMapper.setSameNamespaceClassUsageCallback((className, originalName) => {
+            this.usedSameNamespaceClasses.set(className, originalName);
+        });
     }
 
     private async generateClass(
         cls: GirClass,
         sharedLibrary: string,
         classMap: Map<string, GirClass>,
+        interfaceMap: Map<string, GirInterface>,
     ): Promise<string> {
         this.resetState();
 
@@ -370,12 +407,23 @@ export class CodeGenerator {
             cls.methods.some((m) => hasOutParameter(m.parameters)) ||
             cls.constructors.some((c) => hasOutParameter(c.parameters)) ||
             cls.functions.some((f) => hasOutParameter(f.parameters));
-        this.usesCall = cls.methods.length > 0 || cls.constructors.length > 0 || cls.functions.length > 0 || cls.signals.length > 0;
+        this.usesCall =
+            cls.methods.length > 0 || cls.constructors.length > 0 || cls.functions.length > 0 || cls.signals.length > 0;
 
         const className = normalizeClassName(cls.name);
         const hasParent = !!(cls.parent && classMap.has(cls.parent));
         const parentClassName = cls.parent ? normalizeClassName(cls.parent) : "";
         const extendsClause = hasParent ? ` extends ${parentClassName}` : "";
+
+        const implementedInterfaces = cls.implements
+            .filter((ifaceName) => interfaceMap.has(ifaceName))
+            .map((ifaceName) => {
+                const normalizedName = toPascalCase(ifaceName);
+                this.usedInterfaces.set(normalizedName, ifaceName);
+                return normalizedName;
+            });
+        const implementsClause =
+            implementedInterfaces.length > 0 ? ` implements ${implementedInterfaces.join(", ")}` : "";
 
         const sections: string[] = [];
 
@@ -387,7 +435,7 @@ export class CodeGenerator {
         if (cls.doc) {
             sections.push(formatDoc(cls.doc));
         }
-        sections.push(`export class ${className}${extendsClause} {`);
+        sections.push(`export class ${className}${extendsClause}${implementsClause} {`);
 
         if (!extendsClause) {
             sections.push(`  ptr: unknown;\n`);
@@ -779,6 +827,7 @@ ${allArgs ? `${allArgs},` : ""}
         this.typeMapper.setEnumUsageCallback(null);
         this.typeMapper.setRecordUsageCallback(null);
         this.typeMapper.setExternalTypeUsageCallback(null);
+        this.typeMapper.setSameNamespaceClassUsageCallback(null);
 
         const signalMetadata = signals.map((signal) => {
             const paramEntries = (signal.parameters ?? []).map((param) => {
@@ -798,6 +847,9 @@ ${allArgs ? `${allArgs},` : ""}
         this.typeMapper.setExternalTypeUsageCallback((usage) => {
             const key = `${usage.namespace}.${usage.transformedName}`;
             this.usedExternalTypes.set(key, usage);
+        });
+        this.typeMapper.setSameNamespaceClassUsageCallback((className, originalName) => {
+            this.usedSameNamespaceClasses.set(className, originalName);
         });
 
         this.usesType = true;
@@ -848,13 +900,10 @@ ${allArgs ? `${allArgs},` : ""}
 
     private async generateInterface(
         iface: GirInterface,
-        sharedLibrary: string,
-        classMap: Map<string, GirClass>,
+        _sharedLibrary: string,
+        _classMap: Map<string, GirClass>,
     ): Promise<string> {
         this.resetState();
-
-        this.usesRef = iface.methods.some((m) => hasOutParameter(m.parameters));
-        this.usesCall = iface.methods.length > 0 || iface.signals.length > 0;
 
         const interfaceName = toPascalCase(iface.name);
         const sections: string[] = [];
@@ -862,20 +911,11 @@ ${allArgs ? `${allArgs},` : ""}
         if (iface.doc) {
             sections.push(formatDoc(iface.doc));
         }
-        sections.push(`export abstract class ${interfaceName} {`);
-        sections.push(`  protected abstract ptr: unknown;\n`);
-        sections.push(this.generateMethods(iface.methods, sharedLibrary, iface.name));
-        sections.push(this.generateProperties(iface.properties, iface.methods));
-
-        if (iface.signals.length > 0) {
-            const hasConnectMethod = iface.methods.some((m) => toCamelCase(m.name) === "connect");
-            sections.push(this.generateSignalConnect(sharedLibrary, iface.signals, hasConnectMethod, classMap));
-        }
-
+        sections.push(`export interface ${interfaceName} {`);
+        sections.push(`  ptr: unknown;`);
         sections.push("}");
 
-        const imports = this.generateImports(interfaceName);
-        return this.formatCode(imports + sections.join("\n"));
+        return this.formatCode(sections.join("\n"));
     }
 
     private async generateRecord(record: GirRecord, sharedLibrary: string): Promise<string> {
@@ -885,8 +925,7 @@ ${allArgs ? `${allArgs},` : ""}
             record.methods.some((m) => hasOutParameter(m.parameters)) ||
             record.constructors.some((c) => hasOutParameter(c.parameters)) ||
             record.functions.some((f) => hasOutParameter(f.parameters));
-        this.usesCall =
-            record.methods.length > 0 || record.constructors.length > 0 || record.functions.length > 0;
+        this.usesCall = record.methods.length > 0 || record.constructors.length > 0 || record.functions.length > 0;
 
         const hasReadableFields = record.fields.some((f) => f.readable !== false && !f.private);
         if (hasReadableFields) {
@@ -971,7 +1010,9 @@ ${allArgs ? `${allArgs},` : ""}
         } else {
             const initFields = this.getWritableFields(record.fields);
             if (initFields.length > 0) {
-                sections.push(`  constructor(init: ${recordName}Init = {}) {\n    this.ptr = this.createPtr(init);\n  }\n`);
+                sections.push(
+                    `  constructor(init: ${recordName}Init = {}) {\n    this.ptr = this.createPtr(init);\n  }\n`,
+                );
             } else {
                 sections.push(`  constructor() {\n    this.ptr = this.createPtr({});\n  }\n`);
             }
@@ -1061,7 +1102,9 @@ ${args}
             if (field.writable !== false && this.isWritableType(field.type)) {
                 const fieldName = toValidIdentifier(toCamelCase(field.name));
                 const typeMapping = this.typeMapper.mapType(field.type);
-                writes.push(`    if (init.${fieldName} !== undefined) write(ptr, ${this.generateTypeDescriptor(typeMapping.ffi)}, ${currentOffset}, init.${fieldName});`);
+                writes.push(
+                    `    if (init.${fieldName} !== undefined) write(ptr, ${this.generateTypeDescriptor(typeMapping.ffi)}, ${currentOffset}, init.${fieldName});`,
+                );
             }
 
             currentOffset += fieldSize;
@@ -1172,7 +1215,13 @@ ${args}
 
     private isWritableType(type: { name: string; cType?: string }): boolean {
         const typeName = type.name;
-        if (typeName === "gboolean" || typeName === "guint8" || typeName === "gint8" || typeName === "guchar" || typeName === "gchar") {
+        if (
+            typeName === "gboolean" ||
+            typeName === "guint8" ||
+            typeName === "gint8" ||
+            typeName === "guchar" ||
+            typeName === "gchar"
+        ) {
             return true;
         }
         if (typeName === "gint16" || typeName === "guint16" || typeName === "gshort" || typeName === "gushort") {
@@ -1181,7 +1230,14 @@ ${args}
         if (typeName === "gint" || typeName === "guint" || typeName === "gint32" || typeName === "guint32") {
             return true;
         }
-        if (typeName === "gint64" || typeName === "guint64" || typeName === "glong" || typeName === "gulong" || typeName === "gsize" || typeName === "gssize") {
+        if (
+            typeName === "gint64" ||
+            typeName === "guint64" ||
+            typeName === "glong" ||
+            typeName === "gulong" ||
+            typeName === "gsize" ||
+            typeName === "gssize"
+        ) {
             return true;
         }
         if (typeName === "gfloat" || typeName === "float" || typeName === "gdouble" || typeName === "double") {
@@ -1192,16 +1248,41 @@ ${args}
 
     private getFieldSize(type: { name: string; cType?: string }): number {
         const typeName = type.name;
-        if (typeName === "gboolean" || typeName === "guint8" || typeName === "gint8" || typeName === "guchar" || typeName === "gchar") {
+        if (
+            typeName === "gboolean" ||
+            typeName === "guint8" ||
+            typeName === "gint8" ||
+            typeName === "guchar" ||
+            typeName === "gchar"
+        ) {
             return 1;
         }
         if (typeName === "gint16" || typeName === "guint16" || typeName === "gshort" || typeName === "gushort") {
             return 2;
         }
-        if (typeName === "gint" || typeName === "guint" || typeName === "gint32" || typeName === "guint32" || typeName === "gfloat" || typeName === "float" || typeName === "Quark" || typeName === "GQuark") {
+        if (
+            typeName === "gint" ||
+            typeName === "guint" ||
+            typeName === "gint32" ||
+            typeName === "guint32" ||
+            typeName === "gfloat" ||
+            typeName === "float" ||
+            typeName === "Quark" ||
+            typeName === "GQuark"
+        ) {
             return 4;
         }
-        if (typeName === "gint64" || typeName === "guint64" || typeName === "gdouble" || typeName === "double" || typeName === "glong" || typeName === "gulong" || typeName === "gsize" || typeName === "gssize" || typeName === "GType") {
+        if (
+            typeName === "gint64" ||
+            typeName === "guint64" ||
+            typeName === "gdouble" ||
+            typeName === "double" ||
+            typeName === "glong" ||
+            typeName === "gulong" ||
+            typeName === "gsize" ||
+            typeName === "gssize" ||
+            typeName === "GType"
+        ) {
             return 8;
         }
         return 8;
@@ -1396,46 +1477,42 @@ ${indent}  }`;
             }
         }
 
+        for (const [interfaceName, originalName] of Array.from(this.usedInterfaces.entries()).sort((a, b) =>
+            a[0].localeCompare(b[0]),
+        )) {
+            const originalFileName = this.interfaceNameToFile.get(interfaceName) ?? originalName;
+            lines.push(`import type { ${interfaceName} } from "./${toKebabCase(originalFileName)}.js";`);
+        }
+
+        for (const [className, originalName] of Array.from(this.usedSameNamespaceClasses.entries()).sort((a, b) =>
+            a[0].localeCompare(b[0]),
+        )) {
+            const normalizedCurrentClass = currentClassName ? normalizeClassName(currentClassName) : "";
+            const normalizedParentClass = parentClassName ? normalizeClassName(parentClassName) : "";
+            if (
+                className !== normalizedCurrentClass &&
+                className !== normalizedParentClass &&
+                !this.signalClasses.has(className) &&
+                !this.usedInterfaces.has(className)
+            ) {
+                lines.push(`import type { ${className} } from "./${toKebabCase(originalName)}.js";`);
+            }
+        }
+
         for (const className of Array.from(this.signalClasses).sort()) {
             if (className !== currentClassName && className !== parentClassName) {
                 lines.push(`import { ${className} } from "./${toKebabCase(className)}.js";`);
             }
         }
 
-        const externalByNamespace = new Map<string, ExternalTypeUsage[]>();
-        const importedNames = new Set<string>();
+        const externalNamespaces = new Set<string>();
         for (const usage of this.usedExternalTypes.values()) {
             if (usage.namespace === this.options.namespace) continue;
-            if (usage.transformedName === currentClassName || usage.transformedName === parentClassName) continue;
-            const existing = externalByNamespace.get(usage.namespace) ?? [];
-            existing.push(usage);
-            externalByNamespace.set(usage.namespace, existing);
+            externalNamespaces.add(usage.namespace);
         }
-        for (const [namespace, usages] of Array.from(externalByNamespace.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
-            const typesByKind = {
-                classes: usages.filter((u) => u.kind === "class" || u.kind === "interface"),
-                enums: usages.filter((u) => u.kind === "enum"),
-                records: usages.filter((u) => u.kind === "record"),
-            };
+        for (const namespace of Array.from(externalNamespaces).sort()) {
             const nsLower = namespace.toLowerCase();
-            if (typesByKind.enums.length > 0) {
-                const nonConflictingEnums = typesByKind.enums.filter((u) => !importedNames.has(u.transformedName));
-                if (nonConflictingEnums.length > 0) {
-                    const enumNames = nonConflictingEnums.map((u) => u.transformedName).sort().join(", ");
-                    lines.push(`import { ${enumNames} } from "../${nsLower}/enums.js";`);
-                    for (const e of nonConflictingEnums) importedNames.add(e.transformedName);
-                }
-            }
-            for (const usage of typesByKind.classes.sort((a, b) => a.transformedName.localeCompare(b.transformedName))) {
-                if (importedNames.has(usage.transformedName)) continue;
-                lines.push(`import type { ${usage.transformedName} } from "../${nsLower}/${toKebabCase(usage.name)}.js";`);
-                importedNames.add(usage.transformedName);
-            }
-            for (const usage of typesByKind.records.sort((a, b) => a.transformedName.localeCompare(b.transformedName))) {
-                if (importedNames.has(usage.transformedName)) continue;
-                lines.push(`import type { ${usage.transformedName} } from "../${nsLower}/${toKebabCase(usage.name)}.js";`);
-                importedNames.add(usage.transformedName);
-            }
+            lines.push(`import * as ${namespace} from "../${nsLower}/index.js";`);
         }
 
         return lines.length > 0 ? `${lines.join("\n")}\n` : "";

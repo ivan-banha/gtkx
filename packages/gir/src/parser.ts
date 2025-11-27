@@ -313,7 +313,9 @@ export class GirParser {
             glibTypeName: record["@_glib:type-name"] ? String(record["@_glib:type-name"]) : undefined,
             glibGetType: record["@_glib:get-type"] ? String(record["@_glib:get-type"]) : undefined,
             fields: this.parseFields(Array.isArray(record.field) ? (record.field as Record<string, unknown>[]) : []),
-            methods: this.parseMethods(Array.isArray(record.method) ? (record.method as Record<string, unknown>[]) : []),
+            methods: this.parseMethods(
+                Array.isArray(record.method) ? (record.method as Record<string, unknown>[]) : [],
+            ),
             constructors: this.parseConstructors(
                 Array.isArray(record.constructor) ? (record.constructor as Record<string, unknown>[]) : [],
             ),

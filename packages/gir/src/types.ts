@@ -421,7 +421,13 @@ export class TypeRegistry {
                 registry.registerEnum(ns.name, bitfield.name);
             }
             for (const record of ns.records) {
-                if (record.glibTypeName && !record.disguised && !record.name.endsWith("Class") && !record.name.endsWith("Private") && !record.name.endsWith("Iface")) {
+                if (
+                    record.glibTypeName &&
+                    !record.disguised &&
+                    !record.name.endsWith("Class") &&
+                    !record.name.endsWith("Private") &&
+                    !record.name.endsWith("Iface")
+                ) {
                     registry.registerRecord(ns.name, record.name, record.glibTypeName);
                 }
             }
@@ -505,6 +511,7 @@ export class TypeMapper {
     private onEnumUsed?: (enumName: string) => void;
     private onRecordUsed?: (recordName: string) => void;
     private onExternalTypeUsed?: (usage: ExternalTypeUsage) => void;
+    private onSameNamespaceClassUsed?: (className: string, originalName: string) => void;
     private typeRegistry?: TypeRegistry;
     private currentNamespace?: string;
 
@@ -574,6 +581,14 @@ export class TypeMapper {
      */
     setExternalTypeUsageCallback(callback: ((usage: ExternalTypeUsage) => void) | null): void {
         this.onExternalTypeUsed = callback ?? undefined;
+    }
+
+    /**
+     * Sets a callback to track same-namespace class/interface usage during type mapping.
+     * @param callback - Called when a same-namespace class is used, or null to clear
+     */
+    setSameNamespaceClassUsageCallback(callback: ((className: string, originalName: string) => void) | null): void {
+        this.onSameNamespaceClassUsed = callback ?? undefined;
     }
 
     /**
@@ -655,31 +670,41 @@ export class TypeMapper {
             if (this.typeRegistry && ns && typeName) {
                 const registered = this.typeRegistry.resolve(girType.name);
                 if (registered) {
+                    const isExternal = registered.namespace !== this.currentNamespace;
+                    const qualifiedName = isExternal
+                        ? `${registered.namespace}.${registered.transformedName}`
+                        : registered.transformedName;
                     const externalType: ExternalTypeUsage = {
                         namespace: registered.namespace,
                         name: registered.name,
                         transformedName: registered.transformedName,
                         kind: registered.kind,
                     };
-                    this.onExternalTypeUsed?.(externalType);
+                    if (isExternal) {
+                        this.onExternalTypeUsed?.(externalType);
+                    }
                     if (registered.kind === "enum") {
                         return {
-                            ts: registered.transformedName,
+                            ts: qualifiedName,
                             ffi: { type: "int", size: 32, unsigned: false },
-                            externalType,
+                            externalType: isExternal ? externalType : undefined,
                         };
                     }
                     if (registered.kind === "record") {
                         return {
-                            ts: registered.transformedName,
-                            ffi: { type: "boxed", borrowed: isReturn, innerType: registered.glibTypeName ?? registered.transformedName },
-                            externalType,
+                            ts: qualifiedName,
+                            ffi: {
+                                type: "boxed",
+                                borrowed: isReturn,
+                                innerType: registered.glibTypeName ?? registered.transformedName,
+                            },
+                            externalType: isExternal ? externalType : undefined,
                         };
                     }
                     return {
-                        ts: registered.transformedName,
+                        ts: qualifiedName,
                         ffi: { type: "gobject", borrowed: isReturn },
-                        externalType,
+                        externalType: isExternal ? externalType : undefined,
                     };
                 }
             }
@@ -691,30 +716,44 @@ export class TypeMapper {
 
         if (this.typeRegistry && this.currentNamespace) {
             const registered = this.typeRegistry.resolveInNamespace(girType.name, this.currentNamespace);
-            if (registered && registered.namespace !== this.currentNamespace) {
-                const externalType: ExternalTypeUsage = {
-                    namespace: registered.namespace,
-                    name: registered.name,
-                    transformedName: registered.transformedName,
-                    kind: registered.kind,
-                };
-                this.onExternalTypeUsed?.(externalType);
+            if (registered) {
+                const isExternal = registered.namespace !== this.currentNamespace;
+                const qualifiedName = isExternal
+                    ? `${registered.namespace}.${registered.transformedName}`
+                    : registered.transformedName;
+                const externalType: ExternalTypeUsage | undefined = isExternal
+                    ? {
+                          namespace: registered.namespace,
+                          name: registered.name,
+                          transformedName: registered.transformedName,
+                          kind: registered.kind,
+                      }
+                    : undefined;
+                if (isExternal) {
+                    this.onExternalTypeUsed?.(externalType as ExternalTypeUsage);
+                } else if (registered.kind === "class" || registered.kind === "interface") {
+                    this.onSameNamespaceClassUsed?.(registered.transformedName, registered.name);
+                }
                 if (registered.kind === "enum") {
                     return {
-                        ts: registered.transformedName,
+                        ts: qualifiedName,
                         ffi: { type: "int", size: 32, unsigned: false },
                         externalType,
                     };
                 }
                 if (registered.kind === "record") {
                     return {
-                        ts: registered.transformedName,
-                        ffi: { type: "boxed", borrowed: isReturn, innerType: registered.glibTypeName ?? registered.transformedName },
+                        ts: qualifiedName,
+                        ffi: {
+                            type: "boxed",
+                            borrowed: isReturn,
+                            innerType: registered.glibTypeName ?? registered.transformedName,
+                        },
                         externalType,
                     };
                 }
                 return {
-                    ts: registered.transformedName,
+                    ts: qualifiedName,
                     ffi: { type: "gobject", borrowed: isReturn },
                     externalType,
                 };

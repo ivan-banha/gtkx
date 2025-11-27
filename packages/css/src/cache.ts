@@ -1,5 +1,5 @@
-import createCache from "@emotion/cache";
 import type { EmotionCache } from "@emotion/cache";
+import createCache from "@emotion/cache";
 import { GtkStyleSheet } from "./gtk-style-sheet.js";
 
 let gtkCache: EmotionCache | null = null;

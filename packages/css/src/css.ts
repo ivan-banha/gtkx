@@ -1,5 +1,5 @@
-import { serializeStyles } from "@emotion/serialize";
 import type { CSSInterpolation } from "@emotion/serialize";
+import { serializeStyles } from "@emotion/serialize";
 import { getGtkCache } from "./cache.js";
 
 type CSSClassName = string & { __brand: "css" };

@@ -1,41 +1,34 @@
-# Website
+# GTKX Documentation Website
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+Documentation site for GTKX, built with [Docusaurus](https://docusaurus.io/).
 
-## Installation
-
-```bash
-yarn
-```
-
-## Local Development
+## Development
 
 ```bash
-yarn start
+pnpm start
 ```
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+Starts a local development server at `http://localhost:3000` with hot reloading.
 
 ## Build
 
 ```bash
-yarn build
+pnpm build
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+Generates static content in the `build/` directory for deployment.
 
-## Deployment
-
-Using SSH:
+## Serve
 
 ```bash
-USE_SSH=true yarn deploy
+pnpm serve
 ```
 
-Not using SSH:
+Serves the production build locally for preview.
+
+## From Monorepo Root
 
 ```bash
-GIT_USER=<Your GitHub username> yarn deploy
+pnpm docs        # Start dev server
+pnpm docs:build  # Build for production
 ```
-
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.

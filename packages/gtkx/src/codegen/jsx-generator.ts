@@ -197,21 +197,20 @@ export class JsxGenerator {
 
     private generateImports(): string {
         return [
-            `import type React from "react";`,
             `import type { ReactNode, Ref } from "react";`,
             `import type * as Gio from "@gtkx/ffi/gio";`,
             `import type * as Gtk from "@gtkx/ffi/gtk";`,
+            `import type { GridChildProps, ItemProps, SlotProps } from "../types.js";`,
             "",
         ].join("\n");
     }
+
 
     private generateCommonTypes(widgetClass: GirClass | undefined): string {
         const widgetPropsContent = this.generateWidgetPropsContent(widgetClass);
 
         return `
-export interface GtkComponent<P> {
-\t(props: P): React.ReactElement | null;
-}
+export { SlotProps, GridChildProps, ItemProps };
 
 ${widgetPropsContent}
 `;
@@ -382,28 +381,6 @@ ${widgetPropsContent}
             if (!metadata) throw new Error(`Missing container metadata for widget: ${widget.name}`);
 
             sections.push(this.generateWidgetProps(widget, metadata));
-
-            for (const slot of metadata.namedChildSlots) {
-                const widgetName = toPascalCase(widget.name);
-                sections.push(`export interface ${widgetName}_${slot.slotName}_Props {\n\tchildren?: ReactNode;\n}\n`);
-            }
-
-            if (isListWidget(widget.name)) {
-                const widgetName = toPascalCase(widget.name);
-                sections.push(`export interface ${widgetName}_Item_Props<T> {\n\titem: T;\n}\n`);
-            }
-
-            if (isDropDownWidget(widget.name)) {
-                const widgetName = toPascalCase(widget.name);
-                sections.push(`export interface ${widgetName}_Item_Props<T> {\n\titem: T;\n}\n`);
-            }
-
-            if (isGridWidget(widget.name)) {
-                const widgetName = toPascalCase(widget.name);
-                sections.push(
-                    `export interface ${widgetName}_Child_Props {\n\tcolumn?: number;\n\trow?: number;\n\tcolumnSpan?: number;\n\trowSpan?: number;\n\tchildren?: ReactNode;\n}\n`,
-                );
-            }
         }
 
         return sections.join("\n");
@@ -622,7 +599,6 @@ ${widgetPropsContent}
 
         for (const widget of widgets) {
             const widgetName = toPascalCase(widget.name);
-            const propsName = `${widgetName}Props`;
             const metadata = containerMetadata.get(widget.name);
             if (!metadata) throw new Error(`Missing container metadata for widget: ${widget.name}`);
 
@@ -634,47 +610,22 @@ ${widgetPropsContent}
                 isGridWidget(widget.name);
 
             if (hasMeaningfulSlots) {
-                const typeMembers = [
-                    `Root: GtkComponent<${propsName}>`,
-                    ...metadata.namedChildSlots.map(
-                        (slot) => `${slot.slotName}: GtkComponent<${widgetName}_${slot.slotName}_Props>`,
-                    ),
-                    ...(isListWidget(widget.name) ? [`Item: GtkComponent<${widgetName}_Item_Props<any>>`] : []),
-                    ...(isDropDownWidget(widget.name) ? [`Item: GtkComponent<${widgetName}_Item_Props<any>>`] : []),
-                    ...(isGridWidget(widget.name) ? [`Child: GtkComponent<${widgetName}_Child_Props>`] : []),
-                ];
                 const valueMembers = [
-                    `Root: "${widgetName}" as unknown as GtkComponent<${propsName}>`,
-                    ...metadata.namedChildSlots.map(
-                        (slot) =>
-                            `${slot.slotName}: "${widgetName}.${slot.slotName}" as unknown as GtkComponent<${widgetName}_${slot.slotName}_Props>`,
-                    ),
-                    ...(isListWidget(widget.name)
-                        ? [`Item: "${widgetName}.Item" as unknown as GtkComponent<${widgetName}_Item_Props<any>>`]
-                        : []),
-                    ...(isDropDownWidget(widget.name)
-                        ? [`Item: "${widgetName}.Item" as unknown as GtkComponent<${widgetName}_Item_Props<any>>`]
-                        : []),
-                    ...(isGridWidget(widget.name)
-                        ? [`Child: "${widgetName}.Child" as unknown as GtkComponent<${widgetName}_Child_Props>`]
-                        : []),
+                    `Root: "${widgetName}.Root" as const`,
+                    ...metadata.namedChildSlots.map((slot) => `${slot.slotName}: "${widgetName}.${slot.slotName}" as const`),
+                    ...(isListWidget(widget.name) ? [`Item: "${widgetName}.Item" as const`] : []),
+                    ...(isDropDownWidget(widget.name) ? [`Item: "${widgetName}.Item" as const`] : []),
+                    ...(isGridWidget(widget.name) ? [`Child: "${widgetName}.Child" as const`] : []),
                 ];
-                lines.push(
-                    `export const ${widgetName}: {\n\t${typeMembers.join(";\n\t")};\n} = {\n\t${valueMembers.join(",\n\t")},\n};`,
-                );
+                lines.push(`export const ${widgetName} = {\n\t${valueMembers.join(",\n\t")},\n};`);
             } else {
-                lines.push(
-                    `export const ${widgetName}: GtkComponent<${propsName}> = "${widgetName}" as unknown as GtkComponent<${propsName}>;`,
-                );
+                lines.push(`export const ${widgetName} = "${widgetName}" as const;`);
             }
         }
 
         for (const dialog of dialogs) {
             const dialogName = toPascalCase(dialog.name);
-            const propsName = `${dialogName}Props`;
-            lines.push(
-                `export const ${dialogName}: GtkComponent<${propsName}> = "${dialogName}" as unknown as GtkComponent<${propsName}>;`,
-            );
+            lines.push(`export const ${dialogName} = "${dialogName}" as const;`);
         }
 
         return `${lines.join("\n")}\n`;
@@ -709,19 +660,19 @@ ${widgetPropsContent}
             }
 
             for (const slot of metadata.namedChildSlots) {
-                elements.push(`"${widgetName}.${slot.slotName}": ${widgetName}_${slot.slotName}_Props;`);
+                elements.push(`"${widgetName}.${slot.slotName}": SlotProps;`);
             }
 
             if (isListWidget(widget.name)) {
-                elements.push(`"${widgetName}.Item": ${widgetName}_Item_Props<any>;`);
+                elements.push(`"${widgetName}.Item": ItemProps<any>;`);
             }
 
             if (isDropDownWidget(widget.name)) {
-                elements.push(`"${widgetName}.Item": ${widgetName}_Item_Props<any>;`);
+                elements.push(`"${widgetName}.Item": ItemProps<any>;`);
             }
 
             if (isGridWidget(widget.name)) {
-                elements.push(`"${widgetName}.Child": ${widgetName}_Child_Props;`);
+                elements.push(`"${widgetName}.Child": GridChildProps;`);
             }
         }
 

@@ -1,6 +1,6 @@
 # @gtkx/gtkx
 
-The React integration layer for GTKX. This package provides a custom React reconciler that renders React components as native GTK4 widgets.
+React integration layer for GTKX. This package provides a custom React reconciler that renders React components as native GTK4 widgets.
 
 ## Installation
 
@@ -14,36 +14,25 @@ pnpm add @gtkx/gtkx react
 
 ### System Requirements
 
-- **Linux** with GTK4 development libraries installed
-- **Node.js** 20 or later
-- **Rust** toolchain (for building the native module)
-
-#### Installing GTK4 on Fedora
+- Linux with GTK4 libraries
+- Node.js 20+
+- Rust toolchain (for building `@gtkx/native`)
 
 ```bash
+# Fedora
 sudo dnf install gtk4-devel
-```
 
-#### Installing GTK4 on Ubuntu/Debian
-
-```bash
+# Ubuntu/Debian
 sudo apt install libgtk-4-dev
 ```
 
 ## Quick Start
 
-Create a simple GTK4 application:
-
 ```tsx
 import { ApplicationWindow, Button, quit, render } from "@gtkx/gtkx";
 
 render(
-  <ApplicationWindow
-    title="My App"
-    defaultWidth={800}
-    defaultHeight={600}
-    onCloseRequest={quit}
-  >
+  <ApplicationWindow title="My App" defaultWidth={800} defaultHeight={600} onCloseRequest={quit}>
     <Button label="Hello!" onClicked={() => console.log("Clicked!")} />
   </ApplicationWindow>,
   "com.example.myapp"
@@ -56,65 +45,48 @@ Run with:
 npx tsx src/index.tsx
 ```
 
-## API Reference
+## API
 
-### Core Functions
-
-#### `render(element, applicationId)`
+### `render(element, applicationId)`
 
 Renders a React element tree as a GTK4 application.
 
-```tsx
-render(<ApplicationWindow>...</ApplicationWindow>, "com.example.app");
-```
+- `element` — Root React element (typically `ApplicationWindow`)
+- `applicationId` — Unique identifier in reverse-DNS format (e.g., `com.example.app`)
 
-- `element` — The root React element (typically `ApplicationWindow`)
-- `applicationId` — Unique application identifier in reverse-DNS format
+### `quit()`
 
-#### `quit()`
-
-Signals the application to close. Typically used as the `onCloseRequest` handler:
+Signals the application to close. Returns `true` to indicate the request was handled.
 
 ```tsx
 <ApplicationWindow onCloseRequest={quit}>...</ApplicationWindow>
 ```
 
-Returns `true` to indicate the close request was handled.
+### `createRef()`
 
-#### `createRef()`
-
-Creates a reference object for passing to FFI functions that require output parameters:
+Creates a reference for FFI output parameters.
 
 ```tsx
 import { createRef } from "@gtkx/gtkx";
 
 const ref = createRef();
 someGtkFunction(ref);
-console.log(ref.value); // The value set by GTK
+console.log(ref.value);
 ```
 
 ## Widgets
 
 ### Container Widgets
 
-#### ApplicationWindow
-
-The main application window. Every GTKX app starts with this.
+**ApplicationWindow** — Main application window
 
 ```tsx
-<ApplicationWindow
-  title="Window Title"
-  defaultWidth={800}
-  defaultHeight={600}
-  onCloseRequest={quit}
->
+<ApplicationWindow title="Window Title" defaultWidth={800} defaultHeight={600} onCloseRequest={quit}>
   {children}
 </ApplicationWindow>
 ```
 
-#### Box
-
-A container that arranges children in a single row or column.
+**Box** — Arranges children in a row or column
 
 ```tsx
 <Box orientation={Gtk.Orientation.VERTICAL} spacing={10}>
@@ -123,22 +95,16 @@ A container that arranges children in a single row or column.
 </Box>
 ```
 
-#### Grid
-
-Arranges children in a grid layout.
+**Grid** — Arranges children in a grid layout
 
 ```tsx
 <Grid columnSpacing={10} rowSpacing={10}>
   <Button label="(0,0)" />
   <Button label="(1,0)" />
-  <Button label="(0,1)" />
-  <Button label="(1,1)" />
 </Grid>
 ```
 
-#### ScrolledWindow
-
-Adds scrollbars to content that exceeds its allocated size.
+**ScrolledWindow** — Adds scrollbars to content
 
 ```tsx
 <ScrolledWindow vexpand hexpand>
@@ -146,86 +112,49 @@ Adds scrollbars to content that exceeds its allocated size.
 </ScrolledWindow>
 ```
 
-#### Frame
-
-A decorative container with an optional label.
-
-```tsx
-<Frame.Root>
-  <Frame.LabelWidget>
-    <Label.Root label="Section Title" />
-  </Frame.LabelWidget>
-  <Frame.Child>
-    <Box>{/* content */}</Box>
-  </Frame.Child>
-</Frame.Root>
-```
-
-#### Notebook
-
-A tabbed container.
+**Notebook** — Tabbed container
 
 ```tsx
 <Notebook>
-  <Box>{/* Tab 1 content */}</Box>
-  <Box>{/* Tab 2 content */}</Box>
+  <Box>{/* Tab 1 */}</Box>
+  <Box>{/* Tab 2 */}</Box>
 </Notebook>
 ```
 
-#### Paned
-
-A resizable split container.
+**Paned** — Resizable split container
 
 ```tsx
 <Paned.Root wideHandle>
   <Paned.StartChild>
-    <Box>{/* Left pane */}</Box>
+    <Box>{/* Left */}</Box>
   </Paned.StartChild>
   <Paned.EndChild>
-    <Box>{/* Right pane */}</Box>
+    <Box>{/* Right */}</Box>
   </Paned.EndChild>
 </Paned.Root>
 ```
 
 ### Input Widgets
 
-#### Button
-
-A clickable button.
+**Button** — Clickable button
 
 ```tsx
 <Button label="Click me" onClicked={() => console.log("Clicked!")} />
 ```
 
-#### ToggleButton
-
-A button with on/off state.
+**ToggleButton** — Button with on/off state
 
 ```tsx
-const [active, setActive] = useState(false);
-
-<ToggleButton.Root
-  label={active ? "ON" : "OFF"}
-  active={active}
-  onToggled={() => setActive((a) => !a)}
-/>;
+<ToggleButton.Root label={active ? "ON" : "OFF"} active={active} onToggled={() => setActive((a) => !a)} />
 ```
 
-#### CheckButton
-
-A checkbox with a label.
+**CheckButton** — Checkbox with label
 
 ```tsx
-<CheckButton.Root
-  label="Accept terms"
-  active={checked}
-  onToggled={() => setChecked((c) => !c)}
-/>
+<CheckButton.Root label="Accept terms" active={checked} onToggled={() => setChecked((c) => !c)} />
 ```
 
-#### Switch
-
-An on/off toggle switch.
+**Switch** — On/off toggle
 
 ```tsx
 <Switch
@@ -237,41 +166,19 @@ An on/off toggle switch.
 />
 ```
 
-#### Entry
-
-A single-line text input.
+**Entry** — Single-line text input
 
 ```tsx
 <Entry placeholderText="Enter text..." text={value} onChanged={handleChange} />
 ```
 
-#### SearchEntry
-
-A text input styled for search.
-
-```tsx
-<SearchEntry placeholderText="Search..." />
-```
-
-#### SpinButton
-
-A numeric input with increment/decrement buttons.
-
-```tsx
-<SpinButton />
-```
-
-#### Scale
-
-A horizontal or vertical slider.
+**Scale** — Horizontal or vertical slider
 
 ```tsx
 <Scale hexpand drawValue />
 ```
 
-#### TextView
-
-A multi-line text editor.
+**TextView** — Multi-line text editor
 
 ```tsx
 <ScrolledWindow>
@@ -281,33 +188,19 @@ A multi-line text editor.
 
 ### Display Widgets
 
-#### Label
-
-Displays text.
+**Label** — Text display
 
 ```tsx
 <Label.Root label="Hello, World!" />
 ```
 
-#### ProgressBar
-
-Shows progress of an operation.
+**ProgressBar** — Progress indicator
 
 ```tsx
 <ProgressBar fraction={0.5} showText />
 ```
 
-#### LevelBar
-
-Displays a value within a range.
-
-```tsx
-<LevelBar value={0.7} />
-```
-
-#### Spinner
-
-An animated loading indicator.
+**Spinner** — Loading indicator
 
 ```tsx
 <Spinner spinning={isLoading} />
@@ -315,9 +208,7 @@ An animated loading indicator.
 
 ### Layout Widgets
 
-#### HeaderBar
-
-A title bar with optional buttons.
+**HeaderBar** — Title bar with buttons
 
 ```tsx
 <HeaderBar.Root>
@@ -327,9 +218,7 @@ A title bar with optional buttons.
 </HeaderBar.Root>
 ```
 
-#### CenterBox
-
-Positions children at start, center, and end.
+**CenterBox** — Positions children at start, center, and end
 
 ```tsx
 <CenterBox.Root>
@@ -345,190 +234,67 @@ Positions children at start, center, and end.
 </CenterBox.Root>
 ```
 
-#### ActionBar
-
-A bar with action buttons, typically at the bottom.
-
-```tsx
-<ActionBar revealed>
-  <Button label="Save" />
-  <Button label="Cancel" />
-</ActionBar>
-```
-
-### List Widgets
-
-#### ListBox
-
-A vertical list of selectable rows.
-
-```tsx
-<ListBox selectionMode={Gtk.SelectionMode.SINGLE}>
-  <ListBoxRow>
-    <Label.Root label="Item 1" />
-  </ListBoxRow>
-  <ListBoxRow>
-    <Label.Root label="Item 2" />
-  </ListBoxRow>
-</ListBox>
-```
-
-#### ListView
-
-A virtualized list for large datasets.
-
-```tsx
-<ListView.Root
-  renderItem={(item) => {
-    const box = new Gtk.Box();
-    const label = new Gtk.Label(item?.text ?? "");
-    box.append(label.ptr);
-    return box;
-  }}
->
-  {items.map((item) => (
-    <ListView.Item item={item} key={item.id} />
-  ))}
-</ListView.Root>
-```
-
 ### Dialog Widgets
 
-#### Popover
-
-A popup attached to a widget.
+**Popover** — Popup attached to a widget
 
 ```tsx
 <Popover.Root autohide>
   <Popover.Child>
-    <Box>{/* Popover content */}</Box>
+    <Box>{/* Content */}</Box>
   </Popover.Child>
   <Button label="Show Popover" />
 </Popover.Root>
 ```
 
-#### MenuButton
-
-A button that shows a menu when clicked.
+**AboutDialog** — Application about dialog
 
 ```tsx
-<MenuButton.Root label="Menu">
-  <MenuButton.Popover>
-    <Popover.Root>
-      <Popover.Child>
-        <Box>
-          <Button label="Option 1" />
-          <Button label="Option 2" />
-        </Box>
-      </Popover.Child>
-    </Popover.Root>
-  </MenuButton.Popover>
-</MenuButton.Root>
+{showAbout && <AboutDialog programName="My App" version="1.0.0" onCloseRequest={() => setShowAbout(false)} />}
 ```
 
-#### AboutDialog
-
-An application about dialog.
-
-```tsx
-{
-  showAbout && (
-    <AboutDialog
-      programName="My App"
-      version="1.0.0"
-      comments="A sample application"
-      onCloseRequest={() => {
-        setShowAbout(false);
-        return false;
-      }}
-    />
-  );
-}
-```
-
-### Chooser Widgets
-
-#### ColorDialogButton
-
-Opens a color picker dialog.
+**ColorDialogButton** — Color picker
 
 ```tsx
 <ColorDialogButton />
 ```
 
-#### FontDialogButton
-
-Opens a font picker dialog.
+**FontDialogButton** — Font picker
 
 ```tsx
 <FontDialogButton />
 ```
 
-#### EmojiChooser
+## Named Slots
 
-A popover for selecting emojis.
+Some GTK widgets have named child positions, handled via compound components:
 
 ```tsx
-<EmojiChooser onEmojiPicked={(emoji) => console.log(emoji)} />
+<Frame.Root>
+  <Frame.LabelWidget>
+    <Label.Root label="Custom Label" />
+  </Frame.LabelWidget>
+  <Frame.Child>
+    <Box>{/* Content */}</Box>
+  </Frame.Child>
+</Frame.Root>
 ```
 
-### Other Widgets
+## Using GTK Enums
 
-#### Calendar
-
-A date picker.
+Import enums from `@gtkx/ffi/gtk`:
 
 ```tsx
-<Calendar onDaySelected={handleDateChange} />
-```
+import * as Gtk from "@gtkx/ffi/gtk";
 
-#### Expander
-
-A collapsible container.
-
-```tsx
-<Expander.Root label="Click to expand">
-  <Expander.Child>
-    <Box>{/* Hidden content */}</Box>
-  </Expander.Child>
-</Expander.Root>
-```
-
-#### Revealer
-
-Animates showing/hiding content.
-
-```tsx
-<Revealer
-  revealChild={visible}
-  transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN}
->
-  <Label.Root label="Revealed content" />
-</Revealer>
-```
-
-#### Overlay
-
-Stacks widgets on top of each other.
-
-```tsx
-<Overlay>
-  <Box>{/* Base content */}</Box>
-  <Label.Root label="On top" halign={Gtk.Align.END} valign={Gtk.Align.START} />
-</Overlay>
-```
-
-#### Separator
-
-A horizontal or vertical line separator.
-
-```tsx
-<Separator />
+<Box orientation={Gtk.Orientation.VERTICAL} />;
+<ListBox selectionMode={Gtk.SelectionMode.SINGLE} />;
+<Revealer transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN} />;
 ```
 
 ## Hooks Support
 
-GTKX fully supports React hooks:
+Standard React hooks work as expected:
 
 ```tsx
 import { useState, useEffect } from "react";
@@ -538,7 +304,7 @@ const Counter = () => {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    console.log(`Count changed to ${count}`);
+    console.log(`Count: ${count}`);
   }, [count]);
 
   return (
@@ -557,45 +323,7 @@ render(
 );
 ```
 
-## Named Slots
-
-Some GTK widgets have named child positions. GTKX handles these using compound components:
-
-```tsx
-// Frame with a custom label widget
-<Frame.Root>
-  <Frame.LabelWidget>
-    <Label.Root label="Custom Label" />
-  </Frame.LabelWidget>
-  <Frame.Child>
-    <Box>{/* Main content */}</Box>
-  </Frame.Child>
-</Frame.Root>
-
-// CenterBox with start, center, and end widgets
-<CenterBox.Root>
-  <CenterBox.StartWidget>{/* Left */}</CenterBox.StartWidget>
-  <CenterBox.CenterWidget>{/* Center */}</CenterBox.CenterWidget>
-  <CenterBox.EndWidget>{/* Right */}</CenterBox.EndWidget>
-</CenterBox.Root>
-```
-
-## Using GTK Enums
-
-Import enums from `@gtkx/ffi/gtk`:
-
-```tsx
-import * as Gtk from "@gtkx/ffi/gtk";
-
-<Box orientation={Gtk.Orientation.VERTICAL} />;
-<ListBox selectionMode={Gtk.SelectionMode.SINGLE} />;
-<Revealer transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN} />;
-<Label.Root halign={Gtk.Align.CENTER} />;
-```
-
 ## Architecture
-
-GTKX uses a multi-layer architecture:
 
 ```
 ┌─────────────────────────────────┐
@@ -603,19 +331,13 @@ GTKX uses a multi-layer architecture:
 ├─────────────────────────────────┤
 │   @gtkx/gtkx (React Reconciler) │
 ├─────────────────────────────────┤
-│      @gtkx/ffi (FFI Bindings)   │
+│   @gtkx/ffi (TypeScript FFI)    │
 ├─────────────────────────────────┤
-│    @gtkx/native (Rust Bridge)   │
+│   @gtkx/native (Rust Bridge)    │
 ├─────────────────────────────────┤
-│           GTK4 / GLib           │
+│         GTK4 / GLib             │
 └─────────────────────────────────┘
 ```
-
-1. **React Application** — Your JSX components with hooks and state
-2. **React Reconciler** — Translates React operations to GTK widget updates
-3. **FFI Bindings** — TypeScript classes wrapping GTK C functions
-4. **Native Bridge** — Rust module using libffi to call GTK
-5. **GTK4** — The native Linux GUI toolkit
 
 ## License
 

@@ -39,43 +39,11 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  examples/demo:
+  examples/gtk4-demo:
     dependencies:
       '@gtkx/css':
         specifier: workspace:*
         version: link:../../packages/css
-      '@gtkx/ffi':
-        specifier: workspace:*
-        version: link:../../packages/ffi
-      '@gtkx/gtkx':
-        specifier: workspace:*
-        version: link:../../packages/gtkx
-      react:
-        specifier: 19.2.0
-        version: 19.2.0
-    devDependencies:
-      '@types/react':
-        specifier: 19.2.6
-        version: 19.2.6
-
-  examples/file-dialogs:
-    dependencies:
-      '@gtkx/ffi':
-        specifier: workspace:*
-        version: link:../../packages/ffi
-      '@gtkx/gtkx':
-        specifier: workspace:*
-        version: link:../../packages/gtkx
-      react:
-        specifier: 19.2.0
-        version: 19.2.0
-    devDependencies:
-      '@types/react':
-        specifier: 19.2.6
-        version: 19.2.6
-
-  examples/kitchen-sink:
-    dependencies:
       '@gtkx/ffi':
         specifier: workspace:*
         version: link:../../packages/ffi

@@ -27,7 +27,7 @@ type Container = unknown;
 type TextInstance = TextNode;
 type SuspenseInstance = never;
 type HydratableInstance = never;
-type PublicInstance = Node;
+type PublicInstance = Gtk.Widget;
 type HostContext = Record<string, never>;
 type ChildSet = never;
 type TimeoutHandle = number;
@@ -150,7 +150,8 @@ export class GtkReconciler {
                 clearTimeout(id);
             },
 
-            getPublicInstance: (instance: Node | TextInstance): PublicInstance => instance as PublicInstance,
+            getPublicInstance: (instance: Node | TextInstance): PublicInstance =>
+                instance.getWidget?.() as PublicInstance,
             getCurrentUpdatePriority: () => 2,
             setCurrentUpdatePriority: (): void => {},
             resolveUpdatePriority: () => 2,

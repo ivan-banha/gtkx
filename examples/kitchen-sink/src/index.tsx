@@ -56,7 +56,14 @@ const ButtonsSection = () => {
                 <Label.Root label="Buttons & Choosers" />
             </Frame.LabelWidget>
             <Frame.Child>
-                <Box spacing={10} marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+                <Box
+                    orientation={Gtk.Orientation.VERTICAL}
+                    spacing={10}
+                    marginTop={10}
+                    marginBottom={10}
+                    marginStart={10}
+                    marginEnd={10}
+                >
                     <Button
                         label={`Clicked ${clickCount} times`}
                         onClicked={() => setClickCount((c) => c + 1)}
@@ -68,11 +75,11 @@ const ButtonsSection = () => {
                         onToggled={() => setToggleActive((a) => !a)}
                     />
                     <LinkButton label="Open GTK4 docs" uri="https://www.gtk.org/docs/" />
-                    <Box spacing={10}>
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={10}>
                         <ColorDialogButton />
                         <FontDialogButton />
                     </Box>
-                    <Box spacing={10}>
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={10}>
                         <MenuButton.Root label={`Emoji: ${selectedEmoji}`}>
                             <MenuButton.Popover>
                                 <EmojiChooser
@@ -104,12 +111,19 @@ const InputsSection = () => {
                 <Label.Root label="Inputs" />
             </Frame.LabelWidget>
             <Frame.Child>
-                <Box spacing={10} marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
-                    <Box spacing={5}>
+                <Box
+                    orientation={Gtk.Orientation.VERTICAL}
+                    spacing={10}
+                    marginTop={10}
+                    marginBottom={10}
+                    marginStart={10}
+                    marginEnd={10}
+                >
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={5}>
                         <Label.Root label="Entry:" />
                         <Entry placeholderText="Type something..." />
                     </Box>
-                    <Box spacing={5}>
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={5}>
                         <Label.Root label="Search:" />
                         <SearchEntry placeholderText="Search..." />
                     </Box>
@@ -118,7 +132,7 @@ const InputsSection = () => {
                         active={checked}
                         onToggled={() => setChecked((c) => !c)}
                     />
-                    <Separator />
+                    <Separator orientation={Gtk.Orientation.HORIZONTAL} />
                     <Label.Root label="Radio Buttons:" />
                     <CheckButton.Root
                         label="Option 1"
@@ -135,8 +149,8 @@ const InputsSection = () => {
                         active={selectedRadio === 2}
                         onToggled={() => setSelectedRadio(2)}
                     />
-                    <Separator />
-                    <Box spacing={10}>
+                    <Separator orientation={Gtk.Orientation.HORIZONTAL} />
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={10}>
                         <Label.Root label="Switch:" />
                         <Switch
                             active={switchOn}
@@ -147,17 +161,18 @@ const InputsSection = () => {
                         />
                         <Label.Root label={switchOn ? "ON" : "OFF"} />
                     </Box>
-                    <Box spacing={10}>
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={10}>
                         <Label.Root label="SpinButton:" />
                         <SpinButton
-                            adjustment={spinAdjustment.ptr}
+                            adjustment={spinAdjustment}
+                            digits={0}
                             onValueChanged={() => setSpinValue(Math.round(spinAdjustment.getValue()))}
                         />
                         <Label.Root label={`Value: ${spinValue}`} />
                     </Box>
-                    <Box spacing={10} hexpand>
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={10} hexpand>
                         <Label.Root label="Scale:" />
-                        <Scale hexpand drawValue adjustment={scaleAdjustment.ptr} />
+                        <Scale hexpand drawValue adjustment={scaleAdjustment} />
                     </Box>
                 </Box>
             </Frame.Child>
@@ -182,16 +197,23 @@ const ProgressSection = () => {
                 <Label.Root label="Progress Indicators" />
             </Frame.LabelWidget>
             <Frame.Child>
-                <Box spacing={10} marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
-                    <Box spacing={5}>
+                <Box
+                    orientation={Gtk.Orientation.VERTICAL}
+                    spacing={10}
+                    marginTop={10}
+                    marginBottom={10}
+                    marginStart={10}
+                    marginEnd={10}
+                >
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={5}>
                         <Label.Root label="ProgressBar:" />
                         <ProgressBar fraction={progress} showText hexpand />
                     </Box>
-                    <Box spacing={5}>
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={5}>
                         <Label.Root label="LevelBar:" />
                         <LevelBar value={progress} hexpand />
                     </Box>
-                    <Box spacing={10}>
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={10}>
                         <Button
                             label={loading ? "Stop Spinner" : "Start Spinner"}
                             onClicked={() => setLoading((l) => !l)}
@@ -210,15 +232,23 @@ const NotebookSection = () => (
             <Label.Root label="Notebook (Tabs)" />
         </Frame.LabelWidget>
         <Frame.Child>
-            <Box marginTop={10} marginBottom={10} marginStart={10} marginEnd={10} vexpand>
+            <Box
+                orientation={Gtk.Orientation.VERTICAL}
+                spacing={0}
+                marginTop={10}
+                marginBottom={10}
+                marginStart={10}
+                marginEnd={10}
+                vexpand
+            >
                 <Notebook hexpand vexpand>
-                    <Box>
+                    <Box orientation={Gtk.Orientation.VERTICAL} spacing={0}>
                         <Label.Root label="Tab 1 Content - You can add any widgets here" />
                     </Box>
-                    <Box>
+                    <Box orientation={Gtk.Orientation.VERTICAL} spacing={0}>
                         <Label.Root label="Tab 2 Content - Each tab is a separate page" />
                     </Box>
-                    <Box>
+                    <Box orientation={Gtk.Orientation.VERTICAL} spacing={0}>
                         <Label.Root label="Tab 3 Content - Navigate using the tabs above" />
                     </Box>
                 </Notebook>
@@ -233,20 +263,48 @@ const ListBoxSection = () => (
             <Label.Root label="ListBox" />
         </Frame.LabelWidget>
         <Frame.Child>
-            <Box marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+            <Box
+                orientation={Gtk.Orientation.VERTICAL}
+                spacing={0}
+                marginTop={10}
+                marginBottom={10}
+                marginStart={10}
+                marginEnd={10}
+            >
                 <ListBox hexpand selectionMode={Gtk.SelectionMode.SINGLE}>
                     <ListBoxRow>
-                        <Box spacing={10} marginStart={10} marginEnd={10} marginTop={5} marginBottom={5}>
+                        <Box
+                            orientation={Gtk.Orientation.HORIZONTAL}
+                            spacing={10}
+                            marginStart={10}
+                            marginEnd={10}
+                            marginTop={5}
+                            marginBottom={5}
+                        >
                             <Label.Root label="Row 1 - Click to select" />
                         </Box>
                     </ListBoxRow>
                     <ListBoxRow>
-                        <Box spacing={10} marginStart={10} marginEnd={10} marginTop={5} marginBottom={5}>
+                        <Box
+                            orientation={Gtk.Orientation.HORIZONTAL}
+                            spacing={10}
+                            marginStart={10}
+                            marginEnd={10}
+                            marginTop={5}
+                            marginBottom={5}
+                        >
                             <Label.Root label="Row 2 - Selectable row" />
                         </Box>
                     </ListBoxRow>
                     <ListBoxRow>
-                        <Box spacing={10} marginStart={10} marginEnd={10} marginTop={5} marginBottom={5}>
+                        <Box
+                            orientation={Gtk.Orientation.HORIZONTAL}
+                            spacing={10}
+                            marginStart={10}
+                            marginEnd={10}
+                            marginTop={5}
+                            marginBottom={5}
+                        >
                             <Label.Root label="Row 3 - Another row" />
                         </Box>
                     </ListBoxRow>
@@ -262,12 +320,26 @@ const PopoverSection = () => (
             <Label.Root label="Popover & MenuButton" />
         </Frame.LabelWidget>
         <Frame.Child>
-            <Box spacing={10} marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+            <Box
+                orientation={Gtk.Orientation.HORIZONTAL}
+                spacing={10}
+                marginTop={10}
+                marginBottom={10}
+                marginStart={10}
+                marginEnd={10}
+            >
                 <MenuButton.Root label="Open Popover">
                     <MenuButton.Popover>
                         <Popover.Root>
                             <Popover.Child>
-                                <Box spacing={10} marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+                                <Box
+                                    orientation={Gtk.Orientation.VERTICAL}
+                                    spacing={10}
+                                    marginTop={10}
+                                    marginBottom={10}
+                                    marginStart={10}
+                                    marginEnd={10}
+                                >
                                     <Label.Root label="Popover Content!" />
                                     <Button label="Action 1" onClicked={() => {}} />
                                     <Button label="Action 2" onClicked={() => {}} />
@@ -280,10 +352,17 @@ const PopoverSection = () => (
                     <MenuButton.Popover>
                         <Popover.Root>
                             <Popover.Child>
-                                <Box spacing={5} marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+                                <Box
+                                    orientation={Gtk.Orientation.VERTICAL}
+                                    spacing={5}
+                                    marginTop={10}
+                                    marginBottom={10}
+                                    marginStart={10}
+                                    marginEnd={10}
+                                >
                                     <Button label="Menu Item 1" onClicked={() => {}} />
                                     <Button label="Menu Item 2" onClicked={() => {}} />
-                                    <Separator />
+                                    <Separator orientation={Gtk.Orientation.HORIZONTAL} />
                                     <Button label="Menu Item 3" onClicked={() => {}} />
                                 </Box>
                             </Popover.Child>
@@ -304,7 +383,14 @@ const RevealerSection = () => {
                 <Label.Root label="Revealer & Expander" />
             </Frame.LabelWidget>
             <Frame.Child>
-                <Box spacing={10} marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+                <Box
+                    orientation={Gtk.Orientation.VERTICAL}
+                    spacing={10}
+                    marginTop={10}
+                    marginBottom={10}
+                    marginStart={10}
+                    marginEnd={10}
+                >
                     <Button
                         label={revealed ? "Hide Content" : "Show Content"}
                         onClicked={() => setRevealed((r) => !r)}
@@ -314,7 +400,7 @@ const RevealerSection = () => {
                     </Revealer>
                     <Expander.Root label="Click to expand">
                         <Expander.Child>
-                            <Box spacing={5}>
+                            <Box orientation={Gtk.Orientation.VERTICAL} spacing={5}>
                                 <Label.Root label="Hidden content inside expander" />
                                 <Button label="A button inside" onClicked={() => {}} />
                             </Box>
@@ -332,9 +418,16 @@ const OverlaySection = () => (
             <Label.Root label="Overlay" />
         </Frame.LabelWidget>
         <Frame.Child>
-            <Box marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+            <Box
+                orientation={Gtk.Orientation.VERTICAL}
+                spacing={0}
+                marginTop={10}
+                marginBottom={10}
+                marginStart={10}
+                marginEnd={10}
+            >
                 <Overlay hexpand>
-                    <Box hexpand vexpand cssClasses={["card"]}>
+                    <Box orientation={Gtk.Orientation.VERTICAL} spacing={0} hexpand vexpand cssClasses={["card"]}>
                         <Label.Root label="Base content (underneath)" hexpand vexpand />
                     </Box>
                     <Label.Root label="Overlay on top!" halign={Gtk.Align.END} valign={Gtk.Align.START} />
@@ -353,7 +446,14 @@ const CenterBoxSection = () => {
                 <Label.Root label="CenterBox (Named Slots)" />
             </Frame.LabelWidget>
             <Frame.Child>
-                <Box marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+                <Box
+                    orientation={Gtk.Orientation.VERTICAL}
+                    spacing={0}
+                    marginTop={10}
+                    marginBottom={10}
+                    marginStart={10}
+                    marginEnd={10}
+                >
                     <CenterBox.Root hexpand>
                         <CenterBox.StartWidget>
                             <Button label="Left" onClicked={() => setCounter((c) => c - 1)} />
@@ -380,7 +480,14 @@ const ActionBarSection = () => {
                 <Label.Root label="ActionBar" />
             </Frame.LabelWidget>
             <Frame.Child>
-                <Box marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+                <Box
+                    orientation={Gtk.Orientation.VERTICAL}
+                    spacing={0}
+                    marginTop={10}
+                    marginBottom={10}
+                    marginStart={10}
+                    marginEnd={10}
+                >
                     <ActionBar revealed hexpand>
                         <Button label="Action 1" onClicked={() => setActionText("Action 1 clicked!")} />
                         <Button label="Action 2" onClicked={() => setActionText("Action 2 clicked!")} />
@@ -398,15 +505,37 @@ const PanedSection = () => (
             <Label.Root label="Paned (Resizable)" />
         </Frame.LabelWidget>
         <Frame.Child>
-            <Box marginTop={10} marginBottom={10} marginStart={10} marginEnd={10} vexpand>
-                <Paned.Root wideHandle vexpand>
+            <Box
+                orientation={Gtk.Orientation.VERTICAL}
+                spacing={0}
+                marginTop={10}
+                marginBottom={10}
+                marginStart={10}
+                marginEnd={10}
+                vexpand
+            >
+                <Paned.Root orientation={Gtk.Orientation.HORIZONTAL} wideHandle vexpand>
                     <Paned.StartChild>
-                        <Box hexpand vexpand cssClasses={["card"]} marginEnd={5}>
+                        <Box
+                            orientation={Gtk.Orientation.VERTICAL}
+                            spacing={0}
+                            hexpand
+                            vexpand
+                            cssClasses={["card"]}
+                            marginEnd={5}
+                        >
                             <Label.Root label="Left pane - drag the handle" hexpand vexpand />
                         </Box>
                     </Paned.StartChild>
                     <Paned.EndChild>
-                        <Box hexpand vexpand cssClasses={["card"]} marginStart={5}>
+                        <Box
+                            orientation={Gtk.Orientation.VERTICAL}
+                            spacing={0}
+                            hexpand
+                            vexpand
+                            cssClasses={["card"]}
+                            marginStart={5}
+                        >
                             <Label.Root label="Right pane" hexpand vexpand />
                         </Box>
                     </Paned.EndChild>
@@ -425,7 +554,14 @@ const SearchBarSection = () => {
                 <Label.Root label="SearchBar" />
             </Frame.LabelWidget>
             <Frame.Child>
-                <Box spacing={10} marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+                <Box
+                    orientation={Gtk.Orientation.VERTICAL}
+                    spacing={10}
+                    marginTop={10}
+                    marginBottom={10}
+                    marginStart={10}
+                    marginEnd={10}
+                >
                     <Button
                         label={searchMode ? "Close Search" : "Open Search"}
                         onClicked={() => setSearchMode((s) => !s)}
@@ -475,8 +611,16 @@ const ListViewSection = () => {
                 <Label.Root label="ListView with Dynamic Items" />
             </Frame.LabelWidget>
             <Frame.Child>
-                <Box spacing={10} marginTop={10} marginBottom={10} marginStart={10} marginEnd={10} vexpand>
-                    <Box spacing={5}>
+                <Box
+                    orientation={Gtk.Orientation.VERTICAL}
+                    spacing={10}
+                    marginTop={10}
+                    marginBottom={10}
+                    marginStart={10}
+                    marginEnd={10}
+                    vexpand
+                >
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={5}>
                         <Button label="+ Add" onClicked={addItem} />
                         <Button label="- Remove" onClicked={removeItem} sensitive={items.length > 0} />
                         <Label.Root label={`Total: ${items.length}`} />
@@ -500,7 +644,14 @@ const CalendarSection = () => (
             <Label.Root label="Calendar" />
         </Frame.LabelWidget>
         <Frame.Child>
-            <Box spacing={10} marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+            <Box
+                orientation={Gtk.Orientation.VERTICAL}
+                spacing={10}
+                marginTop={10}
+                marginBottom={10}
+                marginStart={10}
+                marginEnd={10}
+            >
                 <Calendar showDayNames showHeading showWeekNumbers />
             </Box>
         </Frame.Child>
@@ -513,7 +664,14 @@ const TextViewSection = () => (
             <Label.Root label="TextView" />
         </Frame.LabelWidget>
         <Frame.Child>
-            <Box marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+            <Box
+                orientation={Gtk.Orientation.VERTICAL}
+                spacing={0}
+                marginTop={10}
+                marginBottom={10}
+                marginStart={10}
+                marginEnd={10}
+            >
                 <ScrolledWindow hexpand heightRequest={100}>
                     <TextView hexpand vexpand editable wrapMode={Gtk.WrapMode.WORD} />
                 </ScrolledWindow>
@@ -540,7 +698,14 @@ const DropDownSection = () => {
                 <Label.Root label="DropDown" />
             </Frame.LabelWidget>
             <Frame.Child>
-                <Box spacing={10} marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+                <Box
+                    orientation={Gtk.Orientation.VERTICAL}
+                    spacing={10}
+                    marginTop={10}
+                    marginBottom={10}
+                    marginStart={10}
+                    marginEnd={10}
+                >
                     <Label.Root label="Select an option:" />
                     <DropDown.Root
                         hexpand
@@ -567,7 +732,14 @@ const AboutDialogSection = () => {
                 <Label.Root label="Dialogs" />
             </Frame.LabelWidget>
             <Frame.Child>
-                <Box spacing={10} marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+                <Box
+                    orientation={Gtk.Orientation.VERTICAL}
+                    spacing={10}
+                    marginTop={10}
+                    marginBottom={10}
+                    marginStart={10}
+                    marginEnd={10}
+                >
                     <Button label="Show About Dialog" onClicked={() => setShowAbout(true)} />
                     {showAbout && (
                         <AboutDialog
@@ -594,7 +766,14 @@ const GridLayoutSection = () => (
             <Label.Root label="Grid Layout (2x2)" />
         </Frame.LabelWidget>
         <Frame.Child>
-            <Box marginTop={10} marginBottom={10} marginStart={10} marginEnd={10}>
+            <Box
+                orientation={Gtk.Orientation.VERTICAL}
+                spacing={0}
+                marginTop={10}
+                marginBottom={10}
+                marginStart={10}
+                marginEnd={10}
+            >
                 <Grid.Root rowSpacing={10} columnSpacing={10} hexpand>
                     <Grid.Child column={0} row={0}>
                         <Button label="Top Left" hexpand />
@@ -625,9 +804,16 @@ export const App = () => (
             </HeaderBar.TitleWidget>
         </HeaderBar.Root>
         <ScrolledWindow vexpand>
-            <Box spacing={20} marginTop={20} marginBottom={20} marginStart={20} marginEnd={20}>
+            <Box
+                orientation={Gtk.Orientation.VERTICAL}
+                spacing={20}
+                marginTop={20}
+                marginBottom={20}
+                marginStart={20}
+                marginEnd={20}
+            >
                 Welcome to the GTKX Kitchen Sink! This demo showcases GTK4 widgets rendered through React.
-                <Separator />
+                <Separator orientation={Gtk.Orientation.HORIZONTAL} />
                 <ButtonsSection />
                 <InputsSection />
                 <ProgressSection />

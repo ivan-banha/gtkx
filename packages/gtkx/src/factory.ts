@@ -1,4 +1,4 @@
-import * as gtk from "@gtkx/ffi/gtk";
+import * as Gtk from "@gtkx/ffi/gtk";
 import type { Node } from "./node.js";
 import { ActionBarNode } from "./nodes/action-bar.js";
 import { DropDownItemNode, DropDownNode } from "./nodes/dropdown.js";
@@ -11,33 +11,12 @@ import { WidgetNode } from "./nodes/widget.js";
 
 export type Props = Record<string, unknown>;
 
-const DEFAULT_PROPS: Record<string, Props> = {
-    Box: { orientation: gtk.Orientation.VERTICAL, spacing: 0 },
-    Separator: { orientation: gtk.Orientation.HORIZONTAL },
-    Paned: { orientation: gtk.Orientation.HORIZONTAL },
-    Scale: { orientation: gtk.Orientation.HORIZONTAL, adjustment: null },
-    SpinButton: { adjustment: null, climbRate: 1.0, digits: 0 },
-    LinkButton: { uri: "about:blank" },
-};
-
-type WidgetConstructor = new (...args: unknown[]) => gtk.Widget;
-
-const CONSTRUCTOR_ARGS: Record<string, (props: Props, currentApp?: unknown) => unknown[]> = {
-    ApplicationWindow: (_props, app) => [app],
-    Box: (props) => [props.orientation, props.spacing ?? 0],
-    Separator: (props) => [props.orientation],
-    Paned: (props) => [props.orientation],
-    Scale: (props) => [props.orientation, props.adjustment],
-    SpinButton: (props) => [props.adjustment, props.climbRate, props.digits],
-    LinkButton: (props) => [props.uri],
-    ColorDialogButton: (props) => [props.dialog ?? new gtk.ColorDialog().ptr],
-    FontDialogButton: (props) => [props.dialog ?? new gtk.FontDialog().ptr],
-};
+type WidgetConstructor = new (...args: unknown[]) => Gtk.Widget;
 
 type AnyNodeClass = {
     needsWidget: boolean;
-    matches(type: string, widget: gtk.Widget | null): boolean;
-    new (type: string, widget: gtk.Widget, props: Props): Node;
+    matches(type: string, widget: Gtk.Widget | null): boolean;
+    new (type: string, widget: Gtk.Widget, props: Props): Node;
 };
 
 const NODE_CLASSES: AnyNodeClass[] = [
@@ -54,27 +33,20 @@ const NODE_CLASSES: AnyNodeClass[] = [
     WidgetNode,
 ];
 
-const createWidget = (type: string, props: Props, currentApp: unknown): gtk.Widget => {
+const createWidget = (type: string, props: Props, currentApp: unknown): Gtk.Widget => {
     // biome-ignore lint/performance/noDynamicNamespaceImportAccess: dynamic widget creation
-    const WidgetClass = gtk[type as keyof typeof gtk] as WidgetConstructor | undefined;
+    const WidgetClass = Gtk[type as keyof typeof Gtk] as WidgetConstructor | undefined;
 
     if (!WidgetClass) throw new Error(`Unknown GTK widget type: ${type}`);
 
-    const argsFn = CONSTRUCTOR_ARGS[type];
-    if (argsFn) {
-        const args = argsFn(props, currentApp);
-        return new WidgetClass(...args);
+    if (type === "ApplicationWindow") {
+        return new WidgetClass(currentApp);
     }
 
-    return new WidgetClass();
+    return new WidgetClass(props);
 };
 
 const normalizeType = (type: string): string => (type.endsWith(".Root") ? type.slice(0, -5) : type);
-
-const applyDefaultProps = (type: string, props: Props): Props => ({
-    ...DEFAULT_PROPS[type],
-    ...props,
-});
 
 /**
  * Creates a Node instance for a given React element type.
@@ -82,19 +54,18 @@ const applyDefaultProps = (type: string, props: Props): Props => ({
  */
 export const createNode = (type: string, props: Props, currentApp: unknown): Node => {
     const normalizedType = normalizeType(type);
-    const finalProps = applyDefaultProps(normalizedType, props);
 
-    let widget: gtk.Widget | null = null;
+    let widget: Gtk.Widget | null = null;
 
     for (const NodeClass of NODE_CLASSES) {
         if (NodeClass.needsWidget && !widget) {
-            widget = createWidget(normalizedType, finalProps, currentApp);
+            widget = createWidget(normalizedType, props, currentApp);
         }
 
         if (NodeClass.matches(type, widget)) {
-            const node = new NodeClass(type, widget as gtk.Widget, finalProps);
+            const node = new NodeClass(type, widget as Gtk.Widget, props);
             if (NodeClass.needsWidget) {
-                node.updateProps({}, finalProps);
+                node.updateProps({}, props);
             }
             return node;
         }

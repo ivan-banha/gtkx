@@ -74,7 +74,7 @@ const FileDialogSection = () => {
                     marginEnd={8}
                 >
                     <Label.Root label="Native GTK4 file chooser dialogs with Promise-based API" xalign={0} />
-                    <Box spacing={8}>
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={8}>
                         <Button label="Open File" onClicked={handleOpen} />
                         <Button label="Open Multiple" onClicked={handleOpenMultiple} />
                         <Button label="Save File" onClicked={handleSave} />
@@ -119,7 +119,7 @@ const ColorDialogSection = () => {
                     marginEnd={8}
                 >
                     <Label.Root label="Native color picker with alpha channel support" xalign={0} />
-                    <Box spacing={8}>
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={8}>
                         <Button label="Choose Color" onClicked={handleChooseColor} cssClasses={["suggested-action"]} />
                     </Box>
                     <Label.Root label={result} xalign={0} />
@@ -169,7 +169,7 @@ const FontDialogSection = () => {
                     marginEnd={8}
                 >
                     <Label.Root label="System font picker with family and style selection" xalign={0} />
-                    <Box spacing={8}>
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={8}>
                         <Button label="Choose Font" onClicked={handleChooseFont} />
                         <Button label="Choose Family" onClicked={handleChooseFontFamily} />
                     </Box>
@@ -227,7 +227,7 @@ const AlertDialogSection = () => {
                     marginEnd={8}
                 >
                     <Label.Root label="Modal alert dialogs with customizable buttons" xalign={0} />
-                    <Box spacing={8}>
+                    <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={8}>
                         <Button label="Confirm Delete" onClicked={handleAlert} cssClasses={["destructive-action"]} />
                         <Button label="Save Changes?" onClicked={handleCustomAlert} />
                     </Box>

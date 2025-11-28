@@ -222,6 +222,10 @@ export interface GirProperty {
     constructOnly?: boolean;
     /** Whether this property has a default value. */
     hasDefault?: boolean;
+    /** The getter method name for this property. */
+    getter?: string;
+    /** The setter method name for this property. */
+    setter?: string;
     /** Documentation for the property. */
     doc?: string;
 }

@@ -1,4 +1,4 @@
-import type * as gtk from "@gtkx/ffi/gtk";
+import type * as Gtk from "@gtkx/ffi/gtk";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
 import {
@@ -10,14 +10,14 @@ import {
     removeChild,
 } from "../widget-capabilities.js";
 
-interface NotebookWidget extends gtk.Widget, NotebookLike {}
+interface NotebookWidget extends Gtk.Widget, NotebookLike {}
 
-const isNotebookWidget = (widget: gtk.Widget): widget is NotebookWidget => isNotebookLike(widget);
+const isNotebookWidget = (widget: Gtk.Widget): widget is NotebookWidget => isNotebookLike(widget);
 
 export class NotebookNode implements Node<NotebookWidget> {
     static needsWidget = true;
 
-    static matches(type: string, widget: gtk.Widget | null): widget is NotebookWidget {
+    static matches(type: string, widget: Gtk.Widget | null): widget is NotebookWidget {
         if (type !== "Notebook" && type !== "Notebook.Root") return false;
         return widget !== null && isNotebookWidget(widget);
     }
@@ -25,7 +25,7 @@ export class NotebookNode implements Node<NotebookWidget> {
     private widget: NotebookWidget;
     private signalHandlers = new Map<string, number>();
 
-    constructor(_type: string, widget: gtk.Widget, _props: Props) {
+    constructor(_type: string, widget: Gtk.Widget, _props: Props) {
         if (!isNotebookWidget(widget)) {
             throw new Error("NotebookNode requires a Notebook widget");
         }
@@ -62,11 +62,11 @@ export class NotebookNode implements Node<NotebookWidget> {
         }
     }
 
-    attachChild(childWidget: gtk.Widget): void {
+    attachChild(childWidget: Gtk.Widget): void {
         this.widget.appendPage(childWidget.ptr, undefined);
     }
 
-    detachChild(childWidget: gtk.Widget): void {
+    detachChild(childWidget: Gtk.Widget): void {
         const pageNum = this.widget.pageNum(childWidget.ptr);
         if (pageNum >= 0) {
             this.widget.removePage(pageNum);

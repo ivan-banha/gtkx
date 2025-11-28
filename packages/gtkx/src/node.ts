@@ -1,11 +1,11 @@
-import type * as gtk from "@gtkx/ffi/gtk";
+import type * as Gtk from "@gtkx/ffi/gtk";
 import type { Props } from "./factory.js";
 
 /**
  * Base interface for all node types in the reconciler.
  * Each node manages its own widget lifecycle and parent-child relationships.
  */
-export interface Node<W extends gtk.Widget = gtk.Widget> {
+export interface Node<W extends Gtk.Widget = Gtk.Widget> {
     getWidget?(): W;
     appendChild(child: Node): void;
     removeChild(child: Node): void;

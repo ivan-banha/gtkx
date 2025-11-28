@@ -1,4 +1,4 @@
-import * as gtk from "@gtkx/ffi/gtk";
+import * as Gtk from "@gtkx/ffi/gtk";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
 import {
@@ -15,18 +15,18 @@ import {
 
 type ItemLabelFn<T> = (item: T) => string;
 
-interface DropDownWidget extends gtk.Widget, ModelSettable, Selectable, Connectable {}
+interface DropDownWidget extends Gtk.Widget, ModelSettable, Selectable, Connectable {}
 
-const isDropDownWidget = (widget: gtk.Widget): widget is DropDownWidget =>
+const isDropDownWidget = (widget: Gtk.Widget): widget is DropDownWidget =>
     isModelSettable(widget) && isSelectable(widget) && isConnectable(widget);
 
 class DropDownStore<T> {
-    private stringList: gtk.StringList;
+    private stringList: Gtk.StringList;
     private items: T[] = [];
     private labelFn: ItemLabelFn<T>;
 
     constructor(labelFn: ItemLabelFn<T>) {
-        this.stringList = new gtk.StringList([]);
+        this.stringList = new Gtk.StringList([]);
         this.labelFn = labelFn;
     }
 
@@ -57,7 +57,7 @@ class DropDownStore<T> {
     }
 }
 
-const dropdownStores = new WeakMap<gtk.Widget, DropDownStore<unknown>>();
+const dropdownStores = new WeakMap<Gtk.Widget, DropDownStore<unknown>>();
 
 const getOrCreateStore = <T>(widget: DropDownWidget, labelFn: ItemLabelFn<T>): DropDownStore<T> => {
     let store = dropdownStores.get(widget) as DropDownStore<T> | undefined;
@@ -76,7 +76,7 @@ const getOrCreateStore = <T>(widget: DropDownWidget, labelFn: ItemLabelFn<T>): D
 export class DropDownNode implements Node<DropDownWidget> {
     static needsWidget = true;
 
-    static matches(type: string, widget: gtk.Widget | null): widget is DropDownWidget {
+    static matches(type: string, widget: Gtk.Widget | null): widget is DropDownWidget {
         if (type !== "DropDown" && type !== "DropDown.Root") return false;
         return widget !== null && isDropDownWidget(widget);
     }
@@ -86,7 +86,7 @@ export class DropDownNode implements Node<DropDownWidget> {
     private onSelectionChanged?: (item: unknown, index: number) => void;
     private signalHandlers = new Map<string, number>();
 
-    constructor(_type: string, widget: gtk.Widget, props: Props) {
+    constructor(_type: string, widget: Gtk.Widget, props: Props) {
         if (!isDropDownWidget(widget)) {
             throw new Error("DropDownNode requires a DropDown widget");
         }
@@ -186,13 +186,13 @@ export class DropDownNode implements Node<DropDownWidget> {
 export class DropDownItemNode<T = unknown> implements Node {
     static needsWidget = false;
 
-    static matches(type: string, _widget: gtk.Widget | null): _widget is gtk.Widget {
+    static matches(type: string, _widget: Gtk.Widget | null): _widget is Gtk.Widget {
         return type === "DropDown.Item";
     }
 
     private item: T;
 
-    constructor(_type: string, _widget: gtk.Widget, props: Props) {
+    constructor(_type: string, _widget: Gtk.Widget, props: Props) {
         this.item = props.item as T;
     }
 

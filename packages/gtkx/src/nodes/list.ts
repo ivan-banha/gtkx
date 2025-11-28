@@ -1,16 +1,16 @@
-import * as gtk from "@gtkx/ffi/gtk";
+import * as Gtk from "@gtkx/ffi/gtk";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
 import { appendChild, disconnectSignalHandlers, isConnectable, removeChild } from "../widget-capabilities.js";
 
-type RenderItemFn<T> = (item: T | null) => gtk.Widget;
+type RenderItemFn<T> = (item: T | null) => Gtk.Widget;
 
-interface ListViewWidget extends gtk.Widget {
+interface ListViewWidget extends Gtk.Widget {
     setModel(model: unknown): void;
     setFactory(factory: unknown): void;
 }
 
-const isListViewWidget = (widget: gtk.Widget): widget is ListViewWidget =>
+const isListViewWidget = (widget: Gtk.Widget): widget is ListViewWidget =>
     "setModel" in widget &&
     typeof widget.setModel === "function" &&
     "setFactory" in widget &&
@@ -21,34 +21,34 @@ const LIST_VIEW_TYPES = ["ListView", "ListView.Root"];
 export class ListViewNode<T = unknown> implements Node<ListViewWidget> {
     static needsWidget = true;
 
-    static matches(type: string, widget: gtk.Widget | null): widget is ListViewWidget {
+    static matches(type: string, widget: Gtk.Widget | null): widget is ListViewWidget {
         if (!LIST_VIEW_TYPES.includes(type) && !type.startsWith("ListView")) return false;
         return widget !== null && isListViewWidget(widget);
     }
 
     private widget: ListViewWidget;
-    private stringList: gtk.StringList;
-    private selectionModel: gtk.SingleSelection;
-    private factory: gtk.SignalListItemFactory;
+    private stringList: Gtk.StringList;
+    private selectionModel: Gtk.SingleSelection;
+    private factory: Gtk.SignalListItemFactory;
     private items: T[] = [];
     private renderItem: RenderItemFn<T> | null = null;
     private signalHandlers = new Map<string, number>();
     private factorySignalHandlers = new Map<string, number>();
 
-    constructor(_type: string, widget: gtk.Widget, props: Props) {
+    constructor(_type: string, widget: Gtk.Widget, props: Props) {
         if (!isListViewWidget(widget)) {
             throw new Error("ListViewNode requires a ListView widget");
         }
         this.widget = widget;
 
-        this.stringList = new gtk.StringList([]);
-        this.selectionModel = new gtk.SingleSelection([this.stringList.ptr]);
-        this.factory = new gtk.SignalListItemFactory();
+        this.stringList = new Gtk.StringList([]);
+        this.selectionModel = new Gtk.SingleSelection(this.stringList);
+        this.factory = new Gtk.SignalListItemFactory();
 
         this.renderItem = props.renderItem as RenderItemFn<T> | null;
 
         const setupHandlerId = this.factory.connect("setup", (listItemPtr: unknown) => {
-            const listItem = Object.create(gtk.ListItem.prototype) as gtk.ListItem;
+            const listItem = Object.create(Gtk.ListItem.prototype) as Gtk.ListItem;
             listItem.ptr = listItemPtr;
 
             if (this.renderItem) {
@@ -59,7 +59,7 @@ export class ListViewNode<T = unknown> implements Node<ListViewWidget> {
         this.factorySignalHandlers.set("setup", setupHandlerId);
 
         const bindHandlerId = this.factory.connect("bind", (listItemPtr: unknown) => {
-            const listItem = Object.create(gtk.ListItem.prototype) as gtk.ListItem;
+            const listItem = Object.create(Gtk.ListItem.prototype) as Gtk.ListItem;
             listItem.ptr = listItemPtr;
 
             const position = listItem.getPosition();
@@ -175,7 +175,7 @@ const LIST_WIDGETS = ["ListView", "ColumnView", "GridView"];
 export class ListItemNode<T = unknown> implements Node {
     static needsWidget = false;
 
-    static matches(type: string, _widget: gtk.Widget | null): _widget is gtk.Widget {
+    static matches(type: string, _widget: Gtk.Widget | null): _widget is Gtk.Widget {
         const dotIndex = type.indexOf(".");
         if (dotIndex === -1) return false;
         const widgetType = type.slice(0, dotIndex);
@@ -185,7 +185,7 @@ export class ListItemNode<T = unknown> implements Node {
 
     private item: T;
 
-    constructor(_type: string, _widget: gtk.Widget, props: Props) {
+    constructor(_type: string, _widget: Gtk.Widget, props: Props) {
         this.item = props.item as T;
     }
 

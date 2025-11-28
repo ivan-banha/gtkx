@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildClassMap, GirParser, registerEnumsFromNamespace, TypeMapper } from "@gtkx/gir";
+import { buildClassMap, GirParser, registerEnumsFromNamespace, TypeMapper, TypeRegistry } from "@gtkx/gir";
 import { JsxGenerator } from "../src/codegen/jsx-generator.js";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
@@ -28,8 +28,10 @@ const generateJsxTypes = async (): Promise<void> => {
     }
 
     const classMap = buildClassMap(namespace.classes);
+    const typeRegistry = TypeRegistry.fromNamespaces([namespace]);
     const typeMapper = new TypeMapper();
     registerEnumsFromNamespace(typeMapper, namespace);
+    typeMapper.setTypeRegistry(typeRegistry, namespace.name);
     const generator = new JsxGenerator(typeMapper);
 
     console.log(`Generating JSX type definitions...`);

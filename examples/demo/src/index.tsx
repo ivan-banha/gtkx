@@ -21,7 +21,7 @@ const labelStyle = css`
 
 render(
     <ApplicationWindow title="GTK + Emotion CSS Demo" defaultWidth={400} defaultHeight={300} onCloseRequest={quit}>
-        <Box valign={Gtk.Align.CENTER} halign={Gtk.Align.CENTER} spacing={12}>
+        <Box orientation={Gtk.Orientation.VERTICAL} valign={Gtk.Align.CENTER} halign={Gtk.Align.CENTER} spacing={12}>
             <Label.Root cssClasses={[labelStyle]} label="Hello, Styled GTK!" />
             <Button
                 cssClasses={[buttonStyle]}

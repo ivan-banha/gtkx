@@ -281,6 +281,8 @@ export class GirParser {
             writable: prop["@_writable"] === "1",
             constructOnly: prop["@_construct-only"] === "1",
             hasDefault: prop["@_default-value"] !== undefined,
+            getter: prop["@_getter"] ? String(prop["@_getter"]) : undefined,
+            setter: prop["@_setter"] ? String(prop["@_setter"]) : undefined,
             doc: extractDoc(prop),
         }));
     }

@@ -1,4 +1,4 @@
-import * as gtk from "@gtkx/ffi/gtk";
+import * as Gtk from "@gtkx/ffi/gtk";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
 import { appendChild, removeChild } from "../widget-capabilities.js";
@@ -7,14 +7,14 @@ import { appendChild, removeChild } from "../widget-capabilities.js";
  * Node implementation for text content.
  * Wraps string children in a GTK Label widget.
  */
-export class TextNode implements Node<gtk.Label> {
-    private label: gtk.Label;
+export class TextNode implements Node<Gtk.Label> {
+    private label: Gtk.Label;
 
     constructor(text: string) {
-        this.label = new gtk.Label(text);
+        this.label = new Gtk.Label(text);
     }
 
-    getWidget(): gtk.Label {
+    getWidget(): Gtk.Label {
         return this.label;
     }
 

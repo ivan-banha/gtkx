@@ -1,4 +1,4 @@
-import type * as gtk from "@gtkx/ffi/gtk";
+import type * as Gtk from "@gtkx/ffi/gtk";
 import { call } from "@gtkx/native";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
@@ -16,7 +16,7 @@ import { OverlayNode } from "./overlay.js";
 
 type CombinedPropHandler = {
     props: string[];
-    apply: (widget: gtk.Widget) => (values: Record<string, unknown>) => void;
+    apply: (widget: Gtk.Widget) => (values: Record<string, unknown>) => void;
 };
 
 const COMBINED_PROPS: CombinedPropHandler[] = [
@@ -39,18 +39,18 @@ const COMBINED_PROPS: CombinedPropHandler[] = [
 export class WidgetNode implements Node {
     static needsWidget = true;
 
-    static matches(_type: string, widget: gtk.Widget | null): widget is gtk.Widget {
+    static matches(_type: string, widget: Gtk.Widget | null): widget is Gtk.Widget {
         return widget !== null;
     }
 
-    private widget: gtk.Widget;
+    private widget: Gtk.Widget;
     private signalHandlers = new Map<string, number>();
 
-    constructor(_type: string, widget: gtk.Widget, _props: Props) {
+    constructor(_type: string, widget: Gtk.Widget, _props: Props) {
         this.widget = widget;
     }
 
-    getWidget(): gtk.Widget {
+    getWidget(): Gtk.Widget {
         return this.widget;
     }
 

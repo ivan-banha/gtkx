@@ -10,7 +10,6 @@ import type {
     GirMethod,
     GirNamespace,
     GirParameter,
-    GirProperty,
     GirRecord,
     GirSignal,
     TypeRegistry,
@@ -472,7 +471,6 @@ export class CodeGenerator {
         sections.push(this.generateCreatePtr(cls, sharedLibrary, hasParent));
         sections.push(this.generateStaticFunctions(cls.functions, sharedLibrary, className));
         sections.push(this.generateMethods(filteredClassMethods, sharedLibrary, cls.name));
-        sections.push(this.generateProperties(cls.properties, cls.methods));
 
         if (interfaceMethods.length > 0) {
             sections.push(this.generateMethods(interfaceMethods, sharedLibrary, className));
@@ -630,9 +628,9 @@ export class CodeGenerator {
 
         if (!mainConstructor) {
             if (hasParent) {
-                sections.push(`  constructor(_args: unknown[] = []) {\n    super(_args);\n  }\n`);
+                sections.push(`  constructor(...args: unknown[]) {\n    super(...args);\n  }\n`);
             } else {
-                sections.push(`  constructor(_args: unknown[] = []) {\n    this.ptr = this.createPtr(_args);\n  }\n`);
+                sections.push(`  constructor(...args: unknown[]) {\n    this.ptr = this.createPtr(args);\n  }\n`);
             }
         }
 
@@ -645,30 +643,26 @@ export class CodeGenerator {
 
         if (filteredParams.length === 0) {
             if (hasParent) {
-                return `${ctorDoc}  constructor(_args: unknown[] = []) {\n    super(_args);\n  }\n`;
+                return `${ctorDoc}  constructor(...args: unknown[]) {\n    super(...args);\n  }\n`;
             }
-            return `${ctorDoc}  constructor(_args: unknown[] = []) {\n    this.ptr = this.createPtr(_args);\n  }\n`;
+            return `${ctorDoc}  constructor(...args: unknown[]) {\n    this.ptr = this.createPtr(args);\n  }\n`;
         }
 
         const typedParams = this.generateParameterList(ctor.parameters, false);
-        const paramNames = filteredParams.map((p) => toValidIdentifier(toCamelCase(p.name)));
-        const firstParamType = this.typeMapper.mapParameter(filteredParams[0] as GirParameter).ts;
-        const isFirstParamArray = firstParamType.endsWith("[]") || firstParamType.startsWith("Array<");
-        const superOrCreate = hasParent ? "super(_args)" : "this.ptr = this.createPtr(_args)";
 
-        if (isFirstParamArray) {
-            return `${ctorDoc}  constructor(${typedParams}) {
-    const _args = [${paramNames.join(", ")}];
-    ${superOrCreate};
+        if (hasParent) {
+            return `${ctorDoc}  constructor(${typedParams});
+  constructor(...args: unknown[]);
+  constructor(...args: unknown[]) {
+    super(...args);
   }
 `;
         }
 
         return `${ctorDoc}  constructor(${typedParams});
-  constructor(_args: unknown[]);
+  constructor(...args: unknown[]);
   constructor(...args: unknown[]) {
-    const _args = args.length === 1 && Array.isArray(args[0]) ? args[0] : args;
-    ${superOrCreate};
+    this.ptr = this.createPtr(args);
   }
 `;
     }
@@ -689,20 +683,22 @@ export class CodeGenerator {
         const paramTypes = filteredParams.map((p) => this.typeMapper.mapParameter(p).ts);
         const paramNames = filteredParams.map((p) => toValidIdentifier(toCamelCase(p.name)));
 
-        const destructuring =
-            paramNames.length > 0
-                ? `    const [${paramNames.join(", ")}] = _args as [${paramTypes.join(", ")}];\n`
-                : "";
+        const hasParams = paramNames.length > 0;
+        const hasArgsParam = paramNames.includes("args");
+        const arrayParamName = hasArgsParam ? "ctorArgs" : hasParams ? "args" : "_args";
+        const destructuring = hasParams
+            ? `    const [${paramNames.join(", ")}] = ${arrayParamName} as [${paramTypes.join(", ")}];\n`
+            : "";
 
-        const args = this.generateCallArguments(mainConstructor.parameters);
+        const callArgs = this.generateCallArguments(mainConstructor.parameters);
         const override = hasParent ? "override " : "";
 
-        return `  protected ${override}createPtr(_args: unknown[]): unknown {
+        return `  protected ${override}createPtr(${arrayParamName}: unknown[]): unknown {
 ${destructuring}    return call(
       "${sharedLibrary}",
       "${mainConstructor.cIdentifier}",
       [
-${args}
+${callArgs}
       ],
       { type: "gobject", borrowed: true }
     );
@@ -1227,48 +1223,6 @@ ${allArgs ? `${allArgs},` : ""}
 
         lines.push(`  }`);
         return `${lines.join("\n")}\n`;
-    }
-
-    private generateProperties(properties: GirProperty[], methods: GirMethod[]): string {
-        const methodNames = new Set(methods.map((m) => toCamelCase(m.name)));
-        const sections: string[] = [];
-
-        for (const property of properties) {
-            if (!property.readable && !property.writable) continue;
-            const propertyName = toValidIdentifier(toCamelCase(property.name));
-            if (methodNames.has(propertyName)) continue;
-            sections.push(this.generateProperty(property));
-        }
-
-        return sections.join("\n");
-    }
-
-    private generateProperty(property: GirProperty): string {
-        const propertyName = toValidIdentifier(toCamelCase(property.name));
-        const typeMapping = this.typeMapper.mapType(property.type);
-        const lines: string[] = [];
-
-        if (property.readable) {
-            if (property.doc) {
-                lines.push(formatDoc(property.doc, "  ").trimEnd());
-            }
-            lines.push(`  get ${propertyName}(): ${typeMapping.ts} {
-    throw new Error("Property getters not yet implemented");
-  }
-`);
-        }
-
-        if (property.writable && !property.constructOnly) {
-            if (!property.readable && property.doc) {
-                lines.push(formatDoc(property.doc, "  ").trimEnd());
-            }
-            lines.push(`  set ${propertyName}(_value: ${typeMapping.ts}) {
-    throw new Error("Property setters not yet implemented");
-  }
-`);
-        }
-
-        return lines.join("\n");
     }
 
     private extractSignalParamClass(param: GirParameter, classMap: Map<string, GirClass>): string | undefined {

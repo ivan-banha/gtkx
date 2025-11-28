@@ -1,15 +1,15 @@
-import type * as gtk from "@gtkx/ffi/gtk";
+import type * as Gtk from "@gtkx/ffi/gtk";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
 import { appendChild, disconnectSignalHandlers, isConnectable, removeChild } from "../widget-capabilities.js";
 
-interface OverlayWidget extends gtk.Widget {
+interface OverlayWidget extends Gtk.Widget {
     setChild(child: unknown): void;
     addOverlay(widget: unknown): void;
     removeOverlay(widget: unknown): void;
 }
 
-const isOverlayWidget = (widget: gtk.Widget): widget is OverlayWidget =>
+const isOverlayWidget = (widget: Gtk.Widget): widget is OverlayWidget =>
     "setChild" in widget &&
     typeof widget.setChild === "function" &&
     "addOverlay" in widget &&
@@ -20,17 +20,17 @@ const isOverlayWidget = (widget: gtk.Widget): widget is OverlayWidget =>
 export class OverlayNode implements Node<OverlayWidget> {
     static needsWidget = true;
 
-    static matches(type: string, widget: gtk.Widget | null): widget is OverlayWidget {
+    static matches(type: string, widget: Gtk.Widget | null): widget is OverlayWidget {
         if (type !== "Overlay" && type !== "Overlay.Root") return false;
         return widget !== null && isOverlayWidget(widget);
     }
 
     private widget: OverlayWidget;
-    private mainChild: gtk.Widget | null = null;
-    private overlayChildren: gtk.Widget[] = [];
+    private mainChild: Gtk.Widget | null = null;
+    private overlayChildren: Gtk.Widget[] = [];
     private signalHandlers = new Map<string, number>();
 
-    constructor(_type: string, widget: gtk.Widget, _props: Props) {
+    constructor(_type: string, widget: Gtk.Widget, _props: Props) {
         if (!isOverlayWidget(widget)) {
             throw new Error("OverlayNode requires an Overlay widget");
         }
@@ -67,7 +67,7 @@ export class OverlayNode implements Node<OverlayWidget> {
         }
     }
 
-    attachChild(childWidget: gtk.Widget): void {
+    attachChild(childWidget: Gtk.Widget): void {
         if (this.mainChild === null) {
             this.mainChild = childWidget;
             this.widget.setChild(childWidget.ptr);
@@ -77,7 +77,7 @@ export class OverlayNode implements Node<OverlayWidget> {
         }
     }
 
-    detachChild(childWidget: gtk.Widget): void {
+    detachChild(childWidget: Gtk.Widget): void {
         if (this.mainChild === childWidget) {
             this.widget.setChild(null);
             this.mainChild = null;

@@ -1,4 +1,4 @@
-import type * as gtk from "@gtkx/ffi/gtk";
+import type * as Gtk from "@gtkx/ffi/gtk";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
 import {
@@ -10,9 +10,9 @@ import {
     removeChild,
 } from "../widget-capabilities.js";
 
-interface GridWidget extends gtk.Widget, GridAttachable, Removable {}
+interface GridWidget extends Gtk.Widget, GridAttachable, Removable {}
 
-const isGridWidget = (widget: gtk.Widget): widget is GridWidget => isGridAttachable(widget) && isRemovable(widget);
+const isGridWidget = (widget: Gtk.Widget): widget is GridWidget => isGridAttachable(widget) && isRemovable(widget);
 
 /**
  * Node implementation for GTK Grid widgets.
@@ -21,14 +21,14 @@ const isGridWidget = (widget: gtk.Widget): widget is GridWidget => isGridAttacha
 export class GridNode implements Node<GridWidget> {
     static needsWidget = true;
 
-    static matches(type: string, widget: gtk.Widget | null): widget is GridWidget {
+    static matches(type: string, widget: Gtk.Widget | null): widget is GridWidget {
         if (type !== "Grid" && type !== "Grid.Root") return false;
         return widget !== null && isGridWidget(widget);
     }
 
     private widget: GridWidget;
 
-    constructor(_type: string, widget: gtk.Widget, _props: Props) {
+    constructor(_type: string, widget: Gtk.Widget, _props: Props) {
         if (!isGridWidget(widget)) {
             throw new Error("GridNode requires a Grid widget");
         }
@@ -99,7 +99,7 @@ export class GridNode implements Node<GridWidget> {
 export class GridChildNode implements Node {
     static needsWidget = false;
 
-    static matches(type: string, _widget: gtk.Widget | null): _widget is gtk.Widget {
+    static matches(type: string, _widget: Gtk.Widget | null): _widget is Gtk.Widget {
         return type === "Grid.Child";
     }
 
@@ -107,10 +107,10 @@ export class GridChildNode implements Node {
     private row: number;
     private columnSpan: number;
     private rowSpan: number;
-    private childWidget: gtk.Widget | null = null;
+    private childWidget: Gtk.Widget | null = null;
     private parentGrid: GridNode | null = null;
 
-    constructor(_type: string, _widget: gtk.Widget, props: Props) {
+    constructor(_type: string, _widget: Gtk.Widget, props: Props) {
         this.column = (props.column as number) ?? 0;
         this.row = (props.row as number) ?? 0;
         this.columnSpan = (props.columnSpan as number) ?? 1;

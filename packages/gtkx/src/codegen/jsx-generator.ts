@@ -67,19 +67,7 @@ const isPrimitive = (tsType: string): boolean => {
     return primitives.has(tsType);
 };
 
-const isGObjectType = (girTypeName: string | undefined): boolean => {
-    if (!girTypeName) return false;
-    return (
-        girTypeName.includes("Object") ||
-        girTypeName.includes("GObject") ||
-        girTypeName.includes(".Widget") ||
-        girTypeName === "Widget" ||
-        girTypeName.includes(".Window") ||
-        girTypeName.includes(".Menu")
-    );
-};
-
-const toJsxPropertyType = (tsType: string, girTypeName?: string): string => {
+const toJsxPropertyType = (tsType: string): string => {
     let result = tsType;
 
     if (result.startsWith("Ref<")) {
@@ -92,8 +80,6 @@ const toJsxPropertyType = (tsType: string, girTypeName?: string): string => {
         const elementType = result.slice(0, -2);
         if (isPrimitive(elementType)) return result;
     }
-
-    if (isGObjectType(girTypeName)) return "unknown";
 
     if (result.includes(".") || result.includes("<") || result.includes("(")) return result;
 
@@ -386,6 +372,8 @@ ${widgetPropsContent}
         }
         lines.push(`export interface ${widgetName}Props extends ${parentPropsName} {`);
 
+        const requiredCtorParams = this.getRequiredConstructorParams(widget);
+
         const seenProps = new Set<string>();
         const allProps = [...widget.properties];
         for (const prop of widget.properties) {
@@ -396,7 +384,9 @@ ${widgetPropsContent}
         for (const signal of widget.signals) {
             seenSignals.add(signal.name);
         }
+        const parentInterfaces = this.getAncestorInterfaces(widget);
         for (const ifaceName of widget.implements) {
+            if (parentInterfaces.has(ifaceName)) continue;
             const iface = this.interfaceMap.get(ifaceName);
             if (iface) {
                 for (const prop of iface.properties) {
@@ -422,8 +412,10 @@ ${widgetPropsContent}
         for (const prop of specificProps) {
             const propName = toCamelCase(prop.name);
             const typeMapping = this.typeMapper.mapType(prop.type);
-            const tsType = toJsxPropertyType(typeMapping.ts, prop.type.name);
-            const isRequired = prop.constructOnly && !prop.hasDefault;
+            const tsType = toJsxPropertyType(typeMapping.ts);
+            const isRequiredByProperty = prop.constructOnly && !prop.hasDefault;
+            const isRequiredByConstructor = requiredCtorParams.has(prop.name);
+            const isRequired = isRequiredByProperty || isRequiredByConstructor;
             if (prop.doc) {
                 lines.push(formatDoc(prop.doc, "\t").trimEnd());
             }
@@ -472,6 +464,31 @@ ${widgetPropsContent}
         if (widget.parent === "Widget") return "WidgetProps";
         if (widget.parent === "Window") return "WindowProps";
         return widget.parent ? `${toPascalCase(widget.parent)}Props` : "WidgetProps";
+    }
+
+    private getRequiredConstructorParams(widget: GirClass): Set<string> {
+        const required = new Set<string>();
+        const mainCtor = widget.constructors.find((c) => c.name === "new");
+        if (!mainCtor) return required;
+
+        for (const param of mainCtor.parameters) {
+            if (!param.nullable && !param.optional) {
+                required.add(param.name);
+            }
+        }
+        return required;
+    }
+
+    private getAncestorInterfaces(widget: GirClass): Set<string> {
+        const interfaces = new Set<string>();
+        let current = widget.parent ? this.classMap.get(widget.parent) : undefined;
+        while (current) {
+            for (const ifaceName of current.implements) {
+                interfaces.add(ifaceName);
+            }
+            current = current.parent ? this.classMap.get(current.parent) : undefined;
+        }
+        return interfaces;
     }
 
     private generateSignalHandler(signal: GirSignal): string {

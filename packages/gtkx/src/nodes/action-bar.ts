@@ -1,15 +1,15 @@
-import type * as gtk from "@gtkx/ffi/gtk";
+import type * as Gtk from "@gtkx/ffi/gtk";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
 import { appendChild, disconnectSignalHandlers, isConnectable, removeChild } from "../widget-capabilities.js";
 
-interface ActionBarWidget extends gtk.Widget {
+interface ActionBarWidget extends Gtk.Widget {
     packStart(child: unknown): void;
     remove(child: unknown): void;
     setRevealed(revealed: boolean): void;
 }
 
-const isActionBarWidget = (widget: gtk.Widget): widget is ActionBarWidget =>
+const isActionBarWidget = (widget: Gtk.Widget): widget is ActionBarWidget =>
     "packStart" in widget &&
     typeof widget.packStart === "function" &&
     "remove" in widget &&
@@ -18,7 +18,7 @@ const isActionBarWidget = (widget: gtk.Widget): widget is ActionBarWidget =>
 export class ActionBarNode implements Node<ActionBarWidget> {
     static needsWidget = true;
 
-    static matches(type: string, widget: gtk.Widget | null): widget is ActionBarWidget {
+    static matches(type: string, widget: Gtk.Widget | null): widget is ActionBarWidget {
         if (type !== "ActionBar" && type !== "ActionBar.Root") return false;
         return widget !== null && isActionBarWidget(widget);
     }
@@ -26,7 +26,7 @@ export class ActionBarNode implements Node<ActionBarWidget> {
     private widget: ActionBarWidget;
     private signalHandlers = new Map<string, number>();
 
-    constructor(_type: string, widget: gtk.Widget, _props: Props) {
+    constructor(_type: string, widget: Gtk.Widget, _props: Props) {
         if (!isActionBarWidget(widget)) {
             throw new Error("ActionBarNode requires an ActionBar widget");
         }
@@ -63,11 +63,11 @@ export class ActionBarNode implements Node<ActionBarWidget> {
         }
     }
 
-    attachChild(childWidget: gtk.Widget): void {
+    attachChild(childWidget: Gtk.Widget): void {
         this.widget.packStart(childWidget.ptr);
     }
 
-    detachChild(childWidget: gtk.Widget): void {
+    detachChild(childWidget: Gtk.Widget): void {
         this.widget.remove(childWidget.ptr);
     }
 

@@ -1,4 +1,4 @@
-import type * as gtk from "@gtkx/ffi/gtk";
+import type * as Gtk from "@gtkx/ffi/gtk";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
 
@@ -10,7 +10,7 @@ import type { Node } from "../node.js";
 export class SlotNode implements Node {
     static needsWidget = false;
 
-    static matches(type: string, _widget: gtk.Widget | null): _widget is gtk.Widget {
+    static matches(type: string, _widget: Gtk.Widget | null): _widget is Gtk.Widget {
         if (!type.includes(".")) return false;
         const parts = type.split(".");
         if (parts.length !== 2) return false;
@@ -21,7 +21,7 @@ export class SlotNode implements Node {
     private child: Node | null = null;
     private slotName: string;
 
-    constructor(type: string, _widget: gtk.Widget, _props: Props) {
+    constructor(type: string, _widget: Gtk.Widget, _props: Props) {
         const dotIndex = type.indexOf(".");
         if (dotIndex === -1) {
             throw new Error(`Invalid slot type: ${type}`);
@@ -53,7 +53,7 @@ export class SlotNode implements Node {
         if (!parentWidget || !childWidget) return;
 
         const setterName = `set${this.slotName}`;
-        const setter = parentWidget[setterName as keyof gtk.Widget];
+        const setter = parentWidget[setterName as keyof Gtk.Widget];
         if (typeof setter === "function") {
             (setter as (ptr: unknown) => void).call(parentWidget, childWidget.ptr);
         }
@@ -64,7 +64,7 @@ export class SlotNode implements Node {
         if (!parentWidget) return;
 
         const setterName = `set${this.slotName}`;
-        const setter = parentWidget[setterName as keyof gtk.Widget];
+        const setter = parentWidget[setterName as keyof Gtk.Widget];
         if (typeof setter === "function") {
             (setter as (ptr: null) => void).call(parentWidget, null);
         }

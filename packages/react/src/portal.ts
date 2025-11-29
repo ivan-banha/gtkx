@@ -3,11 +3,6 @@ import type { ReactNode, ReactPortal } from "react";
 const ROOT_PORTAL_CONTAINER = Symbol("ROOT_PORTAL_CONTAINER");
 
 /**
- * Checks if a container is the root portal container (for dialogs, etc.).
- */
-export const isRootPortalContainer = (container: unknown): boolean => container === ROOT_PORTAL_CONTAINER;
-
-/**
  * Creates a portal that renders children into a different GTK widget container.
  *
  * Similar to ReactDOM.createPortal, this allows you to render a subtree into

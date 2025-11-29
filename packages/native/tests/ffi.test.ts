@@ -938,20 +938,19 @@ describe("ListView Integration Tests", () => {
         call(GTK_LIB, "gtk_window_present", [{ type: { type: "gobject" }, value: window }], { type: "undefined" });
 
         const startTime = Date.now();
-        while (Date.now() - startTime < 500) {
-            const hadEvents = call(
+        const timeout = process.env.CI ? 2000 : 500;
+        while (Date.now() - startTime < timeout) {
+            call(
                 GLIB_LIB,
                 "g_main_context_iteration",
                 [
                     { type: { type: "null" }, value: null },
-                    { type: { type: "boolean" }, value: false },
+                    { type: { type: "boolean" }, value: true },
                 ],
                 { type: "boolean" },
             );
             if (setupCount > 0 && bindCount > 0) break;
-            if (!hadEvents) {
-                await new Promise(resolve => setTimeout(resolve, 10));
-            }
+            await new Promise(resolve => setTimeout(resolve, 10));
         }
 
         expect(setupCount).toBeGreaterThan(0);

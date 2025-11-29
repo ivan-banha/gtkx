@@ -4,14 +4,9 @@ import React from "react";
 import Reconciler from "react-reconciler";
 import { createNode, type Props } from "./factory.js";
 import type { Node } from "./node.js";
+import { TextNode } from "./nodes/text.js";
 
 const allInstances = new Set<Node>();
-
-let currentApp: Application | null = null;
-
-export const getCurrentApp = (): Application | null => currentApp;
-
-export const getActiveWindow = (): Gtk.Window | null => currentApp?.getActiveWindow() ?? null;
 
 export const disposeAllInstances = (): void => {
     for (const instance of allInstances) {
@@ -19,8 +14,6 @@ export const disposeAllInstances = (): void => {
     }
     allInstances.clear();
 };
-
-import { TextNode } from "./nodes/text.js";
 
 /** The React reconciler container type. */
 type Container = unknown;
@@ -49,6 +42,8 @@ export class GtkReconciler {
         PublicInstance
     >;
 
+    private currentApp: Application | null = null;
+
     /** Creates a new GTK reconciler instance. */
     constructor() {
         this.reconciler = Reconciler(this.createHostConfig());
@@ -59,7 +54,15 @@ export class GtkReconciler {
      * @param app - The GTK Application instance
      */
     setCurrentApp(app: Application): void {
-        currentApp = app;
+        this.currentApp = app;
+    }
+
+    /**
+     * Gets the active window from the current application.
+     * @returns The active GTK window or null
+     */
+    getActiveWindow(): Gtk.Window | null {
+        return this.currentApp?.getActiveWindow() ?? null;
     }
 
     /**
@@ -98,7 +101,7 @@ export class GtkReconciler {
             shouldSetTextContent: (): boolean => false,
 
             createInstance: (type: string, props: Props): Node => {
-                const instance = createNode(type, props, currentApp);
+                const instance = createNode(type, props, this.currentApp);
                 allInstances.add(instance);
                 return instance;
             },
@@ -196,3 +199,9 @@ export const reconciler = gtkReconciler.getReconciler();
  * @param app - The GTK Application instance
  */
 export const setCurrentApp = (app: Application): void => gtkReconciler.setCurrentApp(app);
+
+/**
+ * Gets the active window from the current application.
+ * @returns The active GTK window or null
+ */
+export const getActiveWindow = (): Gtk.Window | null => gtkReconciler.getActiveWindow();

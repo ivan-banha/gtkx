@@ -4,8 +4,9 @@ export interface SlotProps {
     children?: ReactNode;
 }
 
-export interface ItemProps<T> {
-    item: T;
+export interface ListItemProps {
+    // biome-ignore lint/suspicious/noExplicitAny: needed for generic items
+    item: any;
 }
 
 export interface GridChildProps extends SlotProps {

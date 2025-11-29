@@ -1,54 +1,40 @@
+import type * as Gio from "@gtkx/ffi/gio";
 import * as Gtk from "@gtkx/ffi/gtk";
 import type { Props } from "../factory.js";
-import type { Node } from "../node.js";
-import {
-    appendChild,
-    type Connectable,
-    disconnectSignalHandlers,
-    isConnectable,
-    isModelSettable,
-    isSelectable,
-    type ModelSettable,
-    removeChild,
-    type Selectable,
-} from "../widget.js";
+import { Node } from "../node.js";
 
-type ItemLabelFn<T> = (item: T) => string;
+type ItemLabelFn = (item: unknown) => string;
 
-interface DropDownWidget extends Gtk.Widget, ModelSettable, Selectable, Connectable {}
-
-const isDropDownWidget = (widget: Gtk.Widget): widget is DropDownWidget =>
-    isModelSettable(widget) && isSelectable(widget) && isConnectable(widget);
-
-class DropDownStore<T> {
+class DropDownStore {
     private stringList: Gtk.StringList;
-    private items: T[] = [];
-    private labelFn: ItemLabelFn<T>;
+    private items: unknown[] = [];
+    private labelFn: ItemLabelFn;
 
-    constructor(labelFn: ItemLabelFn<T>) {
+    constructor(labelFn: ItemLabelFn) {
         this.stringList = new Gtk.StringList([]);
         this.labelFn = labelFn;
     }
 
-    getModel(): unknown {
-        return this.stringList.ptr;
+    getModel(): Gtk.StringList {
+        return this.stringList;
     }
 
-    append(item: T): void {
+    append(item: unknown): void {
         const label = this.labelFn(item);
         this.stringList.append(label);
         this.items.push(item);
     }
 
-    remove(item: T): void {
+    remove(item: unknown): void {
         const index = this.items.indexOf(item);
+
         if (index !== -1) {
             this.stringList.remove(index);
             this.items.splice(index, 1);
         }
     }
 
-    getItem(index: number): T | undefined {
+    getItem(index: number): unknown {
         return this.items[index];
     }
 
@@ -57,175 +43,82 @@ class DropDownStore<T> {
     }
 }
 
-const dropdownStores = new WeakMap<Gtk.Widget, DropDownStore<unknown>>();
-
-const getOrCreateStore = <T>(widget: DropDownWidget, labelFn: ItemLabelFn<T>): DropDownStore<T> => {
-    let store = dropdownStores.get(widget) as DropDownStore<T> | undefined;
-    if (!store) {
-        store = new DropDownStore<T>(labelFn);
-        dropdownStores.set(widget, store as DropDownStore<unknown>);
-        widget.setModel(store.getModel());
-    }
-    return store;
-};
-
-/**
- * Node implementation for GTK DropDown widgets.
- * Manages item model and selection change events.
- */
-export class DropDownNode implements Node<DropDownWidget> {
-    static needsWidget = true;
-
-    static matches(type: string, widget: Gtk.Widget | null): widget is DropDownWidget {
-        if (type !== "DropDown" && type !== "DropDown.Root") return false;
-        return widget !== null && isDropDownWidget(widget);
+export class DropDownNode extends Node<Gtk.DropDown> {
+    static matches(type: string): boolean {
+        return type === "DropDown.Root";
     }
 
-    private widget: DropDownWidget;
-    private labelFn: ItemLabelFn<unknown>;
+    private store: DropDownStore;
     private onSelectionChanged?: (item: unknown, index: number) => void;
-    private signalHandlers = new Map<string, number>();
 
-    constructor(_type: string, widget: Gtk.Widget, props: Props) {
-        if (!isDropDownWidget(widget)) {
-            throw new Error("DropDownNode requires a DropDown widget");
-        }
-        this.widget = widget;
-        this.labelFn = (props.itemLabel as ItemLabelFn<unknown>) ?? ((item: unknown) => String(item));
+    constructor(type: string, props: Props, currentApp?: unknown) {
+        super(type, props, currentApp);
+
+        const labelFn = (props.itemLabel as ItemLabelFn) ?? ((item: unknown) => String(item));
         this.onSelectionChanged = props.onSelectionChanged as ((item: unknown, index: number) => void) | undefined;
-
-        getOrCreateStore(this.widget, this.labelFn);
+        this.store = new DropDownStore(labelFn);
+        this.widget.setModel(this.store.getModel() as unknown as Gio.ListModel);
 
         if (this.onSelectionChanged) {
             const handler = () => {
                 const index = this.widget.getSelected();
-                const store = dropdownStores.get(this.widget);
-                const item = store?.getItem(index);
+                const item = this.store.getItem(index);
                 this.onSelectionChanged?.(item, index);
             };
-            const handlerId = this.widget.connect("notify::selected", handler);
-            this.signalHandlers.set("notify::selected", handlerId);
+
+            this.setSignalHandler(this.widget, "notify::selected", handler);
         }
     }
 
-    getWidget(): DropDownWidget {
-        return this.widget;
+    getStore(): DropDownStore {
+        return this.store;
     }
 
-    getLabelFn(): ItemLabelFn<unknown> {
-        return this.labelFn;
+    protected override consumedProps(): Set<string> {
+        const consumed = super.consumedProps();
+        consumed.add("itemLabel");
+        consumed.add("onSelectionChanged");
+        return consumed;
     }
 
-    appendChild(child: Node): void {
-        child.attachToParent(this);
-    }
-
-    removeChild(child: Node): void {
-        child.detachFromParent(this);
-    }
-
-    insertBefore(child: Node, _before: Node): void {
-        this.appendChild(child);
-    }
-
-    attachToParent(parent: Node): void {
-        const parentWidget = parent.getWidget?.();
-        if (parentWidget) {
-            appendChild(parentWidget, this.widget);
-        }
-    }
-
-    detachFromParent(parent: Node): void {
-        const parentWidget = parent.getWidget?.();
-        if (parentWidget) {
-            removeChild(parentWidget, this.widget);
-        }
-    }
-
-    updateProps(oldProps: Props, newProps: Props): void {
+    override updateProps(oldProps: Props, newProps: Props): void {
         if (oldProps.onSelectionChanged !== newProps.onSelectionChanged) {
             this.onSelectionChanged = newProps.onSelectionChanged as
                 | ((item: unknown, index: number) => void)
                 | undefined;
         }
 
-        const consumedProps = new Set(["children", "itemLabel", "onSelectionChanged"]);
-        const allKeys = new Set([...Object.keys(oldProps), ...Object.keys(newProps)]);
-
-        for (const key of allKeys) {
-            if (consumedProps.has(key)) continue;
-
-            const oldValue = oldProps[key];
-            const newValue = newProps[key];
-
-            if (oldValue === newValue) continue;
-
-            if (key.startsWith("on")) {
-                continue;
-            }
-
-            const setterName = `set${key.charAt(0).toUpperCase()}${key.slice(1)}`;
-            const setter = this.widget[setterName as keyof typeof this.widget];
-            if (typeof setter === "function") {
-                (setter as (value: unknown) => void).call(this.widget, newValue);
-            }
-        }
-    }
-
-    mount(): void {}
-
-    dispose(): void {
-        disconnectSignalHandlers(this.widget, this.signalHandlers);
+        super.updateProps(oldProps, newProps);
     }
 }
 
-/**
- * Node implementation for DropDown items.
- * Represents individual items in a DropDown widget.
- */
-export class DropDownItemNode<T = unknown> implements Node {
-    static needsWidget = false;
-
-    static matches(type: string, _widget: Gtk.Widget | null): _widget is Gtk.Widget {
+export class DropDownItemNode extends Node<never> {
+    static matches(type: string): boolean {
         return type === "DropDown.Item";
     }
 
-    private item: T;
-
-    constructor(_type: string, _widget: Gtk.Widget, props: Props) {
-        this.item = props.item as T;
+    protected override isVirtual(): boolean {
+        return true;
     }
 
-    getItem(): T {
+    private item: unknown;
+
+    constructor(type: string, props: Props, _currentApp?: unknown) {
+        super(type, props);
+        this.item = props.item;
+    }
+
+    getItem() {
         return this.item;
     }
 
-    appendChild(_child: Node): void {}
-
-    removeChild(_child: Node): void {}
-
-    insertBefore(_child: Node, _before: Node): void {}
-
-    attachToParent(parent: Node): void {
+    override attachToParent(parent: Node): void {
         if (!(parent instanceof DropDownNode)) return;
-
-        const widget = parent.getWidget();
-        const labelFn = parent.getLabelFn() ?? ((item: unknown) => String(item));
-        const store = getOrCreateStore(widget, labelFn);
-        store.append(this.item);
+        parent.getStore().append(this.item);
     }
 
-    detachFromParent(parent: Node): void {
+    override detachFromParent(parent: Node): void {
         if (!(parent instanceof DropDownNode)) return;
-
-        const widget = parent.getWidget();
-        const store = dropdownStores.get(widget);
-        if (store) {
-            store.remove(this.item);
-        }
+        parent.getStore().remove(this.item);
     }
-
-    updateProps(_oldProps: Props, _newProps: Props): void {}
-
-    mount(): void {}
 }

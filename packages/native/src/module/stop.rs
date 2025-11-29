@@ -10,6 +10,7 @@ pub fn stop(mut cx: FunctionContext) -> JsResult<JsUndefined> {
 
     glib::idle_add_once(move || {
         GtkThreadState::with(|state| {
+            state.invalidate_all_closures();
             state.app_hold_guard.take();
         });
 

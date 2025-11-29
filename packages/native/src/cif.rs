@@ -10,7 +10,9 @@ use neon::prelude::*;
 
 use crate::{
     arg::{self, Arg},
-    async_callback, trampolines,
+    async_callback,
+    state::GtkThreadState,
+    trampolines,
     types::*,
     value,
 };
@@ -362,6 +364,8 @@ impl Value {
                     }
                 });
 
+                GtkThreadState::with(|state| state.register_closure(closure.clone()));
+
                 let ptr = closure.as_ptr() as *mut c_void;
                 Ok(Value::OwnedPtr(OwnedPtr::new(closure, ptr)))
             }
@@ -375,6 +379,7 @@ impl Value {
                         .first()
                         .map(|gval| value::Value::from_glib_value(gval, &source_type))
                         .unwrap_or(value::Value::Null);
+
                     let result_value = args
                         .get(1)
                         .map(|gval| value::Value::from_glib_value(gval, &result_type))
@@ -419,6 +424,8 @@ impl Value {
                         }
                     }
                 });
+
+                GtkThreadState::with(|state| state.register_closure(closure.clone()));
 
                 let closure_ptr = unsafe {
                     use glib::translate::ToGlibPtr as _;
@@ -470,6 +477,8 @@ impl Value {
                         }
                     }
                 });
+
+                GtkThreadState::with(|state| state.register_closure(closure.clone()));
 
                 let closure_ptr = unsafe {
                     use glib::translate::ToGlibPtr as _;
@@ -526,6 +535,8 @@ impl Value {
                         }
                     }
                 });
+
+                GtkThreadState::with(|state| state.register_closure(closure.clone()));
 
                 let closure_ptr = unsafe {
                     use glib::translate::ToGlibPtr as _;

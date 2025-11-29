@@ -277,6 +277,7 @@ export class CodeGenerator {
     private usesAlloc = false;
     private usesNativeError = false;
     private usesWrapPtr = false;
+    private usesSignalMeta = false;
     private usedEnums = new Set<string>();
     private usedRecords = new Set<string>();
     private usedExternalTypes = new Map<string, ExternalTypeUsage>();
@@ -448,6 +449,7 @@ export class CodeGenerator {
         this.usesAlloc = false;
         this.usesNativeError = false;
         this.usesWrapPtr = false;
+        this.usesSignalMeta = false;
         this.usedEnums.clear();
         this.usedRecords.clear();
         this.usedExternalTypes.clear();
@@ -542,14 +544,29 @@ export class CodeGenerator {
             sections.push(this.generateMethods(interfaceMethods, sharedLibrary, className));
         }
 
-        if (cls.signals.length > 0) {
+        let signalMetaConstant = "";
+        const { signals: allSignals, hasCrossNamespaceParent } = this.collectAllSignals(cls, classMap);
+        if (allSignals.length > 0 && !hasCrossNamespaceParent) {
             const hasConnectMethod = cls.methods.some((m) => toCamelCase(m.name) === "connect");
-            sections.push(
-                this.generateSignalConnect(sharedLibrary, cls.signals, hasConnectMethod, classMap, className),
+            const signalConnect = this.generateSignalConnect(
+                sharedLibrary,
+                allSignals,
+                hasConnectMethod,
+                classMap,
+                className,
             );
+            signalMetaConstant = signalConnect.moduleLevel;
+            sections.push(signalConnect.method);
         }
 
         sections.push("}");
+
+        if (signalMetaConstant) {
+            const classDefIndex = sections.findIndex((s) => s.startsWith("export class "));
+            if (classDefIndex !== -1) {
+                sections.splice(classDefIndex, 0, signalMetaConstant);
+            }
+        }
 
         const imports = this.generateImports(
             className,
@@ -679,6 +696,36 @@ export class CodeGenerator {
             current = current.parent ? classMap.get(current.parent) : undefined;
         }
         return names;
+    }
+
+    private collectAllSignals(
+        cls: GirClass,
+        classMap: Map<string, GirClass>,
+    ): { signals: GirSignal[]; hasCrossNamespaceParent: boolean } {
+        const allSignals: GirSignal[] = [...cls.signals];
+        const seenNames = new Set(cls.signals.map((s) => s.name));
+
+        if (cls.parent?.includes(".")) {
+            return { signals: allSignals, hasCrossNamespaceParent: true };
+        }
+
+        let current = cls.parent ? classMap.get(cls.parent) : undefined;
+        while (current) {
+            if (current.signals.length > 0 && current.parent?.includes(".")) {
+                return { signals: allSignals, hasCrossNamespaceParent: true };
+            }
+            for (const signal of current.signals) {
+                if (!seenNames.has(signal.name)) {
+                    allSignals.push(signal);
+                    seenNames.add(signal.name);
+                }
+            }
+            if (current.parent?.includes(".")) {
+                break;
+            }
+            current = current.parent ? classMap.get(current.parent) : undefined;
+        }
+        return { signals: allSignals, hasCrossNamespaceParent: false };
     }
 
     private generateConstructors(cls: GirClass, _sharedLibrary: string, hasParent: boolean): string {
@@ -1362,7 +1409,7 @@ ${allArgs ? `${allArgs},` : ""}
         hasConnectMethod: boolean,
         classMap: Map<string, GirClass>,
         className: string,
-    ): string {
+    ): { moduleLevel: string; method: string } {
         const methodName = hasConnectMethod ? "on" : "connect";
 
         const savedEnumCallback = this.typeMapper.getEnumUsageCallback();
@@ -1375,10 +1422,10 @@ ${allArgs ? `${allArgs},` : ""}
         const signalMetadata = signals.map((signal) => {
             const paramEntries = (signal.parameters ?? []).map((param) => {
                 const ffiType = JSON.stringify(this.typeMapper.mapType(param.type).ffi);
-                const className = this.extractSignalParamClass(param, classMap);
-                if (className) {
-                    this.signalClasses.add(className);
-                    return `{ type: ${ffiType}, cls: ${className} }`;
+                const signalParamClass = this.extractSignalParamClass(param, classMap);
+                if (signalParamClass) {
+                    this.signalClasses.add(signalParamClass);
+                    return `{ type: ${ffiType}, cls: ${signalParamClass} }`;
                 }
                 return `{ type: ${ffiType} }`;
             });
@@ -1391,19 +1438,54 @@ ${allArgs ? `${allArgs},` : ""}
             const key = `${usage.namespace}.${usage.transformedName}`;
             this.usedExternalTypes.set(key, usage);
         });
-        this.typeMapper.setSameNamespaceClassUsageCallback((className, originalName) => {
-            this.usedSameNamespaceClasses.set(className, originalName);
+        this.typeMapper.setSameNamespaceClassUsageCallback((clsName, originalName) => {
+            this.usedSameNamespaceClasses.set(clsName, originalName);
         });
+
+        const signalOverloads = signals.map((signal) => {
+            const signalParams = signal.parameters ?? [];
+            const handlerParams = [`self: ${className}`];
+            for (const param of signalParams) {
+                const paramName = toValidIdentifier(toCamelCase(param.name));
+                const signalParamClass = this.extractSignalParamClass(param, classMap);
+                const paramType = signalParamClass ?? this.typeMapper.mapType(param.type).ts;
+                handlerParams.push(`${paramName}: ${paramType}`);
+            }
+            const returnType = signal.returnType ? this.typeMapper.mapType(signal.returnType).ts : "void";
+            return `  ${methodName}(signal: "${signal.name}", handler: (${handlerParams.join(", ")}) => ${returnType}, after?: boolean): number;`;
+        });
+
+        const hasNotifySignal = signals.some((s) => s.name === "notify");
+        if (!hasNotifySignal && this.options.namespace !== "GObject") {
+            signalOverloads.push(
+                `  ${methodName}(signal: "notify", handler: (self: ${className}, pspec: GObject.ParamSpec) => void, after?: boolean): number;`,
+            );
+            this.usedExternalTypes.set("GObject.ParamSpec", {
+                namespace: "GObject",
+                name: "ParamSpec",
+                transformedName: "ParamSpec",
+                kind: "class",
+            });
+        }
+
+        signalOverloads.push(
+            `  ${methodName}(signal: string, handler: (...args: any[]) => any, after?: boolean): number;`,
+        );
 
         this.usesType = true;
         if (signalMetadata.length > 0) {
             this.usesWrapPtr = true;
+            this.usesSignalMeta = true;
         }
+
+        const moduleLevel =
+            signalMetadata.length > 0
+                ? `const SIGNAL_META: SignalMeta = {\n${signalMetadata.join(",\n")}\n};\n`
+                : "";
 
         const signalMapCode =
             signalMetadata.length > 0
-                ? `const signalMeta: Record<string, { type: Type; cls?: { prototype: object } }[]> = {\n${signalMetadata.join(",\n")}\n  };
-    const meta = signalMeta[signal];
+                ? `const meta = SIGNAL_META[signal];
     const selfType: Type = { type: "gobject", borrowed: true };
     const argTypes = meta ? [selfType, ...meta.map((m) => m.type)] : [selfType];`
                 : `const meta = undefined;\n    const selfType: Type = { type: "gobject", borrowed: true };\n    const argTypes = [selfType];`;
@@ -1421,9 +1503,11 @@ ${allArgs ? `${allArgs},` : ""}
       return handler(self, ...wrapped);
     };`;
 
-        return `  ${methodName}(
+        const overloadsSection = signalOverloads.length > 0 ? `${signalOverloads.join("\n")}\n` : "";
+
+        const method = `${overloadsSection}  ${methodName}(
     signal: string,
-    handler: (...args: unknown[]) => unknown,
+    handler: (...args: any[]) => any,
     after = false
   ): number {
     ${signalMapCode}
@@ -1441,6 +1525,8 @@ ${allArgs ? `${allArgs},` : ""}
     ) as number;
   }
 `;
+
+        return { moduleLevel, method };
     }
 
     private async generateInterface(
@@ -1977,7 +2063,8 @@ ${allArgs ? `${allArgs},` : ""}
             const mapped = this.typeMapper.mapParameter(param);
             const paramName = toValidIdentifier(toCamelCase(param.name));
             const isOptional = makeAllOptional || this.typeMapper.isNullable(param);
-            const paramStr = `${paramName}${isOptional ? "?" : ""}: ${mapped.ts}`;
+            const typeStr = isOptional ? `${mapped.ts} | null` : mapped.ts;
+            const paramStr = `${paramName}${isOptional ? "?" : ""}: ${typeStr}`;
             (isOptional ? optional : required).push(paramStr);
         }
 
@@ -2065,6 +2152,7 @@ ${indent}  }`;
         }
         const ffiImports: string[] = [];
         if (this.usesNativeError) ffiImports.push("NativeError");
+        if (this.usesSignalMeta) ffiImports.push("SignalMeta");
         if (this.usesWrapPtr) ffiImports.push("wrapPtr");
         if (ffiImports.length > 0) {
             lines.push(`import { ${ffiImports.join(", ")} } from "@gtkx/ffi";`);

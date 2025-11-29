@@ -51,7 +51,7 @@ export const start = (appId: string, flags?: ApplicationFlags): Application => {
 
 /**
  * Stops the GTK application and cleans up the keep-alive timer.
- * Emits the "shutdown" event before shutting down to allow cleanup.
+ * Emits the "stop" event before shutting down to allow cleanup.
  */
 export const stop = (): void => {
     if (keepAliveTimeout) {
@@ -62,3 +62,9 @@ export const stop = (): void => {
     events.emit("stop");
     nativeStop();
 };
+
+/**
+ * Signal parameter metadata for type-safe signal connections.
+ * Used by generated connect methods to wrap signal handler arguments.
+ */
+export type SignalMeta = Record<string, { type: import("@gtkx/native").Type; cls?: { prototype: object } }[]>;

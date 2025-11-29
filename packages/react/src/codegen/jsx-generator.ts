@@ -165,7 +165,7 @@ export class JsxGenerator {
             `import type { ReactNode, Ref } from "react";`,
             ...externalImports,
             `import type * as Gtk from "@gtkx/ffi/gtk";`,
-            `import type { GridChildProps, ItemProps, SlotProps } from "../types.js";`,
+            `import type { GridChildProps, ListItemProps, SlotProps } from "../types.js";`,
             "",
         ].join("\n");
     }
@@ -174,7 +174,7 @@ export class JsxGenerator {
         const widgetPropsContent = this.generateWidgetPropsContent(widgetClass);
 
         return `
-export { SlotProps, GridChildProps, ItemProps };
+export { SlotProps, GridChildProps, ListItemProps };
 
 ${widgetPropsContent}
 `;
@@ -628,11 +628,11 @@ ${widgetPropsContent}
             }
 
             if (isListWidget(widget.name)) {
-                elements.push(`"${widgetName}.Item": ItemProps<any>;`);
+                elements.push(`"${widgetName}.Item": ListItemProps;`);
             }
 
             if (isDropDownWidget(widget.name)) {
-                elements.push(`"${widgetName}.Item": ItemProps<any>;`);
+                elements.push(`"${widgetName}.Item": ListItemProps;`);
             }
 
             if (isGridWidget(widget.name)) {

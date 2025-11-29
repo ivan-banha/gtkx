@@ -5,13 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 import type Reconciler from "react-reconciler";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createNode } from "../src/factory.js";
-import { DialogNode } from "../src/nodes/dialog.js";
 import { DropDownItemNode, DropDownNode } from "../src/nodes/dropdown.js";
 import { GridChildNode, GridNode } from "../src/nodes/grid.js";
 import { ListItemNode, ListViewNode } from "../src/nodes/list.js";
-import { NotebookNode } from "../src/nodes/notebook.js";
 import { WidgetNode } from "../src/nodes/widget.js";
-import { disposeAllInstances, reconciler, setCurrentApp } from "../src/reconciler.js";
+import { reconciler, setCurrentApp } from "../src/reconciler.js";
 
 const APP_ID = "com.gtkx.test.react";
 
@@ -54,7 +52,6 @@ const renderElement = (element: React.ReactNode): void => {
 
 const unmountAll = (): void => {
     reconciler.updateContainer(null, container, null, () => {});
-    disposeAllInstances();
 };
 
 beforeAll(() => {
@@ -68,9 +65,6 @@ afterAll(() => {
     stop();
 });
 
-afterEach(() => {
-    disposeAllInstances();
-});
 
 describe("Node Creation and Matching", () => {
     describe("WidgetNode", () => {
@@ -98,37 +92,26 @@ describe("Node Creation and Matching", () => {
         });
     });
 
-    describe("DialogNode", () => {
-        it("should match AboutDialog type", () => {
-            const widget = new Gtk.AboutDialog();
-            expect(DialogNode.matches("AboutDialog", widget)).toBe(true);
-        });
-
-        it("should match Dialog.Root type", () => {
-            const widget = new Gtk.AboutDialog();
-            expect(DialogNode.matches("AboutDialog.Root", widget)).toBe(true);
-        });
-
-        it("should create DialogNode for dialog types", () => {
+    describe("AboutDialog (via WidgetNode)", () => {
+        it("should create AboutDialog as WidgetNode", () => {
             const node = createNode("AboutDialog", { programName: "Test App" }, app);
-            expect(node).toBeInstanceOf(DialogNode);
+            expect(node).toBeInstanceOf(WidgetNode);
+            expect(node.getWidget()).toBeInstanceOf(Gtk.AboutDialog);
         });
     });
 
     describe("ListViewNode", () => {
-        it("should match ListView type", () => {
-            const widget = new Gtk.ListView();
-            expect(ListViewNode.matches("ListView", widget)).toBe(true);
+        it("should match ListView.Root type", () => {
+            expect(ListViewNode.matches("ListView.Root")).toBe(true);
         });
 
-        it("should match ListView.Root type", () => {
-            const widget = new Gtk.ListView();
-            expect(ListViewNode.matches("ListView.Root", widget)).toBe(true);
+        it("should not match plain ListView type", () => {
+            expect(ListViewNode.matches("ListView")).toBe(false);
         });
 
         it("should create ListViewNode with factory", () => {
             const renderItem = () => new Gtk.Label({ label: "Item" });
-            const node = createNode("ListView", { renderItem }, app) as ListViewNode;
+            const node = createNode("ListView.Root", { renderItem }, app) as ListViewNode;
             expect(node).toBeInstanceOf(ListViewNode);
             expect(node.getWidget()).toBeDefined();
         });
@@ -136,83 +119,75 @@ describe("Node Creation and Matching", () => {
 
     describe("ListItemNode", () => {
         it("should match ListView.Item type", () => {
-            expect(ListItemNode.matches("ListView.Item", null)).toBe(true);
+            expect(ListItemNode.matches("ListView.Item")).toBe(true);
         });
 
         it("should match ColumnView.Item type", () => {
-            expect(ListItemNode.matches("ColumnView.Item", null)).toBe(true);
+            expect(ListItemNode.matches("ColumnView.Item")).toBe(true);
         });
 
         it("should match GridView.Item type", () => {
-            expect(ListItemNode.matches("GridView.Item", null)).toBe(true);
+            expect(ListItemNode.matches("GridView.Item")).toBe(true);
         });
 
         it("should not match non-Item types", () => {
-            expect(ListItemNode.matches("ListView", null)).toBe(false);
-            expect(ListItemNode.matches("Button", null)).toBe(false);
+            expect(ListItemNode.matches("ListView")).toBe(false);
+            expect(ListItemNode.matches("Button")).toBe(false);
         });
     });
 
     describe("DropDownNode", () => {
-        it("should match DropDown type", () => {
-            const widget = new Gtk.DropDown();
-            expect(DropDownNode.matches("DropDown", widget)).toBe(true);
+        it("should match DropDown.Root type", () => {
+            expect(DropDownNode.matches("DropDown.Root")).toBe(true);
         });
 
-        it("should match DropDown.Root type", () => {
-            const widget = new Gtk.DropDown();
-            expect(DropDownNode.matches("DropDown.Root", widget)).toBe(true);
+        it("should not match plain DropDown type", () => {
+            expect(DropDownNode.matches("DropDown")).toBe(false);
         });
 
         it("should create DropDownNode with label function", () => {
             const itemLabel = (item: { name: string }) => item.name;
-            const node = createNode("DropDown", { itemLabel }, app) as DropDownNode;
+            const node = createNode("DropDown.Root", { itemLabel }, app);
             expect(node).toBeInstanceOf(DropDownNode);
         });
     });
 
     describe("DropDownItemNode", () => {
         it("should match DropDown.Item type", () => {
-            expect(DropDownItemNode.matches("DropDown.Item", null)).toBe(true);
+            expect(DropDownItemNode.matches("DropDown.Item")).toBe(true);
         });
 
         it("should not match other types", () => {
-            expect(DropDownItemNode.matches("DropDown", null)).toBe(false);
-            expect(DropDownItemNode.matches("ListView.Item", null)).toBe(false);
+            expect(DropDownItemNode.matches("DropDown")).toBe(false);
+            expect(DropDownItemNode.matches("ListView.Item")).toBe(false);
         });
     });
 
     describe("GridNode", () => {
-        it("should match Grid type", () => {
-            const widget = new Gtk.Grid();
-            expect(GridNode.matches("Grid", widget)).toBe(true);
+        it("should match Grid.Root type", () => {
+            expect(GridNode.matches("Grid.Root")).toBe(true);
         });
 
-        it("should match Grid.Root type", () => {
-            const widget = new Gtk.Grid();
-            expect(GridNode.matches("Grid.Root", widget)).toBe(true);
+        it("should not match plain Grid type", () => {
+            expect(GridNode.matches("Grid")).toBe(false);
         });
     });
 
     describe("GridChildNode", () => {
         it("should match Grid.Child type", () => {
-            expect(GridChildNode.matches("Grid.Child", null)).toBe(true);
+            expect(GridChildNode.matches("Grid.Child")).toBe(true);
         });
 
         it("should not match other types", () => {
-            expect(GridChildNode.matches("Grid", null)).toBe(false);
+            expect(GridChildNode.matches("Grid")).toBe(false);
         });
     });
 
-    describe("NotebookNode", () => {
-        it("should match Notebook type", () => {
-            const widget = new Gtk.Notebook();
-            expect(NotebookNode.matches("Notebook", widget)).toBe(true);
-        });
-
-        it("should match Notebook.Root type", () => {
-            const widget = new Gtk.Notebook();
-            expect(NotebookNode.matches("Notebook.Root", widget)).toBe(true);
+    describe("Notebook (via WidgetNode)", () => {
+        it("should create Notebook as WidgetNode", () => {
+            const node = createNode("Notebook", {}, app);
+            expect(node).toBeInstanceOf(WidgetNode);
+            expect(node.getWidget()).toBeInstanceOf(Gtk.Notebook);
         });
     });
 });
@@ -265,7 +240,7 @@ describe("Signal Handler Management", () => {
                     onCloseRequest,
                 },
                 app,
-            ) as DialogNode;
+            ) as WidgetNode;
 
             expect(node.getWidget()).toBeDefined();
         });
@@ -280,7 +255,7 @@ describe("Signal Handler Management", () => {
                     onCloseRequest,
                 },
                 app,
-            ) as DialogNode;
+            ) as WidgetNode;
 
             node.dispose?.();
         });
@@ -290,14 +265,14 @@ describe("Signal Handler Management", () => {
         it("should connect factory signals", () => {
             const renderItem = () => new Gtk.Label({ label: "Item" });
 
-            const node = createNode("ListView", { renderItem }, app) as ListViewNode;
+            const node = createNode("ListView.Root", { renderItem }, app) as ListViewNode;
             expect(node.getWidget()).toBeDefined();
         });
 
         it("should disconnect factory signals on dispose", () => {
             const renderItem = () => new Gtk.Label({ label: "Item" });
 
-            const node = createNode("ListView", { renderItem }, app) as ListViewNode;
+            const node = createNode("ListView.Root", { renderItem }, app) as ListViewNode;
             node.dispose?.();
         });
     });
@@ -344,11 +319,13 @@ describe("App Shutdown and Signal Cleanup", () => {
     it("should dispose all instances when unmounting", () => {
         const onClicked = () => {};
 
-        createNode("Button", { label: "Button 1", onClicked }, app);
-        createNode("Button", { label: "Button 2", onClicked }, app);
-        createNode("Button", { label: "Button 3", onClicked }, app);
+        const node1 = createNode("Button", { label: "Button 1", onClicked }, app);
+        const node2 = createNode("Button", { label: "Button 2", onClicked }, app);
+        const node3 = createNode("Button", { label: "Button 3", onClicked }, app);
 
-        disposeAllInstances();
+        node1.dispose?.();
+        node2.dispose?.();
+        node3.dispose?.();
     });
 
     it("should handle rapid mount/unmount cycles", () => {
@@ -468,8 +445,8 @@ describe("Widget Disposal and Memory Management", () => {
             return box;
         };
 
-        const _tree = createTree(4);
-        disposeAllInstances();
+        const tree = createTree(4);
+        tree.dispose?.();
     });
 
     it("should handle disposal with signal handlers attached", () => {
@@ -482,12 +459,14 @@ describe("Widget Disposal and Memory Management", () => {
             nodes.push(createNode("Button", { label: `Button ${i}`, onClicked: handler }, app));
         }
 
-        disposeAllInstances();
+        for (const node of nodes) {
+            node.dispose?.();
+        }
     });
 
     it("should handle ListView with items disposal", () => {
         const renderItem = () => new Gtk.Label({ label: "Item" });
-        const listView = createNode("ListView", { renderItem }, app) as ListViewNode;
+        const listView = createNode("ListView.Root", { renderItem }, app) as ListViewNode;
 
         for (let i = 0; i < 20; i++) {
             const item = createNode("ListView.Item", { item: { id: i } }, null) as ListItemNode<{ id: number }>;
@@ -532,7 +511,7 @@ describe("Widget Disposal and Memory Management", () => {
     });
 
     it("should handle Notebook with pages disposal", () => {
-        const notebook = createNode("Notebook", {}, app) as NotebookNode;
+        const notebook = createNode("Notebook", {}, app) as WidgetNode;
 
         for (let i = 0; i < 10; i++) {
             const page = createNode("Box", { orientation: Gtk.Orientation.VERTICAL, spacing: 5 }, app);

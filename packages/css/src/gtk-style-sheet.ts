@@ -23,7 +23,7 @@ const flushPendingStyles = (): void => {
     pendingSheets.length = 0;
 };
 
-events.once("ready", flushPendingStyles);
+events.once("start", flushPendingStyles);
 
 /**
  * Custom StyleSheet implementation for Emotion that outputs to GTK's CssProvider.

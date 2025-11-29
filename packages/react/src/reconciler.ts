@@ -4,20 +4,10 @@ import React from "react";
 import Reconciler from "react-reconciler";
 import { createNode, type Props } from "./factory.js";
 import type { Node } from "./node.js";
-import { TextNode } from "./nodes/text.js";
-
-const allInstances = new Set<Node>();
-
-export const disposeAllInstances = (): void => {
-    for (const instance of allInstances) {
-        instance.dispose?.();
-    }
-    allInstances.clear();
-};
 
 /** The React reconciler container type. */
 type Container = unknown;
-type TextInstance = TextNode;
+type TextInstance = Node;
 type SuspenseInstance = never;
 type HydratableInstance = never;
 type PublicInstance = Gtk.Widget;
@@ -58,11 +48,11 @@ export class GtkReconciler {
     }
 
     /**
-     * Gets the active window from the current application.
-     * @returns The active GTK window or null
+     * Gets the current GTK application instance.
+     * @returns The GTK Application instance or null
      */
-    getActiveWindow(): Gtk.Window | null {
-        return this.currentApp?.getActiveWindow() ?? null;
+    getCurrentApp(): Application | null {
+        return this.currentApp;
     }
 
     /**
@@ -95,66 +85,44 @@ export class GtkReconciler {
             supportsHydration: false,
             isPrimaryRenderer: true,
             noTimeout: -1 as NoTimeout,
-
             getRootHostContext: (): HostContext => ({}),
             getChildHostContext: (parentHostContext: HostContext): HostContext => parentHostContext,
             shouldSetTextContent: (): boolean => false,
-
-            createInstance: (type: string, props: Props): Node => {
-                const instance = createNode(type, props, this.currentApp);
-                allInstances.add(instance);
-                return instance;
-            },
-
-            createTextInstance: (text: string): TextInstance => {
-                return new TextNode(text);
-            },
-
+            createInstance: (type: string, props: Props): Node => createNode(type, props, this.currentApp),
+            createTextInstance: (text: string): TextInstance =>
+                createNode("Label.Root", { label: text }, this.currentApp),
             appendInitialChild: (parent: Node, child: Node): void => parent.appendChild(child),
             finalizeInitialChildren: (): boolean => true,
-
             commitUpdate: (instance: Node, _type: string, oldProps: Props, newProps: Props): void => {
                 instance.updateProps(oldProps, newProps);
             },
-
             commitMount: (instance: Node): void => {
                 instance.mount();
             },
-
             appendChild: (parent: Node, child: Node): void => parent.appendChild(child),
             removeChild: (parent: Node, child: Node): void => parent.removeChild(child),
             insertBefore: (parent: Node, child: Node, beforeChild: Node): void =>
                 parent.insertBefore(child, beforeChild),
 
             removeChildFromContainer: (_container: Container, _child: Node): void => {},
-
-            appendChildToContainer: (_container: Container, child: Node): void => {
-                child.mount();
-            },
-
-            insertInContainerBefore: (_container: Container, child: Node, _beforeChild: Node): void => {
-                child.mount();
-            },
-
+            appendChildToContainer: (_container: Container, _child: Node): void => {},
+            insertInContainerBefore: (_container: Container, _child: Node, _beforeChild: Node): void => {},
             prepareForCommit: (): null => null,
             resetAfterCommit: (): void => {},
-            commitTextUpdate: (textInstance: TextInstance, _oldText: string, newText: string): void => {
-                textInstance.updateText(newText);
+            commitTextUpdate: (textInstance: TextInstance, oldText: string, newText: string): void => {
+                textInstance.updateProps({ label: oldText }, { label: newText });
             },
             clearContainer: (): void => {},
             preparePortalMount: (): void => {},
-
             scheduleTimeout: (fn: (...args: unknown[]) => unknown, delay?: number): TimeoutHandle => {
                 const timeoutId = setTimeout(fn, delay ?? 0);
                 return typeof timeoutId === "number" ? timeoutId : Number(timeoutId);
             },
-
             cancelTimeout: (id: TimeoutHandle): void => {
                 clearTimeout(id);
             },
-
             getPublicInstance: (instance: Node | TextInstance): PublicInstance =>
-                instance.getWidget?.() as PublicInstance,
+                instance.getWidget() as PublicInstance,
             getCurrentUpdatePriority: () => 2,
             setCurrentUpdatePriority: (): void => {},
             resolveUpdatePriority: () => 2,
@@ -166,8 +134,7 @@ export class GtkReconciler {
             prepareScopeUpdate: () => {},
             getInstanceFromScope: () => null,
             detachDeletedInstance: (instance: Node): void => {
-                instance.dispose?.();
-                allInstances.delete(instance);
+                instance.dispose();
             },
             resetFormInstance: (): void => {},
             requestPostPaintCallback: (): void => {},
@@ -201,7 +168,7 @@ export const reconciler = gtkReconciler.getReconciler();
 export const setCurrentApp = (app: Application): void => gtkReconciler.setCurrentApp(app);
 
 /**
- * Gets the active window from the current application.
- * @returns The active GTK window or null
+ * Gets the current GTK application from the reconciler.
+ * @returns The GTK Application instance or null
  */
-export const getActiveWindow = (): Gtk.Window | null => gtkReconciler.getActiveWindow();
+export const getCurrentApp = (): Application | null => gtkReconciler.getCurrentApp();

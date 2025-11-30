@@ -56,7 +56,7 @@ jobs:
         run: pnpm build
 
       - name: Run tests
-        run: pnpm test
+        run: xvfb-run -a pnpm test
         env:
           GTK_A11Y: none
 

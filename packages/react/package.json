@@ -1,6 +1,6 @@
 {
     "name": "@gtkx/react",
-    "version": "0.1.14",
+    "version": "0.1.15",
     "description": "Build GTK4 desktop applications with React and TypeScript",
     "keywords": [
         "gtk",
@@ -38,7 +38,7 @@
     "scripts": {
         "build": "tsc -b",
         "codegen": "tsx scripts/codegen.ts",
-        "test": "xvfb-run -a vitest run"
+        "test": "vitest run"
     },
     "dependencies": {
         "@gtkx/ffi": "workspace:*",

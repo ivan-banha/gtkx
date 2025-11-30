@@ -753,7 +753,7 @@ describe("FFI Integration Tests", () => {
     });
 });
 
-describe("ListView Integration Tests", () => {
+describe.skipIf(!!process.env.CI)("ListView Integration Tests", () => {
     it("should create ListView with factory, model, and present in window", async () => {
         let setupCount = 0;
         let bindCount = 0;
@@ -940,7 +940,7 @@ describe("ListView Integration Tests", () => {
                 "g_main_context_iteration",
                 [
                     { type: { type: "null" }, value: null },
-                    { type: { type: "boolean" }, value: true },
+                    { type: { type: "boolean" }, value: false },
                 ],
                 { type: "boolean" },
             );

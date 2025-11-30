@@ -1,6 +1,6 @@
 {
     "name": "@gtkx/native",
-    "version": "0.1.14",
+    "version": "0.1.15",
     "description": "Rust-based native module providing FFI bindings for GTKX",
     "keywords": [
         "gtk",
@@ -38,7 +38,7 @@
     "scripts": {
         "build": "tsc -b && cp index.node dist/",
         "native-build": "cargo build --message-format=json-render-diagnostics --release > cargo.log && neon dist < cargo.log",
-        "test": "xvfb-run -a vitest run"
+        "test": "vitest run"
     },
     "devDependencies": {
         "@neon-rs/cli": "0.1.82"

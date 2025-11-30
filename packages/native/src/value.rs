@@ -245,7 +245,9 @@ impl Value {
             Type::Array(array_type) => {
                 use crate::types::ListType;
 
-                if array_type.list_type == ListType::GList || array_type.list_type == ListType::GSList {
+                if array_type.list_type == ListType::GList
+                    || array_type.list_type == ListType::GSList
+                {
                     let list_ptr = match cif_value {
                         cif::Value::Ptr(ptr) => *ptr,
                         _ => {
@@ -296,10 +298,7 @@ impl Value {
                                 }
                             }
                             _ => {
-                                bail!(
-                                    "Unsupported GList item type: {:?}",
-                                    array_type.item_type
-                                );
+                                bail!("Unsupported GList item type: {:?}", array_type.item_type);
                             }
                         };
                         values.push(item_value);
@@ -468,14 +467,17 @@ impl Value {
                 match &*type_.inner_type {
                     Type::GObject(gobject_type) => {
                         let actual_ptr = unsafe { *(ref_ptr.ptr as *const *mut c_void) };
+
                         if actual_ptr.is_null() {
                             return Ok(Value::Null);
                         }
+
                         let object = unsafe {
                             glib::Object::from_glib_none(
                                 actual_ptr as *mut glib::gobject_ffi::GObject,
                             )
                         };
+
                         if gobject_type.is_borrowed {
                             Ok(Value::Object(ObjectId::new(Object::GObject(object))))
                         } else {
@@ -484,27 +486,55 @@ impl Value {
                     }
                     Type::Boxed(boxed_type) => {
                         let actual_ptr = unsafe { *(ref_ptr.ptr as *const *mut c_void) };
+
                         if actual_ptr.is_null() {
                             return Ok(Value::Null);
                         }
+
                         let gtype = boxed_type.get_gtype();
                         let boxed = if boxed_type.is_borrowed {
                             Boxed::from_glib_none(gtype, actual_ptr)
                         } else {
                             Boxed::from_glib_full(gtype, actual_ptr)
                         };
+
                         Ok(Value::Object(ObjectId::new(Object::Boxed(boxed))))
                     }
+                    Type::Integer(int_type) => {
+                        let number = match (int_type.size, int_type.sign) {
+                            (IntegerSize::_8, IntegerSign::Unsigned) => unsafe {
+                                *(ref_ptr.ptr as *const u8) as f64
+                            },
+                            (IntegerSize::_8, IntegerSign::Signed) => unsafe {
+                                *(ref_ptr.ptr as *const i8) as f64
+                            },
+                            (IntegerSize::_32, IntegerSign::Unsigned) => unsafe {
+                                *(ref_ptr.ptr as *const u32) as f64
+                            },
+                            (IntegerSize::_32, IntegerSign::Signed) => unsafe {
+                                *(ref_ptr.ptr as *const i32) as f64
+                            },
+                            (IntegerSize::_64, IntegerSign::Unsigned) => unsafe {
+                                *(ref_ptr.ptr as *const u64) as f64
+                            },
+                            (IntegerSize::_64, IntegerSign::Signed) => unsafe {
+                                *(ref_ptr.ptr as *const i64) as f64
+                            },
+                        };
+                        Ok(Value::Number(number))
+                    }
+                    Type::Float(float_type) => {
+                        let number = match float_type.size {
+                            FloatSize::_32 => unsafe { *(ref_ptr.ptr as *const f32) as f64 },
+                            FloatSize::_64 => unsafe { *(ref_ptr.ptr as *const f64) },
+                        };
+                        Ok(Value::Number(number))
+                    }
                     _ => {
-                        let inner_value =
-                            ref_ptr
-                                .value
-                                .downcast_ref::<cif::Value>()
-                                .ok_or(anyhow::anyhow!(
-                                    "Failed to downcast ref inner value to Box<cif::Value>"
-                                ))?;
-
-                        Value::from_cif_value(inner_value, &type_.inner_type)
+                        bail!(
+                            "Unsupported ref inner type for reading: {:?}",
+                            type_.inner_type
+                        )
                     }
                 }
             }

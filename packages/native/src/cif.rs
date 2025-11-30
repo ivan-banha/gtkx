@@ -557,29 +557,20 @@ impl Value {
     }
 
     fn try_from_ref(arg: &arg::Arg, type_: &RefType) -> anyhow::Result<Value> {
-        let inner_value = match &arg.value {
-            value::Value::Ref(r#ref) => {
-                let ref_arg = Arg::new(*type_.inner_type.clone(), *r#ref.value.clone());
-                Value::try_from(ref_arg)?
+        let r#ref = match &arg.value {
+            value::Value::Ref(r#ref) => r#ref,
+            value::Value::Null | value::Value::Undefined => {
+                return Ok(Value::Ptr(std::ptr::null_mut()));
             }
-            value::Value::Null | value::Value::Undefined => Value::Ptr(std::ptr::null_mut()),
             _ => bail!("Expected a Ref for ref type, got {:?}", arg.value),
         };
 
-        // Get the pointer value from the inner value
-        let inner_ptr: *mut c_void = match &inner_value {
-            Value::Ptr(ptr) => *ptr,
-            Value::OwnedPtr(owned) => owned.ptr,
-            _ => bail!("Ref inner type must resolve to a pointer"),
-        };
-
-        // Allocate stable storage for the pointer - this is what the native function writes to
-        // For out parameters like GError**, we pass the ADDRESS of this storage
-        let mut storage: Box<*mut c_void> = Box::new(inner_ptr);
-        let ref_ptr: *mut c_void = storage.as_mut() as *mut *mut c_void as *mut c_void;
+        let ref_arg = Arg::new(*type_.inner_type.clone(), *r#ref.value.clone());
+        let ref_value = Box::new(Value::try_from(ref_arg)?);
+        let ref_ptr = ref_value.as_ptr();
 
         Ok(Value::OwnedPtr(OwnedPtr {
-            value: Box::new((inner_value, storage)),
+            value: ref_value,
             ptr: ref_ptr,
         }))
     }

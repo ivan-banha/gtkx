@@ -7,14 +7,7 @@ import { call } from "@gtkx/native";
 
 const LIB = "libcairo.so.2";
 
-// Type descriptor for cairo_t* (raw pointer as unsigned 64-bit integer)
-// This allows passing either the raw pointer number from draw callbacks
-// or a wrapped ObjectId from other contexts.
 const CAIRO_T = { type: "int", size: 64, unsigned: true } as const;
-
-// ============================================================================
-// Path Construction
-// ============================================================================
 
 /**
  * Begin a new sub-path. After this call the current point will be (x, y).
@@ -150,10 +143,6 @@ export function newSubPath(cr: unknown): void {
     call(LIB, "cairo_new_sub_path", [{ type: CAIRO_T, value: cr }], { type: "undefined" });
 }
 
-// ============================================================================
-// Drawing Operations
-// ============================================================================
-
 /**
  * Stroke the current path according to the current line width, line join, line cap, and dash settings.
  */
@@ -204,10 +193,6 @@ export function paintWithAlpha(cr: unknown, alpha: number): void {
     );
 }
 
-// ============================================================================
-// Source/Color Operations
-// ============================================================================
-
 /**
  * Sets the source pattern to an opaque color (RGB).
  */
@@ -242,10 +227,6 @@ export function setSourceRgba(cr: unknown, red: number, green: number, blue: num
         { type: "undefined" },
     );
 }
-
-// ============================================================================
-// Line Properties
-// ============================================================================
 
 /**
  * Sets the current line width.
@@ -311,10 +292,6 @@ export function setDash(cr: unknown, dashes: number[], offset: number): void {
     );
 }
 
-// ============================================================================
-// State Management
-// ============================================================================
-
 /**
  * Makes a copy of the current state and saves it on an internal stack.
  */
@@ -328,10 +305,6 @@ export function save(cr: unknown): void {
 export function restore(cr: unknown): void {
     call(LIB, "cairo_restore", [{ type: CAIRO_T, value: cr }], { type: "undefined" });
 }
-
-// ============================================================================
-// Transformations
-// ============================================================================
 
 /**
  * Modifies the current transformation matrix by translating.
@@ -381,10 +354,6 @@ export function rotate(cr: unknown, angle: number): void {
     );
 }
 
-// ============================================================================
-// Clipping
-// ============================================================================
-
 /**
  * Establishes a new clip region by intersecting the current clip region with the current path.
  */
@@ -405,10 +374,6 @@ export function clipPreserve(cr: unknown): void {
 export function resetClip(cr: unknown): void {
     call(LIB, "cairo_reset_clip", [{ type: CAIRO_T, value: cr }], { type: "undefined" });
 }
-
-// ============================================================================
-// Operator
-// ============================================================================
 
 /**
  * Sets the compositing operator.

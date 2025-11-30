@@ -110,3 +110,30 @@ sudo apt install libgtk-4-dev gobject-introspection
 - **Props**: camelCase with `onEvent` handlers
 - **Constructor params**: Extracted from props via `CONSTRUCTOR_PARAMS` in generated code
 - **Formatting**: Biome with 4-space indent, 120 line width
+
+## Code Style
+
+### Functional Programming
+
+- Prefer functional programming over imperative/OOP
+- Use pure functions and immutable data
+- Only use classes when encapsulation is necessary (e.g., FFI bindings)
+
+### Modern TypeScript
+
+- Use `const` arrow functions for exports
+- Prefer nullish coalescing (`??`) over logical OR (`||`)
+- Use optional chaining (`?.`) where appropriate
+- Avoid type casts (`as`) - use type guards instead
+
+### No Comments
+
+- Code should be self-documenting
+- Use TSDoc only for public APIs
+- Prefer descriptive names over comments
+- Never edit generated files in `src/generated/` directories
+
+### File Naming
+
+- Use kebab-case for all files: `my-component.ts`
+- Exception: generated files

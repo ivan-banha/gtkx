@@ -94,7 +94,5 @@ export class GtkStyleSheet {
         this.hasPendingRules = false;
     }
 
-    hydrate(_elements: unknown[]): void {
-        // No-op for GTK - hydration is a browser SSR concept
-    }
+    hydrate(_elements: unknown[]): void {}
 }

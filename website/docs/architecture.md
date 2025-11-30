@@ -15,7 +15,7 @@ GTKX consists of five packages that work together to render React components as 
 │         Your Application            │
 │    (React components + hooks)       │
 ├─────────────────────────────────────┤
-│            @gtkx/react               │
+│             @gtkx/react             │
 │    React Reconciler + JSX Types     │
 ├──────────────────┬──────────────────┤
 │    @gtkx/ffi     │    @gtkx/css     │

@@ -17,8 +17,6 @@ export const getGtkCache = (): EmotionCache => {
             container: null,
         });
 
-        // Replace the default sheet with our GTK sheet
-        // This works because Emotion uses cache.sheet.constructor for new sheets
         gtkCache.sheet = sheet as unknown as typeof gtkCache.sheet;
     }
 

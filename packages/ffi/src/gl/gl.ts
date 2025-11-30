@@ -7,10 +7,6 @@ import { call, createRef } from "@gtkx/native";
 
 const LIB = "libGL.so.1";
 
-// ============================================================================
-// Basic Operations
-// ============================================================================
-
 /**
  * Clear buffers to preset values.
  * @param mask - Bitwise OR of masks indicating buffers to clear (GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, etc.)
@@ -81,10 +77,6 @@ export function glDepthFunc(func: number): void {
     call(LIB, "glDepthFunc", [{ type: { type: "int", size: 32, unsigned: true }, value: func }], { type: "undefined" });
 }
 
-// ============================================================================
-// Shader Operations
-// ============================================================================
-
 /**
  * Creates a shader object.
  * @param type - GL_VERTEX_SHADER or GL_FRAGMENT_SHADER
@@ -103,8 +95,6 @@ export function glCreateShader(type: number): number {
  * Note: This simplified version passes a single null-terminated string.
  */
 export function glShaderSource(shader: number, source: string): void {
-    // glShaderSource takes (shader, count, string**, length*)
-    // We pass the source as an array of strings, which the FFI will convert to char**
     call(
         LIB,
         "glShaderSource",
@@ -149,16 +139,11 @@ export function glGetShaderiv(shader: number, pname: number): number {
  * Returns the information log for a shader object.
  */
 export function glGetShaderInfoLog(shader: number, _maxLength: number): string {
-    // For now, we'll use a simplified approach - just get the length
-    // and return an empty string if there's no log
-    // This is a limitation we may need to address with native code
-    const logLength = glGetShaderiv(shader, 0x8b84); // GL_INFO_LOG_LENGTH
+    const logLength = glGetShaderiv(shader, 0x8b84);
     if (logLength <= 0) {
         return "";
     }
 
-    // Unfortunately, getting the actual log string requires more complex memory handling
-    // For now, return a generic message
     return `Shader info log length: ${logLength} (use console.error for details)`;
 }
 
@@ -170,10 +155,6 @@ export function glDeleteShader(shader: number): void {
         type: "undefined",
     });
 }
-
-// ============================================================================
-// Program Operations
-// ============================================================================
 
 /**
  * Creates a program object.
@@ -237,7 +218,7 @@ export function glGetProgramiv(program: number, pname: number): number {
  * Returns the information log for a program object.
  */
 export function glGetProgramInfoLog(program: number, _maxLength: number): string {
-    const logLength = glGetProgramiv(program, 0x8b84); // GL_INFO_LOG_LENGTH
+    const logLength = glGetProgramiv(program, 0x8b84);
     if (logLength <= 0) {
         return "";
     }
@@ -252,10 +233,6 @@ export function glDeleteProgram(program: number): void {
         type: "undefined",
     });
 }
-
-// ============================================================================
-// Uniform Operations
-// ============================================================================
 
 /**
  * Returns the location of a uniform variable.
@@ -369,10 +346,6 @@ export function glUniformMatrix4fv(location: number, count: number, transpose: b
         { type: "undefined" },
     );
 }
-
-// ============================================================================
-// Vertex Array and Buffer Operations
-// ============================================================================
 
 /**
  * Generate a single vertex array object name.
@@ -527,10 +500,6 @@ export function glDisableVertexAttribArray(index: number): void {
     });
 }
 
-// ============================================================================
-// Drawing Operations
-// ============================================================================
-
 /**
  * Render primitives from array data.
  */
@@ -564,10 +533,6 @@ export function glDrawElements(mode: number, count: number, type: number, offset
     );
 }
 
-// ============================================================================
-// Attribute Operations
-// ============================================================================
-
 /**
  * Returns the location of an attribute variable.
  */
@@ -598,10 +563,6 @@ export function glBindAttribLocation(program: number, index: number, name: strin
         { type: "undefined" },
     );
 }
-
-// ============================================================================
-// Error Handling
-// ============================================================================
 
 /**
  * Return error information.

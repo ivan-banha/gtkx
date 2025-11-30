@@ -12,8 +12,5 @@
  * ```
  */
 
-// Re-export generated types (enums, data structures)
 export * from "../generated/cairo/index.js";
-
-// Export manual function bindings
 export * from "./cairo.js";

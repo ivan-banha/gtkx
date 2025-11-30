@@ -920,7 +920,6 @@ export class TypeMapper {
      */
     isClosureTarget(paramIndex: number, allParams: GirParameter[]): boolean {
         const trampolineCallbacks = ["Gio.AsyncReadyCallback", "Gtk.DrawingAreaDrawFunc", "DrawingAreaDrawFunc"];
-        // Check if this param is a closure (user_data) or destroy target for a trampoline callback
         return allParams.some(
             (p) => trampolineCallbacks.includes(p.type.name) && (p.closure === paramIndex || p.destroy === paramIndex),
         );

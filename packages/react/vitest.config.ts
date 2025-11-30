@@ -7,5 +7,16 @@ export default mergeConfig(baseConfig, {
         env: {
             GTK_A11Y: "none",
         },
+        pool: "forks",
+        poolOptions: {
+            forks: {
+                singleFork: true,
+            },
+        },
+        fileParallelism: false,
+        sequence: {
+            hooks: "list",
+        },
+        globalSetup: "./tests/global-setup.ts",
     },
 });

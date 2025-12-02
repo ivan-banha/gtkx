@@ -144,6 +144,8 @@ impl Value {
                 let number = match cif_value {
                     cif::Value::I8(v) => *v as f64,
                     cif::Value::U8(v) => *v as f64,
+                    cif::Value::I16(v) => *v as f64,
+                    cif::Value::U16(v) => *v as f64,
                     cif::Value::I32(v) => *v as f64,
                     cif::Value::U32(v) => *v as f64,
                     cif::Value::I64(v) => *v as f64,
@@ -354,6 +356,26 @@ impl Value {
                                 .map(|v| Value::Number(*v as f64))
                                 .collect::<Vec<Value>>()
                         }
+                        (IntegerSize::_16, IntegerSign::Unsigned) => {
+                            let u16_vec = array_ptr.value.downcast_ref::<Vec<u16>>().ok_or(
+                                anyhow::anyhow!("Failed to downcast array items to Vec<u16>"),
+                            )?;
+
+                            u16_vec
+                                .iter()
+                                .map(|v| Value::Number(*v as f64))
+                                .collect::<Vec<Value>>()
+                        }
+                        (IntegerSize::_16, IntegerSign::Signed) => {
+                            let i16_vec = array_ptr.value.downcast_ref::<Vec<i16>>().ok_or(
+                                anyhow::anyhow!("Failed to downcast array items to Vec<i16>"),
+                            )?;
+
+                            i16_vec
+                                .iter()
+                                .map(|v| Value::Number(*v as f64))
+                                .collect::<Vec<Value>>()
+                        }
                         (IntegerSize::_32, IntegerSign::Unsigned) => {
                             let u32_vec = array_ptr.value.downcast_ref::<Vec<u32>>().ok_or(
                                 anyhow::anyhow!("Failed to downcast array items to Vec<u32>"),
@@ -520,6 +542,12 @@ impl Value {
                             (IntegerSize::_8, IntegerSign::Signed) => unsafe {
                                 *(ref_ptr.ptr as *const i8) as f64
                             },
+                            (IntegerSize::_16, IntegerSign::Unsigned) => unsafe {
+                                *(ref_ptr.ptr as *const u16) as f64
+                            },
+                            (IntegerSize::_16, IntegerSign::Signed) => unsafe {
+                                *(ref_ptr.ptr as *const i16) as f64
+                            },
                             (IntegerSize::_32, IntegerSign::Unsigned) => unsafe {
                                 *(ref_ptr.ptr as *const u32) as f64
                             },
@@ -564,6 +592,12 @@ impl Value {
                 }
                 (IntegerSize::_8, IntegerSign::Unsigned) => {
                     Value::Number(gvalue.get::<u8>().unwrap() as f64)
+                }
+                (IntegerSize::_16, IntegerSign::Signed) => {
+                    Value::Number(gvalue.get::<i32>().unwrap() as i16 as f64)
+                }
+                (IntegerSize::_16, IntegerSign::Unsigned) => {
+                    Value::Number(gvalue.get::<u32>().unwrap() as u16 as f64)
                 }
                 (IntegerSize::_32, IntegerSign::Signed) => {
                     Value::Number(gvalue.get::<i32>().unwrap() as f64)

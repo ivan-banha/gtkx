@@ -139,6 +139,12 @@ fn handle_call(
                 (IntegerSize::_8, IntegerSign::Signed) => {
                     cif::Value::I8(cif.call::<i8>(symbol_ptr, &mut ffi_args))
                 }
+                (IntegerSize::_16, IntegerSign::Unsigned) => {
+                    cif::Value::U16(cif.call::<u16>(symbol_ptr, &mut ffi_args))
+                }
+                (IntegerSize::_16, IntegerSign::Signed) => {
+                    cif::Value::I16(cif.call::<i16>(symbol_ptr, &mut ffi_args))
+                }
                 (IntegerSize::_32, IntegerSign::Unsigned) => {
                     cif::Value::U32(cif.call::<u32>(symbol_ptr, &mut ffi_args))
                 }

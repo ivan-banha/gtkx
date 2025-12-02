@@ -50,6 +50,12 @@ fn handle_read(object_id: ObjectId, type_: &Type, offset: usize) -> anyhow::Resu
                 (IntegerSize::_8, IntegerSign::Unsigned) => unsafe {
                     *(field_ptr as *const u8) as f64
                 },
+                (IntegerSize::_16, IntegerSign::Signed) => unsafe {
+                    *(field_ptr as *const i16) as f64
+                },
+                (IntegerSize::_16, IntegerSign::Unsigned) => unsafe {
+                    *(field_ptr as *const u16) as f64
+                },
                 (IntegerSize::_32, IntegerSign::Signed) => unsafe {
                     *(field_ptr as *const i32) as f64
                 },

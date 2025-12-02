@@ -4,6 +4,7 @@ use neon::prelude::*;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IntegerSize {
     _8,
+    _16,
     _32,
     _64,
 }
@@ -14,6 +15,7 @@ impl IntegerSize {
 
         match size.value(cx) as u64 {
             8 => Ok(IntegerSize::_8),
+            16 => Ok(IntegerSize::_16),
             32 => Ok(IntegerSize::_32),
             64 => Ok(IntegerSize::_64),
             _ => cx.throw_type_error("Invalid integer size"),
@@ -69,6 +71,8 @@ impl From<&IntegerType> for ffi::Type {
         match (value.size, value.sign) {
             (IntegerSize::_8, IntegerSign::Unsigned) => ffi::Type::u8(),
             (IntegerSize::_8, IntegerSign::Signed) => ffi::Type::i8(),
+            (IntegerSize::_16, IntegerSign::Unsigned) => ffi::Type::u16(),
+            (IntegerSize::_16, IntegerSign::Signed) => ffi::Type::i16(),
             (IntegerSize::_32, IntegerSign::Unsigned) => ffi::Type::u32(),
             (IntegerSize::_32, IntegerSign::Signed) => ffi::Type::i32(),
             (IntegerSize::_64, IntegerSign::Unsigned) => ffi::Type::u64(),

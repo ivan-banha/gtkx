@@ -1,5 +1,5 @@
 /** Integer type descriptor for FFI calls. */
-type IntegerType = { type: "int"; size: 8 | 32 | 64; unsigned?: boolean };
+type IntegerType = { type: "int"; size: 8 | 16 | 32 | 64; unsigned?: boolean };
 
 /** Floating-point type descriptor for FFI calls. */
 type FloatType = { type: "float"; size: 32 | 64 };

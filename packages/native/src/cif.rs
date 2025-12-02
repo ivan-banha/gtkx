@@ -28,6 +28,8 @@ pub struct OwnedPtr {
 pub enum Value {
     U8(u8),
     I8(i8),
+    U16(u16),
+    I16(i16),
     U32(u32),
     I32(i32),
     U64(u64),
@@ -71,6 +73,10 @@ impl TryFrom<arg::Arg> for Value {
                     IntegerSize::_8 => match type_.sign {
                         IntegerSign::Unsigned => Ok(Value::U8(number as u8)),
                         IntegerSign::Signed => Ok(Value::I8(number as i8)),
+                    },
+                    IntegerSize::_16 => match type_.sign {
+                        IntegerSign::Unsigned => Ok(Value::U16(number as u16)),
+                        IntegerSign::Signed => Ok(Value::I16(number as i16)),
                     },
                     IntegerSize::_32 => match type_.sign {
                         IntegerSign::Unsigned => Ok(Value::U32(number as u32)),
@@ -148,6 +154,8 @@ impl Value {
         match self {
             Value::U8(value) => value as *const u8 as *mut c_void,
             Value::I8(value) => value as *const i8 as *mut c_void,
+            Value::U16(value) => value as *const u16 as *mut c_void,
+            Value::I16(value) => value as *const i16 as *mut c_void,
             Value::U32(value) => value as *const u32 as *mut c_void,
             Value::I32(value) => value as *const i32 as *mut c_void,
             Value::U64(value) => value as *const u64 as *mut c_void,
@@ -189,6 +197,18 @@ impl Value {
                     }
                     (IntegerSize::_8, IntegerSign::Signed) => {
                         let values: Vec<i8> = values.iter().map(|&v| *v as i8).collect();
+                        let ptr = values.as_ptr() as *mut c_void;
+
+                        Ok(Value::OwnedPtr(OwnedPtr::new(values, ptr)))
+                    }
+                    (IntegerSize::_16, IntegerSign::Unsigned) => {
+                        let values: Vec<u16> = values.iter().map(|&v| *v as u16).collect();
+                        let ptr = values.as_ptr() as *mut c_void;
+
+                        Ok(Value::OwnedPtr(OwnedPtr::new(values, ptr)))
+                    }
+                    (IntegerSize::_16, IntegerSign::Signed) => {
+                        let values: Vec<i16> = values.iter().map(|&v| *v as i16).collect();
                         let ptr = values.as_ptr() as *mut c_void;
 
                         Ok(Value::OwnedPtr(OwnedPtr::new(values, ptr)))
@@ -658,6 +678,8 @@ impl<'a> From<&'a Value> for ffi::Arg<'a> {
         match arg {
             Value::U8(value) => ffi::arg(value),
             Value::I8(value) => ffi::arg(value),
+            Value::U16(value) => ffi::arg(value),
+            Value::I16(value) => ffi::arg(value),
             Value::U32(value) => ffi::arg(value),
             Value::I32(value) => ffi::arg(value),
             Value::U64(value) => ffi::arg(value),

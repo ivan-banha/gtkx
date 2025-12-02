@@ -55,6 +55,12 @@ fn handle_write(
             (IntegerSize::_8, IntegerSign::Unsigned) => {
                 unsafe { *(field_ptr as *mut u8) = *n as u8 };
             }
+            (IntegerSize::_16, IntegerSign::Signed) => {
+                unsafe { *(field_ptr as *mut i16) = *n as i16 };
+            }
+            (IntegerSize::_16, IntegerSign::Unsigned) => {
+                unsafe { *(field_ptr as *mut u16) = *n as u16 };
+            }
             (IntegerSize::_32, IntegerSign::Signed) => {
                 unsafe { *(field_ptr as *mut i32) = *n as i32 };
             }

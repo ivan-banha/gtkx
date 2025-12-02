@@ -517,6 +517,28 @@ export function glDrawArrays(mode: number, first: number, count: number): void {
 }
 
 /**
+ * Creates and initializes a buffer object's data store with unsigned short data.
+ * Use this for element/index buffers with GL_UNSIGNED_SHORT type.
+ * @param target - Buffer target (typically GL_ELEMENT_ARRAY_BUFFER)
+ * @param data - Array of unsigned short values (indices)
+ * @param usage - Usage hint (GL_STATIC_DRAW, GL_DYNAMIC_DRAW, etc.)
+ */
+export function glBufferDataUshort(target: number, data: number[], usage: number): void {
+    const size = data.length * 2; // 2 bytes per unsigned short
+    call(
+        LIB,
+        "glBufferData",
+        [
+            { type: { type: "int", size: 32, unsigned: true }, value: target },
+            { type: { type: "int", size: 64, unsigned: false }, value: size },
+            { type: { type: "array", itemType: { type: "int", size: 16, unsigned: true } }, value: data },
+            { type: { type: "int", size: 32, unsigned: true }, value: usage },
+        ],
+        { type: "undefined" },
+    );
+}
+
+/**
  * Render primitives from array data with indices.
  */
 export function glDrawElements(mode: number, count: number, type: number, offset: number): void {

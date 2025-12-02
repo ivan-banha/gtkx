@@ -13,7 +13,7 @@ type StyleSheetOptions = {
 const STYLE_PROVIDER_PRIORITY_APPLICATION = 600;
 
 let isGtkReady = false;
-const pendingSheets: GtkStyleSheet[] = [];
+const pendingSheets: StyleSheet[] = [];
 
 const flushPendingStyles = (): void => {
     isGtkReady = true;
@@ -31,7 +31,7 @@ events.once("start", flushPendingStyles);
  *
  * Rules are queued until GTK is initialized, then applied automatically.
  */
-export class GtkStyleSheet {
+export class StyleSheet {
     key: string;
     private rules: string[] = [];
     private provider: CssProvider | null = null;

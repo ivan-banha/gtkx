@@ -1,16 +1,16 @@
 import type { EmotionCache } from "@emotion/cache";
 import createCache from "@emotion/cache";
-import { GtkStyleSheet } from "./gtk-style-sheet.js";
+import { StyleSheet } from "./style-sheet.js";
 
 let gtkCache: EmotionCache | null = null;
 
 /**
  * Creates and returns a singleton Emotion cache configured for GTK.
- * Uses GtkStyleSheet to inject styles into GTK's CssProvider.
+ * Uses StyleSheet to inject styles into GTK's CssProvider.
  */
 export const getGtkCache = (): EmotionCache => {
     if (!gtkCache) {
-        const sheet = new GtkStyleSheet({ key: "gtkx" });
+        const sheet = new StyleSheet({ key: "gtkx" });
 
         gtkCache = createCache({
             key: "gtkx",

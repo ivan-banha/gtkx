@@ -622,6 +622,17 @@ impl Value {
             _ => panic!("Unsupported type for glib value conversion: {:?}", type_),
         }
     }
+
+    pub fn to_glib_value_with_default(self, return_type: Option<&Type>) -> Option<glib::Value> {
+        match &self {
+            Value::Undefined => match return_type {
+                Some(Type::Boolean) => Some(false.into()),
+                Some(Type::Integer(_)) => Some(0i32.into()),
+                _ => None,
+            },
+            _ => self.into(),
+        }
+    }
 }
 
 impl From<&glib::Value> for Value {

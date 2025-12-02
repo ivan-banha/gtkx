@@ -310,6 +310,7 @@ impl Value {
         match type_.trampoline {
             CallbackTrampoline::Closure => {
                 let arg_types = type_.arg_types.clone();
+                let return_type = type_.return_type.clone();
 
                 let closure = glib::Closure::new(move |args: &[glib::Value]| {
                     let args_values: Vec<value::Value> = match &arg_types {
@@ -321,6 +322,7 @@ impl Value {
                         None => args.iter().map(Into::into).collect(),
                     };
                     let callback = callback.clone();
+                    let return_type = return_type.clone();
 
                     let result = channel.send(move |mut cx| {
                         let js_args: Vec<Handle<JsValue>> = args_values
@@ -345,10 +347,10 @@ impl Value {
                         match rx.try_recv() {
                             Ok(result) => {
                                 return match result {
-                                    Ok(value) => value.into(),
+                                    Ok(value) => value::Value::to_glib_value_with_default(value, return_type.as_deref()),
                                     Err(_) => {
                                         eprintln!("JS callback threw an error");
-                                        None
+                                        value::Value::to_glib_value_with_default(value::Value::Undefined, return_type.as_deref())
                                     }
                                 };
                             }

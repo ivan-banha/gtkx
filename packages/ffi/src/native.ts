@@ -63,8 +63,10 @@ export const stop = (): void => {
     nativeStop();
 };
 
+type SignalParam = { type: import("@gtkx/native").Type; getCls?: () => { prototype: object } };
+
 /**
  * Signal parameter metadata for type-safe signal connections.
  * Used by generated connect methods to wrap signal handler arguments.
  */
-export type SignalMeta = Record<string, { type: import("@gtkx/native").Type; getCls?: () => { prototype: object } }[]>;
+export type SignalMeta = Record<string, { params: SignalParam[]; returnType?: import("@gtkx/native").Type }>;

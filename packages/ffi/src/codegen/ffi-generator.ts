@@ -1271,6 +1271,10 @@ ${allArgs ? `${allArgs},` : ""}
             (returnTypeMapping.ffi.type === "gobject" || returnTypeMapping.ffi.type === "boxed") &&
             baseReturnType !== "unknown" &&
             returnTypeMapping.kind !== "interface";
+        const needsArrayWrap =
+            returnTypeMapping.ffi.type === "array" &&
+            returnTypeMapping.ffi.itemType?.type === "gobject" &&
+            baseReturnType.endsWith("[]");
         const hasReturnValue = returnTypeMapping.ts !== "void";
 
         const lines: string[] = [];
@@ -1314,6 +1318,25 @@ ${allArgs ? `${allArgs},` : ""}
                 this.usesWrapPtr = true;
                 lines.push(`    return wrapPtr(ptr, ${baseReturnType});`);
             }
+        } else if (needsArrayWrap && hasReturnValue) {
+            const elementType = baseReturnType.slice(0, -2);
+            this.usesWrapPtr = true;
+            lines.push(`    const ptrs = call(
+      "${sharedLibrary}",
+      "${method.cIdentifier}",
+      [
+        {
+          type: { type: "gobject" },
+          value: this.ptr,
+        },
+${allArgs ? `${allArgs},` : ""}
+      ],
+      ${this.generateTypeDescriptor(returnTypeMapping.ffi)}
+    ) as unknown[];`);
+            if (method.throws) {
+                lines.push(this.generateErrorCheck());
+            }
+            lines.push(`    return ptrs.map(ptr => wrapPtr(ptr, ${elementType}));`);
         } else {
             const callPrefix = method.throws
                 ? hasReturnValue
@@ -1396,7 +1419,11 @@ ${allArgs ? `${allArgs},` : ""}
                 }
                 return `{ type: ${ffiType} }`;
             });
-            return `    "${signal.name}": [${paramEntries.join(", ")}]`;
+            const returnTypeFfi = signal.returnType
+                ? JSON.stringify(this.typeMapper.mapType(signal.returnType).ffi)
+                : null;
+            const returnTypePart = returnTypeFfi ? `, returnType: ${returnTypeFfi}` : "";
+            return `    "${signal.name}": { params: [${paramEntries.join(", ")}]${returnTypePart} }`;
         });
 
         this.typeMapper.setEnumUsageCallback(savedEnumCallback);
@@ -1452,8 +1479,9 @@ ${allArgs ? `${allArgs},` : ""}
             signalMetadata.length > 0
                 ? `const meta = SIGNAL_META[signal];
     const selfType: Type = { type: "gobject", borrowed: true };
-    const argTypes = meta ? [selfType, ...meta.map((m) => m.type)] : [selfType];`
-                : `const selfType: Type = { type: "gobject", borrowed: true };\n    const argTypes = [selfType];`;
+    const argTypes = meta ? [selfType, ...meta.params.map((m) => m.type)] : [selfType];
+    const returnType = meta?.returnType;`
+                : `const selfType: Type = { type: "gobject", borrowed: true };\n    const argTypes = [selfType];\n    const returnType = undefined;`;
 
         const wrapperCode =
             signalMetadata.length > 0
@@ -1461,7 +1489,7 @@ ${allArgs ? `${allArgs},` : ""}
       const self = wrapPtr(args[0], ${className});
       const signalArgs = args.slice(1);
       if (!meta) return handler(self, ...signalArgs);
-      const wrapped = meta.map((m, i) => {
+      const wrapped = meta.params.map((m, i) => {
         if (m.getCls && signalArgs[i] != null) {
           return wrapPtr(signalArgs[i], m.getCls());
         }
@@ -1489,7 +1517,7 @@ ${allArgs ? `${allArgs},` : ""}
       [
         { type: { type: "gobject" }, value: this.ptr },
         { type: { type: "string" }, value: signal },
-        { type: { type: "callback", argTypes }, value: wrappedHandler },
+        { type: { type: "callback", argTypes, returnType }, value: wrappedHandler },
         { type: { type: "boolean" }, value: after },
       ],
       { type: "int", size: 64, unsigned: true }
@@ -2090,7 +2118,14 @@ ${indent}  }`;
             return `{ type: "ref", innerType: ${this.generateTypeDescriptor(type.innerType)} }`;
         }
         if (type.type === "array" && type.itemType) {
-            return `{ type: "array", itemType: ${this.generateTypeDescriptor(type.itemType)} }`;
+            const parts = [`type: "array"`, `itemType: ${this.generateTypeDescriptor(type.itemType)}`];
+            if (type.listType) {
+                parts.push(`listType: "${type.listType}"`);
+            }
+            if (type.borrowed) {
+                parts.push(`borrowed: true`);
+            }
+            return `{ ${parts.join(", ")} }`;
         }
         if (type.type === "callback") {
             const parts: string[] = [`type: "callback"`];

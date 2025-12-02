@@ -16,6 +16,7 @@ const sidebars: SidebarsConfig = {
                 "guides/styling",
                 "guides/error-handling",
                 "guides/async-results",
+                "guides/testing",
             ],
         },
         "architecture",

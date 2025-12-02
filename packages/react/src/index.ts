@@ -14,9 +14,11 @@ import { container } from "./render.js";
  * @returns Always returns true (useful for signal handlers)
  */
 export const quit = () => {
-    reconciler.getInstance().updateContainer(null, container, null, () => {
-        stop();
-    });
+    if (container) {
+        reconciler.getInstance().updateContainer(null, container, null, () => {
+            stop();
+        });
+    }
 
     return true;
 };

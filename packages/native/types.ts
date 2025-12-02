@@ -43,6 +43,7 @@ type CallbackType = {
     argTypes?: Type[];
     sourceType?: Type;
     resultType?: Type;
+    returnType?: Type;
 };
 
 /**

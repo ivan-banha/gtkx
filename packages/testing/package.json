@@ -1,16 +1,13 @@
 {
-    "name": "@gtkx/react",
+    "name": "@gtkx/testing",
     "version": "0.1.19",
-    "description": "Build GTK4 desktop applications with React and TypeScript",
+    "description": "Testing utilities for GTKX applications",
     "keywords": [
         "gtk",
         "gtk4",
         "react",
-        "typescript",
-        "linux",
-        "desktop",
-        "gui",
-        "native"
+        "testing",
+        "testing-library"
     ],
     "homepage": "https://eugeniodepalo.github.io/gtkx",
     "bugs": {
@@ -19,7 +16,7 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/eugeniodepalo/gtkx.git",
-        "directory": "packages/gtkx"
+        "directory": "packages/testing"
     },
     "license": "MPL-2.0",
     "author": "Eugenio Depalo <eugeniodepalo@gmail.com>",
@@ -40,15 +37,12 @@
     ],
     "scripts": {
         "build": "tsc -b",
-        "codegen": "tsx scripts/codegen.ts",
         "test": "xvfb-run -a vitest run"
     },
     "dependencies": {
         "@gtkx/ffi": "workspace:*",
-        "react-reconciler": "0.33.0"
-    },
-    "devDependencies": {
-        "@gtkx/gir": "workspace:*"
+        "@gtkx/native": "workspace:*",
+        "@gtkx/react": "workspace:*"
     },
     "peerDependencies": {
         "react": "^19"

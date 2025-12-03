@@ -1,6 +1,7 @@
 [package]
 name = "native"
-version = "0.1.0"
+version = "0.1.22"
+authors = ["Eugenio Depalo <eugeniodepalo@gmail.com>"]
 license = "MPL-2.0"
 edition = "2024"
 exclude = ["index.node"]
@@ -10,7 +11,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 neon = "1.1.1"
-gtk4 = "0.10.2"
+gtk4 = "0.10.3"
 libloading = "0.9.0"
 libffi = "5.0.0"
 anyhow = "1.0.100"

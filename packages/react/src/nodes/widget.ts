@@ -129,10 +129,6 @@ export class WidgetNode extends Node<Gtk.Widget> {
     protected override consumedProps(): Set<string> {
         const consumed = super.consumedProps();
 
-        if (this.widget instanceof Gtk.ApplicationWindow) {
-            consumed.add("application");
-        }
-
         for (const handler of COMBINED_PROPS) {
             for (const prop of handler.props) {
                 consumed.add(prop);
@@ -160,11 +156,15 @@ export class WidgetNode extends Node<Gtk.Widget> {
         super.updateProps(oldProps, newProps);
     }
 
-    override mount(app: Gtk.Application): void {
-        super.mount(app);
-
+    override mount(_app: Gtk.Application): void {
         if (this.widget instanceof Gtk.Window) {
             this.widget.present();
+        }
+    }
+
+    override dispose(_app: Gtk.Application): void {
+        if (this.widget instanceof Gtk.Window) {
+            this.widget.destroy();
         }
     }
 }

@@ -225,3 +225,214 @@ describe("Callback Trampoline Types", () => {
         expect(typeof visible).toBe("boolean");
     });
 });
+
+describe("Callbacks with Various Argument Types", () => {
+    it("should handle callbacks receiving string value from widget", () => {
+        const button = call(
+            GTK_LIB,
+            "gtk_button_new_with_label",
+            [{ type: { type: "string" }, value: "Test Button" }],
+            {
+                type: "gobject",
+                borrowed: true,
+            },
+        );
+
+        const label = call(GTK_LIB, "gtk_button_get_label", [{ type: { type: "gobject" }, value: button }], {
+            type: "string",
+            borrowed: true,
+        });
+        expect(label).toBe("Test Button");
+
+        const handlerId = call(
+            GOBJECT_LIB,
+            "g_signal_connect_closure",
+            [
+                { type: { type: "gobject" }, value: button },
+                { type: { type: "string" }, value: "clicked" },
+                {
+                    type: {
+                        type: "callback",
+                        argTypes: [{ type: "gobject", borrowed: true }],
+                    },
+                    value: (btn: unknown) => {
+                        const btnLabel = call(
+                            GTK_LIB,
+                            "gtk_button_get_label",
+                            [{ type: { type: "gobject" }, value: btn }],
+                            { type: "string", borrowed: true },
+                        );
+                        expect(btnLabel).toBe("Test Button");
+                    },
+                },
+                { type: { type: "boolean" }, value: false },
+            ],
+            { type: "int", size: 64, unsigned: true },
+        );
+        expect(handlerId).toBeGreaterThan(0);
+    });
+
+    it("should handle callbacks with u8 arguments", () => {
+        const button = call(GTK_LIB, "gtk_button_new", [], { type: "gobject", borrowed: true });
+        const gestureClick = call(GTK_LIB, "gtk_gesture_click_new", [], { type: "gobject", borrowed: true });
+
+        call(
+            GTK_LIB,
+            "gtk_widget_add_controller",
+            [
+                { type: { type: "gobject" }, value: button },
+                { type: { type: "gobject" }, value: gestureClick },
+            ],
+            { type: "undefined" },
+        );
+
+        const handlerId = call(
+            GOBJECT_LIB,
+            "g_signal_connect_closure",
+            [
+                { type: { type: "gobject" }, value: gestureClick },
+                { type: { type: "string" }, value: "pressed" },
+                {
+                    type: {
+                        type: "callback",
+                        argTypes: [
+                            { type: "gobject", borrowed: true },
+                            { type: "int", size: 32 },
+                            { type: "float", size: 64 },
+                            { type: "float", size: 64 },
+                        ],
+                    },
+                    value: (_gesture: unknown, nPress: unknown, _x: unknown, _y: unknown) => {
+                        expect(typeof nPress).toBe("number");
+                    },
+                },
+                { type: { type: "boolean" }, value: false },
+            ],
+            { type: "int", size: 64, unsigned: true },
+        );
+        expect(handlerId).toBeGreaterThan(0);
+    });
+
+    it("should handle callbacks with u64 arguments (GType)", () => {
+        const factory = call(GTK_LIB, "gtk_signal_list_item_factory_new", [], { type: "gobject", borrowed: true });
+
+        const handlerId = call(
+            GOBJECT_LIB,
+            "g_signal_connect_closure",
+            [
+                { type: { type: "gobject" }, value: factory },
+                { type: { type: "string" }, value: "setup" },
+                {
+                    type: {
+                        type: "callback",
+                        argTypes: [
+                            { type: "gobject", borrowed: true },
+                            { type: "gobject", borrowed: true },
+                        ],
+                    },
+                    value: (_factory: unknown, listItem: unknown) => {
+                        const gtype = call(
+                            GOBJECT_LIB,
+                            "g_type_from_instance",
+                            [{ type: { type: "gobject" }, value: listItem }],
+                            { type: "int", size: 64, unsigned: true },
+                        );
+                        expect(gtype).toBeGreaterThan(0);
+                    },
+                },
+                { type: { type: "boolean" }, value: false },
+            ],
+            { type: "int", size: 64, unsigned: true },
+        );
+        expect(handlerId).toBeGreaterThan(0);
+    });
+
+    it("should handle callbacks that read boolean values from widgets", () => {
+        const checkButton = call(GTK_LIB, "gtk_check_button_new", [], { type: "gobject", borrowed: true });
+
+        call(
+            GTK_LIB,
+            "gtk_check_button_set_active",
+            [
+                { type: { type: "gobject" }, value: checkButton },
+                { type: { type: "boolean" }, value: true },
+            ],
+            { type: "undefined" },
+        );
+
+        const isActive = call(
+            GTK_LIB,
+            "gtk_check_button_get_active",
+            [{ type: { type: "gobject" }, value: checkButton }],
+            {
+                type: "boolean",
+            },
+        );
+        expect(isActive).toBe(true);
+
+        const handlerId = call(
+            GOBJECT_LIB,
+            "g_signal_connect_closure",
+            [
+                { type: { type: "gobject" }, value: checkButton },
+                { type: { type: "string" }, value: "toggled" },
+                {
+                    type: {
+                        type: "callback",
+                        argTypes: [{ type: "gobject", borrowed: true }],
+                    },
+                    value: () => {},
+                },
+                { type: { type: "boolean" }, value: false },
+            ],
+            { type: "int", size: 64, unsigned: true },
+        );
+        expect(handlerId).toBeGreaterThan(0);
+    });
+});
+
+describe("Callbacks with Return Values", () => {
+    it("should handle sourceFunc returning true to continue", () => {
+        let callCount = 0;
+        const sourceId = call(
+            GLIB_LIB,
+            "g_idle_add",
+            [
+                {
+                    type: { type: "callback", trampoline: "sourceFunc" },
+                    value: () => {
+                        callCount++;
+                        return callCount < 3;
+                    },
+                },
+            ],
+            { type: "int", size: 32, unsigned: true },
+        ) as number;
+
+        expect(sourceId).toBeGreaterThan(0);
+
+        call(GLIB_LIB, "g_source_remove", [{ type: { type: "int", size: 32, unsigned: true }, value: sourceId }], {
+            type: "boolean",
+        });
+    });
+
+    it("should handle sourceFunc returning false to stop", () => {
+        const sourceId = call(
+            GLIB_LIB,
+            "g_idle_add",
+            [
+                {
+                    type: { type: "callback", trampoline: "sourceFunc" },
+                    value: () => false,
+                },
+            ],
+            { type: "int", size: 32, unsigned: true },
+        ) as number;
+
+        expect(sourceId).toBeGreaterThan(0);
+
+        call(GLIB_LIB, "g_source_remove", [{ type: { type: "int", size: 32, unsigned: true }, value: sourceId }], {
+            type: "boolean",
+        });
+    });
+});

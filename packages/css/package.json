@@ -1,6 +1,6 @@
 {
     "name": "@gtkx/css",
-    "version": "0.1.24",
+    "version": "0.1.25",
     "description": "Emotion-style CSS-in-JS for GTKX applications",
     "keywords": [
         "gtk",
@@ -35,7 +35,7 @@
     ],
     "scripts": {
         "build": "tsc -b && cp ../../README.md .",
-        "test": "GDK_BACKEND=x11 xvfb-run -a vitest run"
+        "test": "if [ -n \"$CI\" ]; then vitest run; else GDK_BACKEND=x11 xvfb-run -a vitest run; fi"
     },
     "dependencies": {
         "@emotion/cache": "11.14.0",

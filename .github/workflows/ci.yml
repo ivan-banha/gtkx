@@ -68,7 +68,10 @@ jobs:
         run: pnpm knip
 
       - name: Run tests
-        run: pnpm test
+        run: |
+          Xvfb :99 -screen 0 1024x768x24 &
+          sleep 1
+          pnpm test
         env:
+          DISPLAY: ":99"
           GTK_A11Y: none
-          GSK_RENDERER: cairo

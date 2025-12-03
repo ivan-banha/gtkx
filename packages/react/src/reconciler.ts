@@ -107,22 +107,16 @@ class Reconciler {
             removeChild: (parent, child) => parent.removeChild(child),
             insertBefore: (parent, child, beforeChild) => parent.insertBefore(child, beforeChild),
             removeChildFromContainer: (container, child) => {
-                if (container instanceof Gtk.Widget) {
-                    const parent = createNode(container.constructor.name, {}, this.getApp(), container);
-                    parent.removeChild(child);
-                }
+                const parent = this.createNodeFromContainer(container);
+                parent.removeChild(child);
             },
             appendChildToContainer: (container, child) => {
-                if (container instanceof Gtk.Widget) {
-                    const parent = createNode(container.constructor.name, {}, this.getApp(), container);
-                    parent.appendChild(child);
-                }
+                const parent = this.createNodeFromContainer(container);
+                parent.appendChild(child);
             },
             insertInContainerBefore: (container, child, beforeChild) => {
-                if (container instanceof Gtk.Widget) {
-                    const parent = createNode(container.constructor.name, {}, this.getApp(), container);
-                    parent.insertBefore(child, beforeChild);
-                }
+                const parent = this.createNodeFromContainer(container);
+                parent.insertBefore(child, beforeChild);
             },
             prepareForCommit: () => null,
             resetAfterCommit: () => {},
@@ -169,6 +163,14 @@ class Reconciler {
     private createReconcilerContext(value: TransitionStatus): ReactReconciler.ReactContext<TransitionStatus> {
         const context = React.createContext<TransitionStatus>(value);
         return context as unknown as ReactReconciler.ReactContext<TransitionStatus>;
+    }
+
+    private createNodeFromContainer(container: Container): Node {
+        if (container instanceof Gtk.Widget) {
+            return createNode(container.constructor.name, {}, this.getApp(), container);
+        }
+
+        return createNode("Application", {}, this.getApp(), container as unknown as Gtk.Widget);
     }
 }
 

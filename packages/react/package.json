@@ -1,6 +1,6 @@
 {
     "name": "@gtkx/react",
-    "version": "0.1.24",
+    "version": "0.1.25",
     "description": "Build GTK4 desktop applications with React and TypeScript",
     "keywords": [
         "gtk",
@@ -41,7 +41,7 @@
     "scripts": {
         "build": "tsc -b && cp ../../README.md .",
         "codegen": "tsx scripts/codegen.ts",
-        "test": "GDK_BACKEND=x11 xvfb-run -a vitest run"
+        "test": "if [ -n \"$CI\" ]; then vitest run; else GDK_BACKEND=x11 xvfb-run -a vitest run; fi"
     },
     "dependencies": {
         "@gtkx/ffi": "workspace:*",

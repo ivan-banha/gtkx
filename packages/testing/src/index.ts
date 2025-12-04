@@ -25,7 +25,7 @@ export {
     queryByTestId,
     queryByText,
 } from "./queries.js";
-export { cleanup, render, teardown } from "./render.jsx";
+export { cleanup, render, teardown } from "./render.js";
 export { screen } from "./screen.js";
 export type {
     ByRoleOptions,

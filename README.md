@@ -30,16 +30,16 @@ GTKX bridges React's component model with GTK4's native widget system. Write fam
 
 ```bash
 # Install dependencies
-pnpm add @gtkx/react @gtkx/ffi react
+npm install @gtkx/react @gtkx/ffi react
 
 # For TypeScript (recommended)
-pnpm add -D @types/react tsx typescript
+npm install -D @types/react tsx typescript
 
 # For styling (optional)
-pnpm add @gtkx/css
+npm install @gtkx/css
 
 # For testing (optional)
-pnpm add -D @gtkx/testing
+npm install -D @gtkx/testing
 ```
 
 Create your first app:
@@ -83,7 +83,7 @@ export const App = () => {
 Run with:
 
 ```bash
-pnpm tsx index.tsx
+npx tsx index.tsx
 ```
 
 ## Styling
@@ -201,7 +201,7 @@ turbo start --filter=gtk4-demo
 ## Requirements
 
 - Node.js 20+
-- GTK4 development libraries
+- GTK4
 - Linux (GTK4 is Linux-native)
 
 ## License

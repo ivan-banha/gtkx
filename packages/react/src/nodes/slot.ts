@@ -17,6 +17,7 @@ export class SlotNode extends Node<never> {
 
     private child: Node | null = null;
     private slotName: string;
+    private parentNode: Node | null = null;
 
     constructor(type: string, props: Props, app: Gtk.Application) {
         super(type, props, app);
@@ -30,32 +31,11 @@ export class SlotNode extends Node<never> {
         this.slotName = type.substring(dotIndex + 1);
     }
 
-    override appendChild(child: Node): void {
-        if (child.getWidget()) {
-            this.child = child;
-        }
-    }
+    private updateParentSlot(): void {
+        if (!this.parentNode) return;
 
-    override removeChild(_child: Node): void {
-        this.child = null;
-    }
-
-    override attachToParent(parent: Node): void {
-        const parentWidget = parent.getWidget();
+        const parentWidget = this.parentNode.getWidget();
         const childWidget = this.child?.getWidget();
-
-        if (!parentWidget || !childWidget) return;
-
-        const setterName = `set${this.slotName}`;
-        const setter = parentWidget[setterName as keyof Gtk.Widget];
-
-        if (typeof setter === "function") {
-            (setter as (ptr: unknown) => void).call(parentWidget, childWidget.ptr);
-        }
-    }
-
-    override detachFromParent(parent: Node): void {
-        const parentWidget = parent.getWidget();
 
         if (!parentWidget) return;
 
@@ -63,7 +43,41 @@ export class SlotNode extends Node<never> {
         const setter = parentWidget[setterName as keyof Gtk.Widget];
 
         if (typeof setter === "function") {
-            (setter as (ptr: null) => void).call(parentWidget, null);
+            (setter as (ptr: unknown) => void).call(parentWidget, childWidget?.ptr ?? null);
         }
+    }
+
+    override appendChild(child: Node): void {
+        if (child.getWidget()) {
+            this.child = child;
+            this.updateParentSlot();
+        }
+    }
+
+    override removeChild(_child: Node): void {
+        this.child = null;
+        this.updateParentSlot();
+    }
+
+    override attachToParent(parent: Node): void {
+        this.parentNode = parent;
+        this.updateParentSlot();
+    }
+
+    override detachFromParent(_parent: Node): void {
+        if (this.parentNode) {
+            const parentWidget = this.parentNode.getWidget();
+
+            if (parentWidget) {
+                const setterName = `set${this.slotName}`;
+                const setter = parentWidget[setterName as keyof Gtk.Widget];
+
+                if (typeof setter === "function") {
+                    (setter as (ptr: null) => void).call(parentWidget, null);
+                }
+            }
+        }
+
+        this.parentNode = null;
     }
 }

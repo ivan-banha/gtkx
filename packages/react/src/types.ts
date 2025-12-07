@@ -30,7 +30,12 @@ export interface ColumnViewColumnProps {
     expand?: boolean;
     resizable?: boolean;
     fixedWidth?: number;
-    // biome-ignore lint/suspicious/noExplicitAny: allows typed renderCell callbacks in JSX
+    /**
+     * Render function for column cells.
+     * Called with null during setup (for loading state) and with the actual item during bind.
+     * Always annotate your callback parameter type to include null, e.g.: `(item: MyItem | null) => ...`
+     */
+    // biome-ignore lint/suspicious/noExplicitAny: Using any allows users to specify their own item type
     renderCell: (item: any) => ReactElement;
 }
 

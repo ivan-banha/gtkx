@@ -170,6 +170,7 @@ export class JsxGenerator {
 
         return [
             `import "react";`,
+            `import { createElement } from "react";`,
             `import type { ReactNode, Ref } from "react";`,
             ...externalImports,
             `import type * as Gtk from "@gtkx/ffi/gtk";`,
@@ -404,15 +405,23 @@ ${widgetPropsContent}
             lines.push(`\t * Render function for list items.`);
             lines.push(`\t * Called with null during setup (for loading state) and with the actual item during bind.`);
             lines.push(`\t */`);
-            lines.push(`\t// biome-ignore lint/suspicious/noExplicitAny: allows typed renderItem callbacks`);
+            lines.push(
+                `\t// biome-ignore lint/suspicious/noExplicitAny: Internal type, use generic ListView<T> export`,
+            );
             lines.push(`\trenderItem: (item: any) => import("react").ReactElement;`);
         }
 
         if (isDropDownWidget(widget.name)) {
             lines.push("");
             lines.push(`\t/** Function to convert item to display label */`);
+            lines.push(
+                `\t// biome-ignore lint/suspicious/noExplicitAny: Internal type, use generic DropDown<T> export`,
+            );
             lines.push(`\titemLabel?: (item: any) => string;`);
             lines.push(`\t/** Called when selection changes */`);
+            lines.push(
+                `\t// biome-ignore lint/suspicious/noExplicitAny: Internal type, use generic DropDown<T> export`,
+            );
             lines.push(`\tonSelectionChanged?: (item: any, index: number) => void;`);
         }
 
@@ -662,23 +671,36 @@ ${widgetPropsContent}
             const docComment = widget.doc ? formatDoc(widget.doc).trimEnd() : "";
 
             if (hasMeaningfulSlots) {
-                const valueMembers = [
-                    `Root: "${widgetName}.Root" as const`,
-                    ...metadata.namedChildSlots.map(
-                        (slot) => `${slot.slotName}: "${widgetName}.${slot.slotName}" as const`,
-                    ),
-                    ...(isListWidget(widget.name) ? [`Item: "${widgetName}.Item" as const`] : []),
-                    ...(isColumnViewWidget(widget.name)
-                        ? [`Column: "${widgetName}.Column" as const`, `Item: "${widgetName}.Item" as const`]
-                        : []),
-                    ...(isDropDownWidget(widget.name) ? [`Item: "${widgetName}.Item" as const`] : []),
-                    ...(isGridWidget(widget.name) ? [`Child: "${widgetName}.Child" as const`] : []),
-                    ...(isNotebookWidget(widget.name) ? [`Page: "${widgetName}.Page" as const`] : []),
-                ];
-                if (docComment) {
-                    lines.push(`${docComment}\nexport const ${widgetName} = {\n\t${valueMembers.join(",\n\t")},\n};`);
+                // For list widgets, generate wrapper components with proper generics
+                if (isListWidget(widget.name) || isColumnViewWidget(widget.name) || isDropDownWidget(widget.name)) {
+                    const wrapperComponents = this.generateGenericWrapperComponents(widget.name, metadata);
+                    const exportMembers = this.getWrapperExportMembers(widget.name, metadata);
+
+                    if (docComment) {
+                        lines.push(
+                            `${wrapperComponents}\n${docComment}\nexport const ${widgetName} = {\n\t${exportMembers.join(",\n\t")},\n};`,
+                        );
+                    } else {
+                        lines.push(
+                            `${wrapperComponents}\nexport const ${widgetName} = {\n\t${exportMembers.join(",\n\t")},\n};`,
+                        );
+                    }
                 } else {
-                    lines.push(`export const ${widgetName} = {\n\t${valueMembers.join(",\n\t")},\n};`);
+                    const valueMembers = [
+                        `Root: "${widgetName}.Root" as const`,
+                        ...metadata.namedChildSlots.map(
+                            (slot) => `${slot.slotName}: "${widgetName}.${slot.slotName}" as const`,
+                        ),
+                        ...(isGridWidget(widget.name) ? [`Child: "${widgetName}.Child" as const`] : []),
+                        ...(isNotebookWidget(widget.name) ? [`Page: "${widgetName}.Page" as const`] : []),
+                    ];
+                    if (docComment) {
+                        lines.push(
+                            `${docComment}\nexport const ${widgetName} = {\n\t${valueMembers.join(",\n\t")},\n};`,
+                        );
+                    } else {
+                        lines.push(`export const ${widgetName} = {\n\t${valueMembers.join(",\n\t")},\n};`);
+                    }
                 }
             } else {
                 if (docComment) {
@@ -690,6 +712,103 @@ ${widgetPropsContent}
         }
 
         return `${lines.join("\n")}\n`;
+    }
+
+    private getWrapperExportMembers(widgetName: string, metadata: ContainerMetadata): string[] {
+        const name = toPascalCase(widgetName);
+        const members: string[] = [`Root: ${name}Root`];
+
+        if (isListWidget(widgetName)) {
+            members.push(`Item: ${name}Item`);
+        } else if (isColumnViewWidget(widgetName)) {
+            members.push(`Column: ${name}Column`);
+            members.push(`Item: ${name}Item`);
+        } else if (isDropDownWidget(widgetName)) {
+            members.push(`Item: ${name}Item`);
+        }
+
+        // Add named child slots
+        for (const slot of metadata.namedChildSlots) {
+            members.push(`${slot.slotName}: ${name}${slot.slotName}`);
+        }
+
+        return members;
+    }
+
+    private generateGenericWrapperComponents(widgetName: string, metadata: ContainerMetadata): string {
+        const name = toPascalCase(widgetName);
+        const lines: string[] = [];
+
+        if (isListWidget(widgetName)) {
+            // Props type for the generic Root component
+            lines.push(`interface ${name}RootProps<T> extends Omit<${name}Props, "renderItem"> {`);
+            lines.push(`\t/** Render function for list items. Called with null during setup. */`);
+            lines.push(`\trenderItem: (item: T | null) => import("react").ReactElement;`);
+            lines.push(`}`);
+            lines.push(``);
+            // Root wrapper component
+            lines.push(`function ${name}Root<T>(props: ${name}RootProps<T>): import("react").ReactElement {`);
+            lines.push(`\treturn createElement("${name}.Root", props);`);
+            lines.push(`}`);
+            lines.push(``);
+            // Item wrapper component
+            lines.push(`function ${name}Item<T>(props: ListItemProps<T>): import("react").ReactElement {`);
+            lines.push(`\treturn createElement("${name}.Item", props);`);
+            lines.push(`}`);
+        } else if (isColumnViewWidget(widgetName)) {
+            // Root wrapper (non-generic)
+            lines.push(`function ${name}Root(props: ${name}Props): import("react").ReactElement {`);
+            lines.push(`\treturn createElement("${name}.Root", props);`);
+            lines.push(`}`);
+            lines.push(``);
+            // Column props type - use GenericColumnProps to avoid conflict with imported ColumnViewColumnProps
+            lines.push(`interface ${name}GenericColumnProps<T> extends Omit<ColumnViewColumnProps, "renderCell"> {`);
+            lines.push(`\t/** Render function for column cells. Called with null during setup. */`);
+            lines.push(`\trenderCell: (item: T | null) => import("react").ReactElement;`);
+            lines.push(`}`);
+            lines.push(``);
+            // Column wrapper component
+            lines.push(
+                `function ${name}Column<T>(props: ${name}GenericColumnProps<T>): import("react").ReactElement {`,
+            );
+            lines.push(`\treturn createElement("${name}.Column", props);`);
+            lines.push(`}`);
+            lines.push(``);
+            // Item wrapper component
+            lines.push(`function ${name}Item<T>(props: ListItemProps<T>): import("react").ReactElement {`);
+            lines.push(`\treturn createElement("${name}.Item", props);`);
+            lines.push(`}`);
+        } else if (isDropDownWidget(widgetName)) {
+            // Props type for the generic Root component
+            lines.push(
+                `interface ${name}RootProps<T> extends Omit<${name}Props, "itemLabel" | "onSelectionChanged"> {`,
+            );
+            lines.push(`\t/** Function to convert item to display label */`);
+            lines.push(`\titemLabel?: (item: T) => string;`);
+            lines.push(`\t/** Called when selection changes */`);
+            lines.push(`\tonSelectionChanged?: (item: T, index: number) => void;`);
+            lines.push(`}`);
+            lines.push(``);
+            // Root wrapper component
+            lines.push(`function ${name}Root<T>(props: ${name}RootProps<T>): import("react").ReactElement {`);
+            lines.push(`\treturn createElement("${name}.Root", props);`);
+            lines.push(`}`);
+            lines.push(``);
+            // Item wrapper component
+            lines.push(`function ${name}Item<T>(props: ListItemProps<T>): import("react").ReactElement {`);
+            lines.push(`\treturn createElement("${name}.Item", props);`);
+            lines.push(`}`);
+        }
+
+        // Generate slot wrapper components
+        for (const slot of metadata.namedChildSlots) {
+            lines.push(``);
+            lines.push(`function ${name}${slot.slotName}(props: SlotProps): import("react").ReactElement {`);
+            lines.push(`\treturn createElement("${name}.${slot.slotName}", props);`);
+            lines.push(`}`);
+        }
+
+        return lines.join("\n");
     }
 
     private generateJsxNamespace(widgets: GirClass[], containerMetadata: Map<string, ContainerMetadata>): string {

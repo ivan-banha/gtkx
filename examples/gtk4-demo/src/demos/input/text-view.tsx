@@ -10,7 +10,10 @@ const TextViewDemo = () => {
 
     const handleTextChanged = (text: string) => {
         setCharCount(text.length);
-        const words = text.trim().split(/\s+/).filter((w) => w.length > 0);
+        const words = text
+            .trim()
+            .split(/\s+/)
+            .filter((w) => w.length > 0);
         setWordCount(words.length);
     };
 
@@ -67,11 +70,7 @@ const TextViewDemo = () => {
 
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label.Root label="Monospace TextView" cssClasses={["heading"]} halign={Gtk.Align.START} />
-                <Label.Root
-                    label="Useful for code editing or displaying logs."
-                    wrap
-                    cssClasses={["dim-label"]}
-                />
+                <Label.Root label="Useful for code editing or displaying logs." wrap cssClasses={["dim-label"]} />
                 <Frame.Root>
                     <ScrolledWindow minContentHeight={100} hexpand>
                         <TextView

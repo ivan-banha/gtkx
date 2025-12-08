@@ -8,7 +8,8 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const workspaceRoot = resolve(__dirname, "../../..");
 const girFile = join(workspaceRoot, "girs/Gtk-4.0.gir");
 const outputDir = resolve(__dirname, "../src/generated");
-const outputFile = resolve(outputDir, "jsx.ts");
+const jsxOutputFile = resolve(outputDir, "jsx.ts");
+const internalOutputFile = resolve(outputDir, "internal.ts");
 
 const generateJsxTypes = async (): Promise<void> => {
     if (!existsSync(outputDir)) {
@@ -35,10 +36,13 @@ const generateJsxTypes = async (): Promise<void> => {
     const generator = new JsxGenerator(typeMapper);
 
     console.log(`Generating JSX type definitions...`);
-    const content = await generator.generate(namespace, classMap);
+    const result = await generator.generate(namespace, classMap);
 
-    console.log(`Writing ${outputFile}`);
-    writeFileSync(outputFile, content);
+    console.log(`Writing ${jsxOutputFile}`);
+    writeFileSync(jsxOutputFile, result.jsx);
+
+    console.log(`Writing ${internalOutputFile}`);
+    writeFileSync(internalOutputFile, result.internal);
 
     console.log("✓ JSX type generation complete!");
 };

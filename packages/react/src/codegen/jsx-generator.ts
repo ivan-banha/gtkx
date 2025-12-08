@@ -10,6 +10,16 @@ interface JsxGeneratorOptions {
     prettierConfig?: unknown;
 }
 
+/**
+ * Result of the JSX generation containing both public and internal files.
+ */
+interface JsxGeneratorResult {
+    /** Public JSX types and components for user consumption. */
+    jsx: string;
+    /** Internal metadata for reconciler use (not exported to users). */
+    internal: string;
+}
+
 interface WidgetChildInfo {
     propertyName: string;
     slotName: string;
@@ -130,9 +140,9 @@ export class JsxGenerator {
      * Generates JSX type definitions for all widgets in a namespace.
      * @param namespace - The parsed GIR namespace
      * @param classMap - Map of class names to class definitions
-     * @returns Generated TypeScript code as a string
+     * @returns Generated TypeScript code as public jsx.ts and internal.ts files
      */
-    async generate(namespace: GirNamespace, classMap: Map<string, GirClass>): Promise<string> {
+    async generate(namespace: GirNamespace, classMap: Map<string, GirClass>): Promise<JsxGeneratorResult> {
         this.classMap = classMap;
         this.interfaceMap = new Map(namespace.interfaces.map((iface) => [iface.name, iface]));
         this.namespace = namespace.name;
@@ -147,19 +157,26 @@ export class JsxGenerator {
 
         const widgetPropsInterfaces = this.generateWidgetPropsInterfaces(widgets, containerMetadata);
 
-        const sections = [
+        const jsxSections = [
             this.generateImports(),
             this.generateCommonTypes(widgetClass),
             widgetPropsInterfaces,
-            this.generateConstructorArgsMetadata(widgets),
-            this.generatePropSettersMap(widgets),
-            this.generateSetterGetterMap(widgets),
             this.generateExports(widgets, containerMetadata),
             this.generateJsxNamespace(widgets, containerMetadata),
             "export {};",
         ];
 
-        return this.formatCode(sections.join("\n"));
+        const internalSections = [
+            this.generateInternalImports(),
+            this.generateConstructorArgsMetadata(widgets),
+            this.generatePropSettersMap(widgets),
+            this.generateSetterGetterMap(widgets),
+        ];
+
+        return {
+            jsx: await this.formatCode(jsxSections.join("\n")),
+            internal: await this.formatCode(internalSections.join("\n")),
+        };
     }
 
     private generateImports(): string {
@@ -176,6 +193,10 @@ export class JsxGenerator {
             `import type { ColumnViewColumnProps, ColumnViewRootProps, GridChildProps, ListItemProps, ListViewRenderProps, NotebookPageProps, SlotProps } from "../types.js";`,
             "",
         ].join("\n");
+    }
+
+    private generateInternalImports(): string {
+        return "/** Internal metadata for the reconciler. Not part of the public API. */\n";
     }
 
     private generateCommonTypes(widgetClass: GirClass | undefined): string {
@@ -750,73 +771,79 @@ ${widgetPropsContent}
         const lines: string[] = [];
 
         if (isListWidget(widgetName)) {
-            // Props type for the generic Root component
+            lines.push(`/**`);
+            lines.push(` * Props for the ${name}.Root component with type-safe item rendering.`);
+            lines.push(` * @typeParam T - The type of items in the list.`);
+            lines.push(` */`);
             lines.push(`interface ${name}RootProps<T> extends Omit<${name}Props, "renderItem"> {`);
-            lines.push(`\t/** Render function for list items. Called with null during setup. */`);
+            lines.push(`\t/** Render function for list items. Called with null during setup (for loading state). */`);
             lines.push(`\trenderItem: (item: T | null) => import("react").ReactElement;`);
             lines.push(`}`);
             lines.push(``);
-            // Root wrapper component
             lines.push(`function ${name}Root<T>(props: ${name}RootProps<T>): import("react").ReactElement {`);
             lines.push(`\treturn createElement("${name}.Root", props);`);
             lines.push(`}`);
             lines.push(``);
-            // Item wrapper component
             lines.push(`function ${name}Item<T>(props: ListItemProps<T>): import("react").ReactElement {`);
             lines.push(`\treturn createElement("${name}.Item", props);`);
             lines.push(`}`);
         } else if (isColumnViewWidget(widgetName)) {
+            lines.push(`/**`);
+            lines.push(` * Props for the ${name}.Root component with type-safe item and column rendering.`);
+            lines.push(` * @typeParam T - The type of items in the column view.`);
+            lines.push(` * @typeParam C - The union type of column IDs for type-safe sorting.`);
+            lines.push(` */`);
             lines.push(
                 `interface ${name}RootPropsExtended<T = unknown, C extends string = string> extends ${name}Props, ColumnViewRootProps<T, C> {}`,
             );
             lines.push(``);
-            // Root wrapper (generic)
             lines.push(
                 `function ${name}Root<T = unknown, C extends string = string>(props: ${name}RootPropsExtended<T, C>): import("react").ReactElement {`,
             );
             lines.push(`\treturn createElement("${name}.Root", props);`);
             lines.push(`}`);
             lines.push(``);
-            // Column props type - use GenericColumnProps to avoid conflict with imported ColumnViewColumnProps
+            lines.push(`/**`);
+            lines.push(` * Props for ${name}.Column with type-safe cell rendering.`);
+            lines.push(` * @typeParam T - The type of items passed to the renderCell function.`);
+            lines.push(` */`);
             lines.push(`interface ${name}GenericColumnProps<T> extends Omit<ColumnViewColumnProps, "renderCell"> {`);
-            lines.push(`\t/** Render function for column cells. Called with null during setup. */`);
+            lines.push(`\t/** Render function for column cells. Called with null during setup (for loading state). */`);
             lines.push(`\trenderCell: (item: T | null) => import("react").ReactElement;`);
             lines.push(`}`);
             lines.push(``);
-            // Column wrapper component
             lines.push(
                 `function ${name}Column<T>(props: ${name}GenericColumnProps<T>): import("react").ReactElement {`,
             );
             lines.push(`\treturn createElement("${name}.Column", props);`);
             lines.push(`}`);
             lines.push(``);
-            // Item wrapper component
             lines.push(`function ${name}Item<T>(props: ListItemProps<T>): import("react").ReactElement {`);
             lines.push(`\treturn createElement("${name}.Item", props);`);
             lines.push(`}`);
         } else if (isDropDownWidget(widgetName)) {
-            // Props type for the generic Root component
+            lines.push(`/**`);
+            lines.push(` * Props for the ${name}.Root component with type-safe item handling.`);
+            lines.push(` * @typeParam T - The type of items in the dropdown.`);
+            lines.push(` */`);
             lines.push(
                 `interface ${name}RootProps<T> extends Omit<${name}Props, "itemLabel" | "onSelectionChanged"> {`,
             );
-            lines.push(`\t/** Function to convert item to display label */`);
+            lines.push(`\t/** Function to convert an item to its display label. */`);
             lines.push(`\titemLabel?: (item: T) => string;`);
-            lines.push(`\t/** Called when selection changes */`);
+            lines.push(`\t/** Called when the selected item changes. */`);
             lines.push(`\tonSelectionChanged?: (item: T, index: number) => void;`);
             lines.push(`}`);
             lines.push(``);
-            // Root wrapper component
             lines.push(`function ${name}Root<T>(props: ${name}RootProps<T>): import("react").ReactElement {`);
             lines.push(`\treturn createElement("${name}.Root", props);`);
             lines.push(`}`);
             lines.push(``);
-            // Item wrapper component
             lines.push(`function ${name}Item<T>(props: ListItemProps<T>): import("react").ReactElement {`);
             lines.push(`\treturn createElement("${name}.Item", props);`);
             lines.push(`}`);
         }
 
-        // Generate slot wrapper components
         for (const slot of metadata.namedChildSlots) {
             lines.push(``);
             lines.push(`function ${name}${slot.slotName}(props: SlotProps): import("react").ReactElement {`);

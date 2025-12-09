@@ -32,6 +32,7 @@ export const createDevServer = async (options: DevServerOptions): Promise<ViteDe
             ...viteConfig?.optimizeDeps,
             noDiscovery: true,
             include: [],
+            exclude: ["react-dom"],
         },
         ssr: {
             ...viteConfig?.ssr,

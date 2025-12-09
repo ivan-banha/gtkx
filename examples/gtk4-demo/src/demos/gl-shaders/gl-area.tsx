@@ -2,7 +2,7 @@ import type * as Gdk from "@gtkx/ffi/gdk";
 import * as GL from "@gtkx/ffi/gl";
 import * as Gtk from "@gtkx/ffi/gtk";
 import { Box, Button, GLArea, Label, Scale } from "@gtkx/react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSourcePath } from "../source-path.js";
 import type { Demo } from "../types.js";
 
@@ -160,6 +160,17 @@ const GLAreaDemo = () => {
     const yAdjustment = useMemo(() => new Gtk.Adjustment(0, 0, 360, 1, 10, 0), []);
     const zAdjustment = useMemo(() => new Gtk.Adjustment(0, 0, 360, 1, 10, 0), []);
 
+    // Sync adjustment values when React state changes (one-way: React -> GTK)
+    useEffect(() => {
+        if (xAdjustment.getValue() !== rotationX) xAdjustment.setValue(rotationX);
+    }, [xAdjustment, rotationX]);
+    useEffect(() => {
+        if (yAdjustment.getValue() !== rotationY) yAdjustment.setValue(rotationY);
+    }, [yAdjustment, rotationY]);
+    useEffect(() => {
+        if (zAdjustment.getValue() !== rotationZ) zAdjustment.setValue(rotationZ);
+    }, [zAdjustment, rotationZ]);
+
     const handleRealize = useCallback((self: Gtk.Widget) => {
         const area = self as Gtk.GLArea;
         glAreaRef.current = area;
@@ -257,10 +268,7 @@ const GLAreaDemo = () => {
         setRotationX(0);
         setRotationY(0);
         setRotationZ(0);
-        xAdjustment.setValue(0);
-        yAdjustment.setValue(0);
-        zAdjustment.setValue(0);
-    }, [xAdjustment, yAdjustment, zAdjustment]);
+    }, []);
 
     const queueRedraw = useCallback(() => {
         if (glAreaRef.current) {

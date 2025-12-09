@@ -27,17 +27,6 @@ pub fn call(mut cx: FunctionContext) -> JsResult<JsValue> {
     let js_result_type = cx.argument::<JsObject>(3)?;
     let args = Arg::from_js_array(&mut cx, js_args)?;
     let result_type = Type::from_js_value(&mut cx, js_result_type.upcast())?;
-    let has_refs = args.iter().any(|arg| matches!(arg.value, Value::Ref(_)));
-    let is_void = matches!(result_type, Type::Undefined | Type::Null);
-
-    if is_void && !has_refs {
-        glib::idle_add_once(move || {
-            let _ = handle_call(library_name, symbol_name, args, result_type);
-        });
-
-        return Ok(cx.undefined().upcast());
-    }
-
     let (tx, rx) = mpsc::channel::<anyhow::Result<(Value, Vec<RefUpdate>)>>();
 
     glib::idle_add_once(move || {

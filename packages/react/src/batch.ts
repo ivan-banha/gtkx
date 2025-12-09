@@ -9,10 +9,15 @@ export const beginCommit = (): void => {
 
 export const endCommit = (): void => {
     inCommit = false;
-    for (const callback of pendingFlushes) {
-        callback();
+    if (pendingFlushes.size > 0) {
+        const callbacks = [...pendingFlushes];
+        pendingFlushes.clear();
+        queueMicrotask(() => {
+            for (const callback of callbacks) {
+                callback();
+            }
+        });
     }
-    pendingFlushes.clear();
 };
 
 export const scheduleFlush = (callback: FlushCallback): void => {

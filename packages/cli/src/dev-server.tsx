@@ -23,7 +23,19 @@ export const createDevServer = async (options: DevServerOptions): Promise<ViteDe
     const server = await createServer({
         ...viteConfig,
         appType: "custom",
-        plugins: [react()],
+        plugins: [
+            react(),
+            {
+                name: "gtkx:remove-react-dom-optimized",
+                enforce: "post",
+                config(config) {
+                    config.optimizeDeps ??= {};
+                    config.optimizeDeps.include = config.optimizeDeps.include?.filter(
+                        (dep) => dep !== "react-dom" && !dep.startsWith("react-dom/"),
+                    );
+                },
+            },
+        ],
         server: {
             ...viteConfig?.server,
             middlewareMode: true,
@@ -32,7 +44,6 @@ export const createDevServer = async (options: DevServerOptions): Promise<ViteDe
             ...viteConfig?.optimizeDeps,
             noDiscovery: true,
             include: [],
-            exclude: ["react-dom"],
         },
         ssr: {
             ...viteConfig?.ssr,

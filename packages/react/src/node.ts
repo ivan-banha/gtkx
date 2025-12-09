@@ -13,28 +13,52 @@ const extractConstructorArgs = (type: string, props: Props): unknown[] => {
     return params.map((p: { name: string; hasDefault: boolean }) => props[p.name]);
 };
 
-export abstract class Node<T extends Gtk.Widget | undefined = Gtk.Widget | undefined> {
+export abstract class Node<
+    T extends Gtk.Widget | undefined = Gtk.Widget | undefined,
+    S extends object | undefined = object | undefined,
+> {
     static matches(_type: string, _existingWidget?: Gtk.Widget | typeof ROOT_NODE_CONTAINER): boolean {
         return false;
     }
 
     protected signalHandlers = new Map<string, number>();
-    protected widget: T;
+    protected widget: T = undefined as T;
     protected widgetType: string;
+    protected nodeType: string;
+    private _state: S | null = null;
+
+    protected get state(): S {
+        if (this._state === null) {
+            throw new Error(`${this.constructor.name} not initialized`);
+        }
+        return this._state;
+    }
+
+    protected set state(value: S) {
+        this._state = value;
+    }
 
     protected isVirtual(): boolean {
         return false;
     }
 
-    constructor(type: string, props: Props, existingWidget?: Gtk.Widget) {
+    constructor(type: string, existingWidget?: Gtk.Widget) {
+        this.nodeType = type;
         this.widgetType = type.split(".")[0] || type;
 
         if (existingWidget) {
             this.widget = existingWidget as T;
-            return;
         }
+    }
 
-        this.widget = (this.isVirtual() ? undefined : this.createWidget(type, props)) as T;
+    /**
+     * Initializes the node with props. Called by the reconciler after construction.
+     * Subclasses can override to perform custom initialization.
+     */
+    initialize(props: Props): void {
+        if (!this.widget && !this.isVirtual()) {
+            this.widget = this.createWidget(this.nodeType, props) as T;
+        }
         this.updateProps({}, props);
     }
 

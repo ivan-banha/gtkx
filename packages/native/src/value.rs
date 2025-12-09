@@ -691,18 +691,30 @@ impl Value {
                     Value::Object(ObjectId::new(Object::GObject(obj)))
                 }),
             Type::Boxed(boxed_type) => {
-                let boxed_ptr = gvalue.as_ptr();
+                let gvalue_type = gvalue.type_();
+
+                let boxed_ptr = if gvalue_type == glib::Type::VARIANT {
+                    unsafe {
+                        glib::gobject_ffi::g_value_get_variant(gvalue.to_glib_none().0 as *const _)
+                            as *mut c_void
+                    }
+                } else {
+                    unsafe {
+                        glib::gobject_ffi::g_value_get_boxed(gvalue.to_glib_none().0 as *const _)
+                            as *mut c_void
+                    }
+                };
 
                 if boxed_ptr.is_null() {
                     return Value::Null;
                 }
 
-                let gtype = boxed_type.get_gtype().or_else(|| Some(gvalue.type_()));
+                let gtype = boxed_type.get_gtype().or_else(|| Some(gvalue_type));
 
                 let boxed = if boxed_type.is_borrowed {
-                    Boxed::from_glib_none(gtype, boxed_ptr as *mut c_void)
+                    Boxed::from_glib_none(gtype, boxed_ptr)
                 } else {
-                    Boxed::from_glib_full(gtype, boxed_ptr as *mut c_void)
+                    Boxed::from_glib_full(gtype, boxed_ptr)
                 };
 
                 let object_id = ObjectId::new(Object::Boxed(boxed));

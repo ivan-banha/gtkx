@@ -752,8 +752,8 @@ await unmount();
 ### Navigation
 ```tsx
 <Stack.Root visibleChildName={currentPage}>
-  <Box orientation={Orientation.VERTICAL} spacing={0} name="page1">{/* ... */}</Box>
-  <Box orientation={Orientation.VERTICAL} spacing={0} name="page2">{/* ... */}</Box>
+  <Stack.Page name="page1" title="Page 1">{/* content */}</Stack.Page>
+  <Stack.Page name="page2" title="Page 2">{/* content */}</Stack.Page>
 </Stack.Root>
 <StackSwitcher.Root />
 
@@ -762,6 +762,64 @@ await unmount();
   <Notebook.Page label="Tab 2">{/* content */}</Notebook.Page>
 </Notebook.Root>
 ```
+
+### Menus
+
+Application-wide menu bar (must be a sibling of ApplicationWindow at root level):
+```tsx
+export const App = () => (
+  <>
+    <ApplicationMenu>
+      <Menu.Submenu label="File">
+        <Menu.Item label="New" onActivate={handleNew} accels="<Control>n" />
+        <Menu.Item label="Open" onActivate={handleOpen} accels="<Control>o" />
+        <Menu.Section>
+          <Menu.Item label="Quit" onActivate={quit} accels="<Control>q" />
+        </Menu.Section>
+      </Menu.Submenu>
+      <Menu.Submenu label="Help">
+        <Menu.Item label="About" onActivate={showAbout} />
+      </Menu.Submenu>
+    </ApplicationMenu>
+    <ApplicationWindow title="My App" showMenubar onCloseRequest={quit}>
+      {/* content */}
+    </ApplicationWindow>
+  </>
+);
+```
+
+PopoverMenu for context menus and menu buttons:
+```tsx
+<MenuButton.Root label="Options">
+  <MenuButton.Popover>
+    <PopoverMenu.Root>
+      <Menu.Item label="Cut" onActivate={handleCut} accels="<Control>x" />
+      <Menu.Item label="Copy" onActivate={handleCopy} accels="<Control>c" />
+      <Menu.Item label="Paste" onActivate={handlePaste} accels="<Control>v" />
+    </PopoverMenu.Root>
+  </MenuButton.Popover>
+</MenuButton.Root>
+```
+
+Menu.Item props:
+- `label`: Display text
+- `onActivate`: Click handler
+- `accels`: Keyboard accelerator (e.g., `"<Control>s"`, `"<Control><Shift>n"`)
+
+PopoverMenuBar for inline menu bars in content area:
+```tsx
+<Box orientation={Orientation.VERTICAL}>
+  <PopoverMenuBar>
+    <Menu.Submenu label="File">
+      <Menu.Item label="New" onActivate={handleNew} />
+      <Menu.Item label="Quit" onActivate={quit} />
+    </Menu.Submenu>
+  </PopoverMenuBar>
+  {/* content */}
+</Box>
+```
+
+Differences: `ApplicationMenu` shows in window titlebar (requires `showMenubar`), `PopoverMenuBar` shows inline in content.
 
 ### Dialogs
 ```tsx
@@ -788,7 +846,7 @@ Functions:
 - `quit()`: Quit application and cleanup
 - `createPortal(children, container?, key?)`: Render into different container
 
-100+ widget components including: AboutDialog, ActionBar, ApplicationWindow, Box, Button, Calendar, CheckButton, ColumnView, DropDown, Entry, Expander, Frame, Grid, GridView, HeaderBar, Image, Label, ListView, MenuButton, Notebook, Overlay, Paned, PasswordEntry, Picture, Popover, ProgressBar, Revealer, Scale, ScrolledWindow, SearchEntry, Spinner, Stack, Switch, TextView, ToggleButton, Video, Window, and more.
+100+ widget components including: AboutDialog, ActionBar, ApplicationMenu, ApplicationWindow, Box, Button, Calendar, CheckButton, ColumnView, DropDown, Entry, Expander, Frame, Grid, GridView, HeaderBar, Image, Label, ListView, Menu (with Item, Section, Submenu), MenuButton, Notebook, Overlay, Paned, PasswordEntry, Picture, Popover, PopoverMenu, ProgressBar, Revealer, Scale, ScrolledWindow, SearchEntry, Spinner, Stack, Switch, TextView, ToggleButton, Video, Window, and more.
 
 ### @gtkx/ffi
 

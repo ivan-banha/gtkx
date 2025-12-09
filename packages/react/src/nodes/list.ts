@@ -15,29 +15,44 @@ interface ListItemInfo {
     fiberRoot: Reconciler.FiberRoot;
 }
 
-export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView> implements ItemContainer<unknown> {
+interface ListViewState {
+    stringList: Gtk.StringList;
+    selectionModel: Gtk.SingleSelection;
+    factory: Gtk.SignalListItemFactory;
+    renderItem: RenderItemFn<unknown>;
+    listItemCache: Map<number, ListItemInfo>;
+    items: unknown[];
+    committedLength: number;
+}
+
+export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewState> implements ItemContainer<unknown> {
     static matches(type: string): boolean {
         return type === "ListView.Root" || type === "GridView.Root";
     }
 
-    private stringList: Gtk.StringList;
-    private selectionModel: Gtk.SingleSelection;
-    private factory: Gtk.SignalListItemFactory;
-    private items: unknown[] = [];
-    private renderItem: RenderItemFn<unknown>;
-    private listItemCache = new Map<number, ListItemInfo>();
-    private committedLength = 0;
+    override initialize(props: Props): void {
+        // Initialize state before super.initialize() since updateProps accesses this.state
+        this.state = {
+            stringList: null as unknown as Gtk.StringList,
+            selectionModel: null as unknown as Gtk.SingleSelection,
+            factory: null as unknown as Gtk.SignalListItemFactory,
+            renderItem: props.renderItem as RenderItemFn<unknown>,
+            listItemCache: new Map(),
+            items: [],
+            committedLength: 0,
+        };
 
-    constructor(type: string, props: Props) {
-        super(type, props);
+        super.initialize(props);
 
-        this.stringList = new Gtk.StringList([]);
-        this.selectionModel = new Gtk.SingleSelection(this.stringList as unknown as Gio.ListModel);
-        this.factory = new Gtk.SignalListItemFactory();
+        const stringList = new Gtk.StringList([]);
+        const selectionModel = new Gtk.SingleSelection(stringList as unknown as Gio.ListModel);
+        const factory = new Gtk.SignalListItemFactory();
 
-        this.renderItem = props.renderItem as RenderItemFn<unknown>;
+        this.state.stringList = stringList;
+        this.state.selectionModel = selectionModel;
+        this.state.factory = factory;
 
-        this.factory.connect("setup", (_self, listItemObj) => {
+        factory.connect("setup", (_self, listItemObj) => {
             const listItem = getObject(listItemObj.ptr, Gtk.ListItem);
             const id = getObjectId(listItemObj.ptr);
 
@@ -45,79 +60,79 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView> implements I
             listItem.setChild(box);
 
             const fiberRoot = createFiberRoot(box);
-            this.listItemCache.set(id, { box, fiberRoot });
+            this.state.listItemCache.set(id, { box, fiberRoot });
 
-            const element = this.renderItem(null);
+            const element = this.state.renderItem(null);
             reconciler.getInstance().updateContainer(element, fiberRoot, null, () => {});
         });
 
-        this.factory.connect("bind", (_self, listItemObj) => {
+        factory.connect("bind", (_self, listItemObj) => {
             const listItem = getObject(listItemObj.ptr, Gtk.ListItem);
             const id = getObjectId(listItemObj.ptr);
-            const info = this.listItemCache.get(id);
+            const info = this.state.listItemCache.get(id);
 
             if (!info) return;
 
             const position = listItem.getPosition();
-            const item = this.items[position];
-            const element = this.renderItem(item);
+            const item = this.state.items[position];
+            const element = this.state.renderItem(item);
             reconciler.getInstance().updateContainer(element, info.fiberRoot, null, () => {});
         });
 
-        this.factory.connect("unbind", (_self, listItemObj) => {
+        factory.connect("unbind", (_self, listItemObj) => {
             const id = getObjectId(listItemObj.ptr);
-            const info = this.listItemCache.get(id);
+            const info = this.state.listItemCache.get(id);
 
             if (!info) return;
 
             reconciler.getInstance().updateContainer(null, info.fiberRoot, null, () => {});
         });
 
-        this.factory.connect("teardown", (_self, listItemObj) => {
+        factory.connect("teardown", (_self, listItemObj) => {
             const id = getObjectId(listItemObj.ptr);
-            const info = this.listItemCache.get(id);
+            const info = this.state.listItemCache.get(id);
 
             if (info) {
                 reconciler.getInstance().updateContainer(null, info.fiberRoot, null, () => {});
-                this.listItemCache.delete(id);
+                this.state.listItemCache.delete(id);
             }
         });
 
-        this.widget.setModel(this.selectionModel);
-        this.widget.setFactory(this.factory);
+        this.widget.setModel(selectionModel);
+        this.widget.setFactory(factory);
     }
 
     private syncStringList = (): void => {
-        const newLength = this.items.length;
-        if (newLength === this.committedLength) return;
+        const newLength = this.state.items.length;
+        if (newLength === this.state.committedLength) return;
 
         const placeholders = Array.from({ length: newLength }, () => "");
-        this.stringList.splice(0, this.committedLength, placeholders);
-        this.committedLength = newLength;
+        this.state.stringList.splice(0, this.state.committedLength, placeholders);
+        this.state.committedLength = newLength;
     };
 
     addItem(item: unknown): void {
-        this.items.push(item);
+        this.state.items.push(item);
         scheduleFlush(this.syncStringList);
     }
 
     insertItemBefore(item: unknown, beforeItem: unknown): void {
-        const beforeIndex = this.items.indexOf(beforeItem);
+        const beforeIndex = this.state.items.indexOf(beforeItem);
 
         if (beforeIndex === -1) {
-            this.items.push(item);
+            this.state.items.push(item);
         } else {
-            this.items.splice(beforeIndex, 0, item);
+            this.state.items.splice(beforeIndex, 0, item);
         }
 
         scheduleFlush(this.syncStringList);
     }
 
     removeItem(item: unknown): void {
-        const index = this.items.indexOf(item);
+        const index = this.state.items.indexOf(item);
 
         if (index !== -1) {
-            this.items.splice(index, 1);
+            this.state.items.splice(index, 1);
             scheduleFlush(this.syncStringList);
         }
     }
@@ -130,7 +145,7 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView> implements I
 
     override updateProps(oldProps: Props, newProps: Props): void {
         if (oldProps.renderItem !== newProps.renderItem) {
-            this.renderItem = newProps.renderItem as RenderItemFn<unknown>;
+            this.state.renderItem = newProps.renderItem as RenderItemFn<unknown>;
         }
 
         super.updateProps(oldProps, newProps);
@@ -148,9 +163,9 @@ export class ListItemNode extends Node {
 
     private item: unknown;
 
-    constructor(type: string, props: Props) {
-        super(type, props);
+    override initialize(props: Props): void {
         this.item = props.item as unknown;
+        super.initialize(props);
     }
 
     getItem(): unknown {

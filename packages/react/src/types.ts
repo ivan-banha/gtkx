@@ -91,3 +91,57 @@ export interface ColumnViewRootProps<T = unknown, C extends string = string> {
 export interface NotebookPageProps extends SlotProps {
     label: string;
 }
+
+export interface StackRootProps extends SlotProps {
+    visibleChildName?: string;
+}
+
+export interface StackPageProps extends SlotProps {
+    name?: string;
+    title?: string;
+    iconName?: string;
+    needsAttention?: boolean;
+    visible?: boolean;
+    useUnderline?: boolean;
+}
+
+/**
+ * Props for the Menu.Root component.
+ * Root container for declarative menu structures.
+ */
+export interface MenuRootProps {
+    children?: ReactNode;
+}
+
+/**
+ * Props for Menu.Item components.
+ * Represents a single menu item with an action.
+ */
+export interface MenuItemProps {
+    /** The visible label for the menu item. */
+    label: string;
+    /** Callback invoked when the menu item is activated. */
+    onActivate?: () => void;
+    /** Keyboard accelerators for this menu item (e.g., `"<Control>q"` or `["<Control>q", "<Control>w"]`). */
+    accels?: string | string[];
+}
+
+/**
+ * Props for Menu.Section components.
+ * Groups related menu items with optional label.
+ */
+export interface MenuSectionProps {
+    /** Optional section label displayed as a header. */
+    label?: string;
+    children?: ReactNode;
+}
+
+/**
+ * Props for Menu.Submenu components.
+ * Creates a nested submenu with its own items.
+ */
+export interface MenuSubmenuProps {
+    /** The submenu label shown in parent menu. */
+    label: string;
+    children?: ReactNode;
+}

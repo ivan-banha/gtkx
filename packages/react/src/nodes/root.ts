@@ -13,6 +13,6 @@ export class RootNode extends Node<never> {
     }
 
     constructor() {
-        super("", {});
+        super("");
     }
 }

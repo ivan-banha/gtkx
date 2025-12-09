@@ -49,11 +49,11 @@ export class DropDownNode extends Node<Gtk.DropDown> implements ItemContainer<un
         return type === "DropDown.Root";
     }
 
-    private store: DropDownStore;
+    private store!: DropDownStore;
     private onSelectionChanged?: (item: unknown, index: number) => void;
 
-    constructor(type: string, props: Props) {
-        super(type, props);
+    override initialize(props: Props): void {
+        super.initialize(props);
 
         const labelFn = (props.itemLabel as ItemLabelFn) ?? ((item: unknown) => String(item));
         this.onSelectionChanged = props.onSelectionChanged as ((item: unknown, index: number) => void) | undefined;
@@ -112,8 +112,8 @@ export class DropDownItemNode extends Node<never> {
 
     private item: unknown;
 
-    constructor(type: string, props: Props) {
-        super(type, props);
+    override initialize(props: Props): void {
+        super.initialize(props);
         this.item = props.item;
     }
 

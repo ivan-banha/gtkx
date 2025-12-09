@@ -36,6 +36,8 @@ const COLUMN_VIEW_WIDGET = "ColumnView";
 const DROPDOWN_WIDGETS = new Set(["DropDown"]);
 const GRID_WIDGETS = new Set(["Grid"]);
 const NOTEBOOK_WIDGET = "Notebook";
+const STACK_WIDGET = "Stack";
+const POPOVER_MENU_WIDGET = "PopoverMenu";
 
 const INTERNALLY_PROVIDED_PARAMS: Record<string, Set<string>> = {
     ApplicationWindow: new Set(["application"]),
@@ -70,6 +72,8 @@ const isColumnViewWidget = (widgetName: string): boolean => widgetName === COLUM
 const isDropDownWidget = (widgetName: string): boolean => DROPDOWN_WIDGETS.has(widgetName);
 const isGridWidget = (widgetName: string): boolean => GRID_WIDGETS.has(widgetName);
 const isNotebookWidget = (widgetName: string): boolean => widgetName === NOTEBOOK_WIDGET;
+const isStackWidget = (widgetName: string): boolean => widgetName === STACK_WIDGET;
+const isPopoverMenuWidget = (widgetName: string): boolean => widgetName === POPOVER_MENU_WIDGET;
 
 const sanitizeDoc = (doc: string): string => {
     let result = doc;
@@ -190,7 +194,7 @@ export class JsxGenerator {
             `import type { ReactNode, Ref } from "react";`,
             ...externalImports,
             `import type * as Gtk from "@gtkx/ffi/gtk";`,
-            `import type { ColumnViewColumnProps, ColumnViewRootProps, GridChildProps, ListItemProps, ListViewRenderProps, NotebookPageProps, SlotProps } from "../types.js";`,
+            `import type { ColumnViewColumnProps, ColumnViewRootProps, GridChildProps, ListItemProps, ListViewRenderProps, MenuItemProps, MenuRootProps, MenuSectionProps, MenuSubmenuProps, NotebookPageProps, SlotProps, StackPageProps, StackRootProps } from "../types.js";`,
             "",
         ].join("\n");
     }
@@ -203,7 +207,7 @@ export class JsxGenerator {
         const widgetPropsContent = this.generateWidgetPropsContent(widgetClass);
 
         return `
-export { ColumnViewColumnProps, ColumnViewRootProps, GridChildProps, ListItemProps, ListViewRenderProps, NotebookPageProps, SlotProps };
+export { ColumnViewColumnProps, ColumnViewRootProps, GridChildProps, ListItemProps, ListViewRenderProps, MenuItemProps, MenuRootProps, MenuSectionProps, MenuSubmenuProps, NotebookPageProps, SlotProps, StackPageProps, StackRootProps };
 
 ${widgetPropsContent}
 `;
@@ -697,13 +701,21 @@ ${widgetPropsContent}
                 isColumnViewWidget(widget.name) ||
                 isDropDownWidget(widget.name) ||
                 isGridWidget(widget.name) ||
-                isNotebookWidget(widget.name);
+                isNotebookWidget(widget.name) ||
+                isStackWidget(widget.name) ||
+                isPopoverMenuWidget(widget.name);
 
             const docComment = widget.doc ? formatDoc(widget.doc).trimEnd() : "";
 
             if (hasMeaningfulSlots) {
                 // For list widgets, generate wrapper components with proper generics
-                if (isListWidget(widget.name) || isColumnViewWidget(widget.name) || isDropDownWidget(widget.name)) {
+                if (
+                    isListWidget(widget.name) ||
+                    isColumnViewWidget(widget.name) ||
+                    isDropDownWidget(widget.name) ||
+                    isStackWidget(widget.name) ||
+                    isPopoverMenuWidget(widget.name)
+                ) {
                     const wrapperComponents = this.generateGenericWrapperComponents(widget.name, metadata);
                     const exportMembers = this.getWrapperExportMembers(widget.name, metadata);
 
@@ -742,6 +754,39 @@ ${widgetPropsContent}
             }
         }
 
+        // Add ApplicationMenu and Menu namespace components
+        lines.push(`/**
+ * Sets the application-wide menu bar.
+ * The menu will appear in the window's title bar on supported platforms.
+ * Use Menu.Item, Menu.Section, and Menu.Submenu as children.
+ */
+export function ApplicationMenu(props: MenuRootProps): import("react").ReactElement {
+\treturn createElement("ApplicationMenu", props);
+}
+
+function MenuItem(props: MenuItemProps): import("react").ReactElement {
+\treturn createElement("Menu.Item", props);
+}
+
+function MenuSection(props: MenuSectionProps): import("react").ReactElement {
+\treturn createElement("Menu.Section", props);
+}
+
+function MenuSubmenu(props: MenuSubmenuProps): import("react").ReactElement {
+\treturn createElement("Menu.Submenu", props);
+}
+
+/**
+ * Declarative menu builder for use with PopoverMenu and ApplicationMenu.
+ * Use Menu.Item for action items, Menu.Section for groups, Menu.Submenu for nested menus.
+ */
+export const Menu = {
+\tItem: MenuItem,
+\tSection: MenuSection,
+\tSubmenu: MenuSubmenu,
+};
+`);
+
         return `${lines.join("\n")}\n`;
     }
 
@@ -756,6 +801,12 @@ ${widgetPropsContent}
             members.push(`Item: ${name}Item`);
         } else if (isDropDownWidget(widgetName)) {
             members.push(`Item: ${name}Item`);
+        } else if (isStackWidget(widgetName)) {
+            members.push(`Page: ${name}Page`);
+        } else if (isPopoverMenuWidget(widgetName)) {
+            members.push(`Item: ${name}Item`);
+            members.push(`Section: ${name}Section`);
+            members.push(`Submenu: ${name}Submenu`);
         }
 
         // Add named child slots
@@ -842,6 +893,30 @@ ${widgetPropsContent}
             lines.push(`function ${name}Item<T>(props: ListItemProps<T>): import("react").ReactElement {`);
             lines.push(`\treturn createElement("${name}.Item", props);`);
             lines.push(`}`);
+        } else if (isStackWidget(widgetName)) {
+            lines.push(`function ${name}Root(props: StackRootProps & ${name}Props): import("react").ReactElement {`);
+            lines.push(`\treturn createElement("${name}.Root", props);`);
+            lines.push(`}`);
+            lines.push(``);
+            lines.push(`function ${name}Page(props: StackPageProps): import("react").ReactElement {`);
+            lines.push(`\treturn createElement("${name}.Page", props);`);
+            lines.push(`}`);
+        } else if (isPopoverMenuWidget(widgetName)) {
+            lines.push(`function ${name}Root(props: MenuRootProps & ${name}Props): import("react").ReactElement {`);
+            lines.push(`\treturn createElement("${name}.Root", props);`);
+            lines.push(`}`);
+            lines.push(``);
+            lines.push(`function ${name}Item(props: MenuItemProps): import("react").ReactElement {`);
+            lines.push(`\treturn createElement("Menu.Item", props);`);
+            lines.push(`}`);
+            lines.push(``);
+            lines.push(`function ${name}Section(props: MenuSectionProps): import("react").ReactElement {`);
+            lines.push(`\treturn createElement("Menu.Section", props);`);
+            lines.push(`}`);
+            lines.push(``);
+            lines.push(`function ${name}Submenu(props: MenuSubmenuProps): import("react").ReactElement {`);
+            lines.push(`\treturn createElement("Menu.Submenu", props);`);
+            lines.push(`}`);
         }
 
         for (const slot of metadata.namedChildSlots) {
@@ -872,7 +947,9 @@ ${widgetPropsContent}
                 isColumnViewWidget(widget.name) ||
                 isDropDownWidget(widget.name) ||
                 isGridWidget(widget.name) ||
-                isNotebookWidget(widget.name);
+                isNotebookWidget(widget.name) ||
+                isStackWidget(widget.name) ||
+                isPopoverMenuWidget(widget.name);
 
             if (hasMeaningfulSlots) {
                 elements.push(`"${widgetName}.Root": ${propsName};`);
@@ -904,7 +981,19 @@ ${widgetPropsContent}
             if (isNotebookWidget(widget.name)) {
                 elements.push(`"${widgetName}.Page": NotebookPageProps;`);
             }
+
+            if (isStackWidget(widget.name)) {
+                elements.push(`"${widgetName}.Page": StackPageProps;`);
+            }
         }
+
+        // Add shared Menu elements (used by PopoverMenu, PopoverMenuBar, and ApplicationMenu)
+        elements.push(`"Menu.Item": MenuItemProps;`);
+        elements.push(`"Menu.Section": MenuSectionProps;`);
+        elements.push(`"Menu.Submenu": MenuSubmenuProps;`);
+
+        // Add ApplicationMenu element
+        elements.push(`ApplicationMenu: MenuRootProps;`);
 
         return `
 declare global {

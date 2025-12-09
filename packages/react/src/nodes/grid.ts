@@ -27,19 +27,19 @@ export class GridChildNode extends Node<never> {
         return true;
     }
 
-    private column: number;
-    private row: number;
-    private columnSpan: number;
-    private rowSpan: number;
+    private column: number = 0;
+    private row: number = 0;
+    private columnSpan: number = 1;
+    private rowSpan: number = 1;
     private childWidget: Gtk.Widget | null = null;
     private parentContainer: (Node & GridContainer) | null = null;
 
-    constructor(type: string, props: Props) {
-        super(type, props);
+    override initialize(props: Props): void {
         this.column = getNumberProp(props, "column", 0);
         this.row = getNumberProp(props, "row", 0);
         this.columnSpan = getNumberProp(props, "columnSpan", 1);
         this.rowSpan = getNumberProp(props, "rowSpan", 1);
+        super.initialize(props);
     }
 
     override appendChild(child: Node): void {

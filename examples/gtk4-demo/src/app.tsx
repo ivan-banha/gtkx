@@ -1,5 +1,5 @@
 import * as Gtk from "@gtkx/ffi/gtk";
-import { ApplicationWindow, Box, Paned, quit } from "@gtkx/react";
+import { ApplicationMenu, ApplicationWindow, Box, Menu, Paned, quit } from "@gtkx/react";
 import { DemoPanel } from "./components/demo-panel.js";
 import { Sidebar } from "./components/sidebar.js";
 import { SourceViewer } from "./components/source-viewer.js";
@@ -49,7 +49,12 @@ const AppContent = () => {
 
 export const App = () => (
     <DemoProvider categories={categories}>
-        <ApplicationWindow title="GTK4 Demo" defaultWidth={1400} defaultHeight={900} onCloseRequest={quit}>
+        <ApplicationMenu>
+            <Menu.Submenu label="File">
+                <Menu.Item label="Quit" onActivate={quit} accels="<Control>q" />
+            </Menu.Submenu>
+        </ApplicationMenu>
+        <ApplicationWindow title="GTK4 Demo" defaultWidth={1400} defaultHeight={900} showMenubar onCloseRequest={quit}>
             <AppContent />
         </ApplicationWindow>
     </DemoProvider>

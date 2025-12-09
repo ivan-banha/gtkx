@@ -7,15 +7,6 @@ export class TextViewNode extends Node<Gtk.TextView> {
         return type === "TextView";
     }
 
-    constructor(type: string, props: Props) {
-        super(type, props);
-
-        const buffer = props.buffer as Gtk.TextBuffer | undefined;
-        if (buffer) {
-            this.widget.setBuffer(buffer);
-        }
-    }
-
     protected override consumedProps(): Set<string> {
         const consumed = super.consumedProps();
         consumed.add("buffer");

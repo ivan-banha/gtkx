@@ -69,13 +69,13 @@ export class NotebookPageNode extends Node {
         return true;
     }
 
-    private label: string;
+    private label: string = "";
     private childWidget: Gtk.Widget | null = null;
     private parentContainer: (Node & PageContainer) | null = null;
 
-    constructor(type: string, props: Props) {
-        super(type, props);
+    override initialize(props: Props): void {
         this.label = getStringProp(props, "label", "");
+        super.initialize(props);
     }
 
     getLabel(): string {

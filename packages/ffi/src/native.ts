@@ -1,6 +1,7 @@
 import { EventEmitter } from "node:events";
-import { start as nativeStart, stop as nativeStop } from "@gtkx/native";
+import { getObjectId, start as nativeStart, stop as nativeStop } from "@gtkx/native";
 import type { ApplicationFlags } from "./generated/gio/enums.js";
+import { typeNameFromInstance } from "./generated/gobject/functions.js";
 import { Application } from "./generated/gtk/application.js";
 
 type NativeEventMap = {
@@ -89,3 +90,24 @@ export const stop = (): void => {
 };
 
 export { createRef, getObjectId } from "@gtkx/native";
+
+/**
+ * Type guard that checks if an object is an instance of a specific GTK class.
+ * Uses GLib's type system to check the actual runtime type.
+ * @param obj - The object to check (must have a `ptr` property)
+ * @param cls - The class to check against (must have a static `gtkTypeName` property)
+ * @returns True if the object is an instance of the class
+ * @example
+ * ```ts
+ * if (isInstanceOf(widget, Gtk.ApplicationWindow)) {
+ *   widget.setShowMenubar(true); // TypeScript knows widget is ApplicationWindow
+ * }
+ * ```
+ */
+export const isInstanceOf = <T extends { ptr: unknown }>(
+    obj: { ptr: unknown },
+    cls: { gtkTypeName: string; prototype: T },
+): obj is T => {
+    const typeName = typeNameFromInstance(getObjectId(obj.ptr));
+    return typeName === cls.gtkTypeName;
+};

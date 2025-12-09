@@ -74,5 +74,6 @@ render(<App />, "org.example.Counter");
 ## Next Steps
 
 - [Getting Started](./getting-started) — Install GTKX and create your first app
+- [Menus Guide](./guides/menus) — Add application menus and keyboard shortcuts
 - [Styling Guide](./guides/styling) — Style your app with CSS-in-JS
 - [Testing Guide](./guides/testing) — Write tests for your components

@@ -1,5 +1,4 @@
 import type * as Gtk from "@gtkx/ffi/gtk";
-import type { Props } from "../factory.js";
 import { Node } from "../node.js";
 
 export class SlotNode extends Node<never> {
@@ -19,8 +18,8 @@ export class SlotNode extends Node<never> {
     private slotName: string;
     private parentNode: Node | null = null;
 
-    constructor(type: string, props: Props) {
-        super(type, props);
+    constructor(type: string) {
+        super(type);
 
         const dotIndex = type.indexOf(".");
 

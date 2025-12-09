@@ -16,58 +16,76 @@ import { Node } from "../node.js";
 import { reconciler } from "../reconciler.js";
 import type { ColumnSortFn, RenderItemFn } from "../types.js";
 
-export class ColumnViewNode extends Node<Gtk.ColumnView> implements ItemContainer<unknown>, ColumnContainer {
+interface ColumnViewState {
+    stringList: Gtk.StringList;
+    selectionModel: Gtk.SingleSelection;
+    sortListModel: Gtk.SortListModel;
+    items: unknown[];
+    columns: ColumnViewColumnNode[];
+    committedLength: number;
+    sortColumn: string | null;
+    sortOrder: Gtk.SortType;
+    sortFn: ColumnSortFn<unknown, string> | null;
+    isSorting: boolean;
+    onSortChange: ((column: string | null, order: Gtk.SortType) => void) | null;
+    sorterChangedHandlerId: number | null;
+    lastNotifiedColumn: string | null;
+    lastNotifiedOrder: Gtk.SortType;
+}
+
+export class ColumnViewNode
+    extends Node<Gtk.ColumnView, ColumnViewState>
+    implements ItemContainer<unknown>, ColumnContainer
+{
     static matches(type: string): boolean {
         return type === "ColumnView.Root";
     }
 
-    private stringList: Gtk.StringList;
-    private selectionModel: Gtk.SingleSelection;
-    private sortListModel: Gtk.SortListModel;
-    private items: unknown[] = [];
-    private columns: ColumnViewColumnNode[] = [];
-    private committedLength = 0;
-    private sortColumn: string | null = null;
-    private sortOrder: Gtk.SortType = Gtk.SortType.ASCENDING;
-    private sortFn: ColumnSortFn<unknown, string> | null = null;
-    private isSorting = false;
-    private onSortChange: ((column: string | null, order: Gtk.SortType) => void) | null = null;
-    private sorterChangedHandlerId: number | null = null;
-    private lastNotifiedColumn: string | null = null;
-    private lastNotifiedOrder: Gtk.SortType = Gtk.SortType.ASCENDING;
+    override initialize(props: Props): void {
+        // Initialize state before super.initialize() since updateProps accesses this.state
+        this.state = {
+            stringList: null as unknown as Gtk.StringList,
+            selectionModel: null as unknown as Gtk.SingleSelection,
+            sortListModel: null as unknown as Gtk.SortListModel,
+            items: [],
+            columns: [],
+            committedLength: 0,
+            sortColumn: (props.sortColumn as string | null) ?? null,
+            sortOrder: (props.sortOrder as Gtk.SortType | undefined) ?? Gtk.SortType.ASCENDING,
+            sortFn: (props.sortFn as ColumnSortFn<unknown, string> | null) ?? null,
+            isSorting: false,
+            onSortChange: (props.onSortChange as ((column: string | null, order: Gtk.SortType) => void) | null) ?? null,
+            sorterChangedHandlerId: null,
+            lastNotifiedColumn: null,
+            lastNotifiedOrder: Gtk.SortType.ASCENDING,
+        };
 
-    constructor(type: string, props: Props) {
-        super(type, props);
+        super.initialize(props);
 
-        this.stringList = new Gtk.StringList([]);
-        this.sortListModel = new Gtk.SortListModel(
-            this.stringList as unknown as Gio.ListModel,
-            this.widget.getSorter(),
-        );
-        this.sortListModel.setIncremental(true);
-        this.selectionModel = new Gtk.SingleSelection(this.sortListModel as unknown as Gio.ListModel);
-        this.widget.setModel(this.selectionModel);
+        const stringList = new Gtk.StringList([]);
+        const sortListModel = new Gtk.SortListModel(stringList as unknown as Gio.ListModel, this.widget.getSorter());
+        sortListModel.setIncremental(true);
+        const selectionModel = new Gtk.SingleSelection(sortListModel as unknown as Gio.ListModel);
+        this.widget.setModel(selectionModel);
 
-        this.sortColumn = (props.sortColumn as string | null) ?? null;
-        this.sortOrder = (props.sortOrder as Gtk.SortType | undefined) ?? Gtk.SortType.ASCENDING;
-        this.sortFn = (props.sortFn as ColumnSortFn<unknown, string> | null) ?? null;
-        this.onSortChange =
-            (props.onSortChange as ((column: string | null, order: Gtk.SortType) => void) | null) ?? null;
+        this.state.stringList = stringList;
+        this.state.sortListModel = sortListModel;
+        this.state.selectionModel = selectionModel;
 
         this.connectSorterChangedSignal();
     }
 
     private connectSorterChangedSignal(): void {
         const sorter = this.widget.getSorter();
-        if (!sorter || !this.onSortChange) return;
+        if (!sorter || !this.state.onSortChange) return;
 
-        this.sorterChangedHandlerId = sorter.connect("changed", () => {
+        this.state.sorterChangedHandlerId = sorter.connect("changed", () => {
             this.waitForSortComplete(() => this.notifySortChange());
         });
     }
 
     private waitForSortComplete(callback: () => void): void {
-        const sortingInProgress = this.sortListModel.getPending() > 0;
+        const sortingInProgress = this.state.sortListModel.getPending() > 0;
         if (sortingInProgress) {
             setTimeout(() => this.waitForSortComplete(callback), 0);
         } else {
@@ -76,17 +94,17 @@ export class ColumnViewNode extends Node<Gtk.ColumnView> implements ItemContaine
     }
 
     private disconnectSorterChangedSignal(): void {
-        if (this.sorterChangedHandlerId === null) return;
+        if (this.state.sorterChangedHandlerId === null) return;
 
         const sorter = this.widget.getSorter();
         if (sorter) {
-            GObject.signalHandlerDisconnect(sorter, this.sorterChangedHandlerId);
+            GObject.signalHandlerDisconnect(sorter, this.state.sorterChangedHandlerId);
         }
-        this.sorterChangedHandlerId = null;
+        this.state.sorterChangedHandlerId = null;
     }
 
     private notifySortChange(): void {
-        if (!this.onSortChange) return;
+        if (!this.state.onSortChange) return;
 
         const baseSorter = this.widget.getSorter();
         if (!baseSorter) return;
@@ -95,116 +113,114 @@ export class ColumnViewNode extends Node<Gtk.ColumnView> implements ItemContaine
         const column = sorter.getPrimarySortColumn();
         const order = sorter.getPrimarySortOrder();
         const columnId = column?.getId() ?? null;
-        const sortStateUnchanged = columnId === this.lastNotifiedColumn && order === this.lastNotifiedOrder;
+        const sortStateUnchanged = columnId === this.state.lastNotifiedColumn && order === this.state.lastNotifiedOrder;
         if (sortStateUnchanged) {
             return;
         }
 
-        this.lastNotifiedColumn = columnId;
-        this.lastNotifiedOrder = order;
-        this.onSortChange(columnId, order);
+        this.state.lastNotifiedColumn = columnId;
+        this.state.lastNotifiedOrder = order;
+        this.state.onSortChange(columnId, order);
     }
 
     getItems(): unknown[] {
-        return this.items;
+        return this.state.items;
     }
 
     getSortFn(): ColumnSortFn<unknown, string> | null {
-        return this.sortFn;
+        return this.state.sortFn;
     }
 
     compareItems(a: unknown, b: unknown, columnId: string): number {
-        if (this.isSorting || !this.sortFn) return 0;
+        if (this.state.isSorting || !this.state.sortFn) return 0;
 
-        this.isSorting = true;
+        this.state.isSorting = true;
         try {
-            return this.sortFn(a, b, columnId);
+            return this.state.sortFn(a, b, columnId);
         } finally {
-            this.isSorting = false;
+            this.state.isSorting = false;
         }
     }
 
     addColumn(columnNode: ColumnViewColumnNode): void {
-        this.columns.push(columnNode);
+        this.state.columns.push(columnNode);
         const column = columnNode.getColumn();
         this.widget.appendColumn(column);
         columnNode.setColumnView(this);
 
-        if (columnNode.getId() === this.sortColumn && this.sortColumn !== null) {
+        if (columnNode.getId() === this.state.sortColumn && this.state.sortColumn !== null) {
             this.applySortByColumn();
         }
     }
 
     private applySortByColumn(): void {
-        if (this.sortColumn === null) {
-            this.widget.sortByColumn(this.sortOrder, null);
+        if (this.state.sortColumn === null) {
+            this.widget.sortByColumn(this.state.sortOrder, null);
             return;
         }
 
-        if (!this.columns) return;
-
-        const column = this.columns.find((c) => c.getId() === this.sortColumn);
+        const column = this.state.columns.find((c) => c.getId() === this.state.sortColumn);
         if (column) {
-            this.widget.sortByColumn(this.sortOrder, column.getColumn());
+            this.widget.sortByColumn(this.state.sortOrder, column.getColumn());
         }
     }
 
     findColumnById(id: string): ColumnViewColumnNode | undefined {
-        return this.columns.find((c) => c.getId() === id);
+        return this.state.columns.find((c) => c.getId() === id);
     }
 
     removeColumn(column: ColumnViewColumnNode): void {
-        const index = this.columns.indexOf(column);
+        const index = this.state.columns.indexOf(column);
         if (index !== -1) {
-            this.columns.splice(index, 1);
+            this.state.columns.splice(index, 1);
             this.widget.removeColumn(column.getColumn());
             column.setColumnView(null);
         }
     }
 
     insertColumnBefore(column: ColumnViewColumnNode, before: ColumnViewColumnNode): void {
-        const beforeIndex = this.columns.indexOf(before);
+        const beforeIndex = this.state.columns.indexOf(before);
         if (beforeIndex === -1) {
             this.addColumn(column);
             return;
         }
 
-        this.columns.splice(beforeIndex, 0, column);
+        this.state.columns.splice(beforeIndex, 0, column);
         this.widget.insertColumn(beforeIndex, column.getColumn());
         column.setColumnView(this);
     }
 
     private syncStringList = (): void => {
-        const newLength = this.items.length;
-        if (newLength === this.committedLength) return;
+        const newLength = this.state.items.length;
+        if (newLength === this.state.committedLength) return;
 
         const itemIndicesForSorter = Array.from({ length: newLength }, (_, i) => String(i));
-        this.stringList.splice(0, this.committedLength, itemIndicesForSorter);
-        this.committedLength = newLength;
+        this.state.stringList.splice(0, this.state.committedLength, itemIndicesForSorter);
+        this.state.committedLength = newLength;
     };
 
     addItem(item: unknown): void {
-        this.items.push(item);
+        this.state.items.push(item);
         scheduleFlush(this.syncStringList);
     }
 
     insertItemBefore(item: unknown, beforeItem: unknown): void {
-        const beforeIndex = this.items.indexOf(beforeItem);
+        const beforeIndex = this.state.items.indexOf(beforeItem);
 
         if (beforeIndex === -1) {
-            this.items.push(item);
+            this.state.items.push(item);
         } else {
-            this.items.splice(beforeIndex, 0, item);
+            this.state.items.splice(beforeIndex, 0, item);
         }
 
         scheduleFlush(this.syncStringList);
     }
 
     removeItem(item: unknown): void {
-        const index = this.items.indexOf(item);
+        const index = this.state.items.indexOf(item);
 
         if (index !== -1) {
-            this.items.splice(index, 1);
+            this.state.items.splice(index, 1);
             scheduleFlush(this.syncStringList);
         }
     }
@@ -228,9 +244,9 @@ export class ColumnViewNode extends Node<Gtk.ColumnView> implements ItemContaine
             (newProps.onSortChange as ((column: string | null, order: Gtk.SortType) => void) | null) ?? null;
 
         if (oldProps.onSortChange !== newProps.onSortChange) {
-            const hadCallback = this.onSortChange !== null;
-            this.onSortChange = newOnSortChange;
-            const hasCallback = this.onSortChange !== null;
+            const hadCallback = this.state.onSortChange !== null;
+            this.state.onSortChange = newOnSortChange;
+            const hasCallback = this.state.onSortChange !== null;
 
             const callbackAdded = !hadCallback && hasCallback;
             const callbackRemoved = hadCallback && !hasCallback;
@@ -242,17 +258,15 @@ export class ColumnViewNode extends Node<Gtk.ColumnView> implements ItemContaine
         }
 
         if (oldProps.sortFn !== newProps.sortFn) {
-            this.sortFn = newSortFn;
-            if (this.columns) {
-                for (const column of this.columns) {
-                    column.updateSorterFromRoot();
-                }
+            this.state.sortFn = newSortFn;
+            for (const column of this.state.columns) {
+                column.updateSorterFromRoot();
             }
         }
 
         if (oldProps.sortColumn !== newProps.sortColumn || oldProps.sortOrder !== newProps.sortOrder) {
-            this.sortColumn = newSortColumn;
-            this.sortOrder = newSortOrder;
+            this.state.sortColumn = newSortColumn;
+            this.state.sortOrder = newSortOrder;
             this.applySortByColumn();
         }
     }
@@ -263,7 +277,16 @@ interface ListItemInfo {
     fiberRoot: Reconciler.FiberRoot;
 }
 
-export class ColumnViewColumnNode extends Node {
+interface ColumnViewColumnState {
+    column: Gtk.ColumnViewColumn;
+    factory: Gtk.SignalListItemFactory;
+    renderCell: RenderItemFn<unknown>;
+    columnId: string | null;
+    sorter: Gtk.CustomSorter | null;
+    listItemCache: Map<number, ListItemInfo>;
+}
+
+export class ColumnViewColumnNode extends Node<never, ColumnViewColumnState> {
     static matches(type: string): boolean {
         return type === "ColumnView.Column";
     }
@@ -272,40 +295,42 @@ export class ColumnViewColumnNode extends Node {
         return true;
     }
 
-    private column: Gtk.ColumnViewColumn;
-    private factory: Gtk.SignalListItemFactory;
-    private renderCell: RenderItemFn<unknown>;
     private columnView: ColumnViewNode | null = null;
-    private listItemCache = new Map<number, ListItemInfo>();
-    private columnId: string | null = null;
-    private sorter: Gtk.CustomSorter | null = null;
 
-    constructor(type: string, props: Props) {
-        super(type, props);
+    override initialize(props: Props): void {
+        // Initialize state before super.initialize() since updateProps accesses this.state
+        const factory = new Gtk.SignalListItemFactory();
+        const column = new Gtk.ColumnViewColumn(props.title as string | undefined, factory);
+        const columnId = (props.id as string | null) ?? null;
 
-        this.factory = new Gtk.SignalListItemFactory();
-        this.column = new Gtk.ColumnViewColumn(props.title as string | undefined, this.factory);
+        this.state = {
+            column,
+            factory,
+            renderCell: props.renderCell as RenderItemFn<unknown>,
+            columnId,
+            sorter: null,
+            listItemCache: new Map(),
+        };
 
-        this.renderCell = props.renderCell as RenderItemFn<unknown>;
-        this.columnId = (props.id as string | null) ?? null;
+        super.initialize(props);
 
-        if (this.columnId !== null) {
-            this.column.setId(this.columnId);
+        if (columnId !== null) {
+            column.setId(columnId);
         }
 
         if (props.expand !== undefined) {
-            this.column.setExpand(props.expand as boolean);
+            column.setExpand(props.expand as boolean);
         }
 
         if (props.resizable !== undefined) {
-            this.column.setResizable(props.resizable as boolean);
+            column.setResizable(props.resizable as boolean);
         }
 
         if (props.fixedWidth !== undefined) {
-            this.column.setFixedWidth(props.fixedWidth as number);
+            column.setFixedWidth(props.fixedWidth as number);
         }
 
-        this.factory.connect("setup", (_self, listItemObj) => {
+        factory.connect("setup", (_self, listItemObj) => {
             const listItem = getObject(listItemObj.ptr, Gtk.ListItem);
             const id = getObjectId(listItemObj.ptr);
 
@@ -313,16 +338,16 @@ export class ColumnViewColumnNode extends Node {
             listItem.setChild(box);
 
             const fiberRoot = createFiberRoot(box);
-            this.listItemCache.set(id, { box, fiberRoot });
+            this.state.listItemCache.set(id, { box, fiberRoot });
 
-            const element = this.renderCell(null);
+            const element = this.state.renderCell(null);
             reconciler.getInstance().updateContainer(element, fiberRoot, null, () => {});
         });
 
-        this.factory.connect("bind", (_self, listItemObj) => {
+        factory.connect("bind", (_self, listItemObj) => {
             const listItem = getObject(listItemObj.ptr, Gtk.ListItem);
             const id = getObjectId(listItemObj.ptr);
-            const info = this.listItemCache.get(id);
+            const info = this.state.listItemCache.get(id);
 
             if (!info) return;
 
@@ -331,37 +356,37 @@ export class ColumnViewColumnNode extends Node {
             if (this.columnView) {
                 const items = this.columnView.getItems();
                 const item = items[position];
-                const element = this.renderCell(item ?? null);
+                const element = this.state.renderCell(item ?? null);
                 reconciler.getInstance().updateContainer(element, info.fiberRoot, null, () => {});
             }
         });
 
-        this.factory.connect("unbind", (_self, listItemObj) => {
+        factory.connect("unbind", (_self, listItemObj) => {
             const id = getObjectId(listItemObj.ptr);
-            const info = this.listItemCache.get(id);
+            const info = this.state.listItemCache.get(id);
 
             if (!info) return;
 
             reconciler.getInstance().updateContainer(null, info.fiberRoot, null, () => {});
         });
 
-        this.factory.connect("teardown", (_self, listItemObj) => {
+        factory.connect("teardown", (_self, listItemObj) => {
             const id = getObjectId(listItemObj.ptr);
-            const info = this.listItemCache.get(id);
+            const info = this.state.listItemCache.get(id);
 
             if (info) {
                 reconciler.getInstance().updateContainer(null, info.fiberRoot, null, () => {});
-                this.listItemCache.delete(id);
+                this.state.listItemCache.delete(id);
             }
         });
     }
 
     getColumn(): Gtk.ColumnViewColumn {
-        return this.column;
+        return this.state.column;
     }
 
     getId(): string | null {
-        return this.columnId;
+        return this.state.columnId;
     }
 
     setColumnView(columnView: ColumnViewNode | null): void {
@@ -370,20 +395,20 @@ export class ColumnViewColumnNode extends Node {
     }
 
     updateSorterFromRoot(): void {
-        if (!this.columnView || this.columnId === null) {
-            this.column.setSorter(null);
-            this.sorter = null;
+        if (!this.columnView || this.state.columnId === null) {
+            this.state.column.setSorter(null);
+            this.state.sorter = null;
             return;
         }
 
         const rootSortFn = this.columnView.getSortFn();
         if (rootSortFn === null) {
-            this.column.setSorter(null);
-            this.sorter = null;
+            this.state.column.setSorter(null);
+            this.state.sorter = null;
             return;
         }
 
-        const columnId = this.columnId;
+        const columnId = this.state.columnId;
         const columnView = this.columnView;
         const wrappedSortFn = (stringObjPtrA: unknown, stringObjPtrB: unknown): number => {
             const items = columnView.getItems();
@@ -404,8 +429,8 @@ export class ColumnViewColumnNode extends Node {
             return typeof result === "number" ? result : 0;
         };
 
-        this.sorter = new Gtk.CustomSorter(wrappedSortFn);
-        this.column.setSorter(this.sorter);
+        this.state.sorter = new Gtk.CustomSorter(wrappedSortFn);
+        this.state.column.setSorter(this.state.sorter);
     }
 
     override attachToParent(parent: Node): void {
@@ -441,26 +466,24 @@ export class ColumnViewColumnNode extends Node {
 
     override updateProps(oldProps: Props, newProps: Props): void {
         if (oldProps.renderCell !== newProps.renderCell) {
-            this.renderCell = newProps.renderCell as RenderItemFn<unknown>;
+            this.state.renderCell = newProps.renderCell as RenderItemFn<unknown>;
         }
-
-        if (!this.column) return;
 
         if (oldProps.title !== newProps.title) {
-            this.column.setTitle(newProps.title as string | undefined);
+            this.state.column.setTitle(newProps.title as string | undefined);
         }
         if (oldProps.expand !== newProps.expand) {
-            this.column.setExpand(newProps.expand as boolean);
+            this.state.column.setExpand(newProps.expand as boolean);
         }
         if (oldProps.resizable !== newProps.resizable) {
-            this.column.setResizable(newProps.resizable as boolean);
+            this.state.column.setResizable(newProps.resizable as boolean);
         }
         if (oldProps.fixedWidth !== newProps.fixedWidth) {
-            this.column.setFixedWidth(newProps.fixedWidth as number);
+            this.state.column.setFixedWidth(newProps.fixedWidth as number);
         }
         if (oldProps.id !== newProps.id) {
-            this.columnId = (newProps.id as string | null) ?? null;
-            this.column.setId(this.columnId);
+            this.state.columnId = (newProps.id as string | null) ?? null;
+            this.state.column.setId(this.state.columnId);
         }
     }
 }
@@ -476,9 +499,9 @@ export class ColumnViewItemNode extends Node {
 
     private item: unknown;
 
-    constructor(type: string, props: Props) {
-        super(type, props);
+    override initialize(props: Props): void {
         this.item = props.item as unknown;
+        super.initialize(props);
     }
 
     getItem(): unknown {

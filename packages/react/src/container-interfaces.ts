@@ -22,6 +22,28 @@ export interface PageContainer {
 }
 
 /**
+ * Props for Stack pages.
+ */
+export interface StackPageProps {
+    name?: string;
+    title?: string;
+    iconName?: string;
+    needsAttention?: boolean;
+    visible?: boolean;
+    useUnderline?: boolean;
+}
+
+/**
+ * Interface for Stack containers.
+ */
+export interface StackPageContainer {
+    addStackPage(child: Gtk.Widget, props: StackPageProps): void;
+    insertStackPageBefore(child: Gtk.Widget, props: StackPageProps, beforeChild: Gtk.Widget): void;
+    removeStackPage(child: Gtk.Widget): void;
+    updateStackPageProps(child: Gtk.Widget, props: StackPageProps): void;
+}
+
+/**
  * Interface for grid-based containers.
  */
 export interface GridContainer {
@@ -55,6 +77,9 @@ export const isChildContainer = (node: Node): node is Node & ChildContainer =>
 
 export const isPageContainer = (node: Node): node is Node & PageContainer =>
     "addPage" in node && "removePage" in node && "insertPageBefore" in node && "updatePageLabel" in node;
+
+export const isStackPageContainer = (node: Node): node is Node & StackPageContainer =>
+    "addStackPage" in node && "removeStackPage" in node && "updateStackPageProps" in node;
 
 export const isGridContainer = (node: Node): node is Node & GridContainer =>
     "attachToGrid" in node && "removeFromGrid" in node;

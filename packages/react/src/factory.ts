@@ -8,10 +8,19 @@ import { FlowBoxNode } from "./nodes/flow-box.js";
 import { GridChildNode, GridNode } from "./nodes/grid.js";
 import { ListItemNode, ListViewNode } from "./nodes/list.js";
 import { ListBoxNode } from "./nodes/list-box.js";
+import {
+    ApplicationMenuNode,
+    MenuItemNode,
+    MenuSectionNode,
+    MenuSubmenuNode,
+    PopoverMenuBarNode,
+    PopoverMenuRootNode,
+} from "./nodes/menu.js";
 import { NotebookNode, NotebookPageNode } from "./nodes/notebook.js";
 import { OverlayNode } from "./nodes/overlay.js";
 import { type ROOT_NODE_CONTAINER, RootNode } from "./nodes/root.js";
 import { SlotNode } from "./nodes/slot.js";
+import { StackNode, StackPageNode } from "./nodes/stack.js";
 import { TextViewNode } from "./nodes/text-view.js";
 import { WidgetNode } from "./nodes/widget.js";
 import { WindowNode } from "./nodes/window.js";
@@ -21,7 +30,7 @@ export { ROOT_NODE_CONTAINER } from "./nodes/root.js";
 
 interface NodeClass {
     matches: (type: string, existingWidget?: Gtk.Widget | typeof ROOT_NODE_CONTAINER) => boolean;
-    new (type: string, props: Props, existingWidget?: Gtk.Widget | typeof ROOT_NODE_CONTAINER): Node;
+    new (type: string, existingWidget?: Gtk.Widget | typeof ROOT_NODE_CONTAINER): Node;
 }
 
 const NODE_CLASSES = [
@@ -33,11 +42,18 @@ const NODE_CLASSES = [
     DropDownItemNode,
     GridChildNode,
     NotebookPageNode,
+    StackPageNode,
+    MenuItemNode,
+    MenuSectionNode,
+    MenuSubmenuNode,
     SlotNode,
     // Specialized widget nodes
     WindowNode,
     AboutDialogNode,
     TextViewNode,
+    ApplicationMenuNode,
+    PopoverMenuRootNode,
+    PopoverMenuBarNode,
     // Container nodes
     ActionBarNode,
     FlowBoxNode,
@@ -48,6 +64,7 @@ const NODE_CLASSES = [
     ColumnViewNode,
     ListViewNode,
     NotebookNode,
+    StackNode,
     // Catch-all (must be last)
     WidgetNode,
 ] as NodeClass[];
@@ -59,7 +76,9 @@ export const createNode = (
 ): Node => {
     for (const NodeClass of NODE_CLASSES) {
         if (NodeClass.matches(type, existingWidget)) {
-            return new NodeClass(type, props, existingWidget);
+            const node = new NodeClass(type, existingWidget);
+            node.initialize(props);
+            return node;
         }
     }
 

@@ -498,6 +498,11 @@ export class CodeGenerator {
         }
         sections.push(`export class ${className}${parentInfo.extendsClause}${implementsClause} {`);
 
+        if (cls.glibTypeName) {
+            const override = parentInfo.hasParent ? "override " : "";
+            sections.push(`  static ${override}readonly gtkTypeName: string = "${cls.glibTypeName}";\n`);
+        }
+
         if (!parentInfo.hasParent) {
             sections.push(`  ptr: unknown;\n`);
         }

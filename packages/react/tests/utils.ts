@@ -77,3 +77,5 @@ export const teardown = () => {
     stop();
     container = null;
 };
+
+export const flushMicrotasks = (): Promise<void> => new Promise((resolve) => queueMicrotask(resolve));

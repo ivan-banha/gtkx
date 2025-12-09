@@ -398,7 +398,7 @@ await unmount();
 
 ### Disabling the Default Wrapper
 
-For advanced cases like testing multiple windows, disable the default wrapper by providing a pass-through fragment wrapper:
+For advanced cases like testing multiple windows, disable the default wrapper by setting `wrapper: false`:
 
 ```tsx
 import { render } from "@gtkx/testing";
@@ -413,7 +413,7 @@ await render(
       <Button label="Window 2" />
     </ApplicationWindow>
   </>,
-  { wrapper: ({ children }) => <>{children}</> }
+  { wrapper: false }
 );
 ```
 

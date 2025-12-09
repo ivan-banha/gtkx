@@ -79,9 +79,12 @@ const DefaultWrapper = ({ children }: { children: ReactNode }): ReactNode => (
     <ApplicationWindow>{children}</ApplicationWindow>
 );
 
-const wrapElement = (element: ReactNode, Wrapper: RenderOptions["wrapper"] = DefaultWrapper): ReactNode => (
-    <Wrapper>{element}</Wrapper>
-);
+const wrapElement = (element: ReactNode, wrapper: RenderOptions["wrapper"] = true): ReactNode => {
+    if (wrapper === false) return element;
+    if (wrapper === true) return <DefaultWrapper>{element}</DefaultWrapper>;
+    const Wrapper = wrapper;
+    return <Wrapper>{element}</Wrapper>;
+};
 
 /**
  * Renders a React element into a GTK application for testing.

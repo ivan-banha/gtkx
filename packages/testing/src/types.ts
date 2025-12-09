@@ -48,8 +48,13 @@ export interface WaitForOptions {
  * Options for the render function.
  */
 export interface RenderOptions {
-    /** A React component to wrap the rendered element. Useful for providing context. */
-    wrapper?: ComponentType<{ children: ReactNode }>;
+    /**
+     * Controls how the rendered element is wrapped.
+     * - `true` (default): Wrap in ApplicationWindow
+     * - `false`: No wrapping, render element as-is
+     * - Component: Use a custom wrapper component
+     */
+    wrapper?: boolean | ComponentType<{ children: ReactNode }>;
 }
 
 /**

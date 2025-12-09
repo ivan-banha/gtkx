@@ -683,7 +683,7 @@ await render(<MyComponent />, { wrapper: Wrapper });
 await render(<>
   <ApplicationWindow><Content1 /></ApplicationWindow>
   <ApplicationWindow><Content2 /></ApplicationWindow>
-</>, { wrapper: ({ children }) => <>{children}</> });
+</>, { wrapper: false });
 ```
 
 ### RenderResult

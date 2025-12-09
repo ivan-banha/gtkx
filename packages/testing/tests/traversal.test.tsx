@@ -69,7 +69,7 @@ describe("findAll", () => {
                         <Button label="Window 2 Button" />
                     </ApplicationWindow>
                 </>,
-                { wrapper: ({ children }) => <>{children}</> },
+                { wrapper: false },
             );
 
             const windows = findAll(container, (node) => {

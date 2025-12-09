@@ -26,11 +26,11 @@ const TESTING_DEV_DEPENDENCIES: Record<Exclude<TestingFramework, "none">, string
 const getTestScript = (testing: TestingFramework): string | undefined => {
     switch (testing) {
         case "vitest":
-            return "vitest";
+            return "GDK_BACKEND=x11 xvfb-run -a vitest";
         case "jest":
-            return "jest";
+            return "GDK_BACKEND=x11 xvfb-run -a jest";
         case "node":
-            return "node --import tsx --test tests/**/*.test.ts";
+            return "GDK_BACKEND=x11 xvfb-run -a node --import tsx --test tests/**/*.test.ts";
         case "none":
             return undefined;
     }
@@ -151,7 +151,7 @@ ${afterEachFn}(async () => {
 
 describe("App", () => {
     it("renders the increment button", async () => {
-        await render(<App />);
+        await render(<App />, { wrapper: false });
         const button = await screen.findByRole("button", { name: "Increment" });
         ${assertion}
     });
@@ -391,7 +391,17 @@ export const createApp = async (options: CreateOptions = {}): Promise<void> => {
 
     const runCmd = getRunCommand(packageManager);
 
-    p.note(`cd ${name}\n${runCmd}`, "Next steps");
+    const nextSteps = `cd ${name}
+${runCmd}`;
 
-    p.outro("Happy hacking!");
+    const testingNote =
+        testing !== "none"
+            ? `
+
+To run tests, you need xvfb installed:
+  Fedora: sudo dnf install xorg-x11-server-Xvfb
+  Ubuntu: sudo apt install xvfb`
+            : "";
+
+    p.note(`${nextSteps}${testingNote}`, "Next steps");
 };

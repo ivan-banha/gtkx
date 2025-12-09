@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { beginCommit, endCommit, scheduleFlush } from "../src/batch.js";
 
+const flushMicrotasks = () => new Promise<void>((resolve) => queueMicrotask(resolve));
+
 describe("batch", () => {
     describe("scheduleFlush", () => {
         it("executes callback immediately when not in commit", () => {
@@ -11,7 +13,7 @@ describe("batch", () => {
             expect(callback).toHaveBeenCalledOnce();
         });
 
-        it("defers callback execution during commit", () => {
+        it("defers callback execution during commit", async () => {
             const callback = vi.fn();
 
             beginCommit();
@@ -21,10 +23,13 @@ describe("batch", () => {
 
             endCommit();
 
+            // Callbacks are deferred via queueMicrotask
+            expect(callback).not.toHaveBeenCalled();
+            await flushMicrotasks();
             expect(callback).toHaveBeenCalledOnce();
         });
 
-        it("executes multiple deferred callbacks on endCommit", () => {
+        it("executes multiple deferred callbacks on endCommit", async () => {
             const callback1 = vi.fn();
             const callback2 = vi.fn();
             const callback3 = vi.fn();
@@ -39,27 +44,30 @@ describe("batch", () => {
             expect(callback3).not.toHaveBeenCalled();
 
             endCommit();
+            await flushMicrotasks();
 
             expect(callback1).toHaveBeenCalledOnce();
             expect(callback2).toHaveBeenCalledOnce();
             expect(callback3).toHaveBeenCalledOnce();
         });
 
-        it("clears pending flushes after endCommit", () => {
+        it("clears pending flushes after endCommit", async () => {
             const callback = vi.fn();
 
             beginCommit();
             scheduleFlush(callback);
             endCommit();
+            await flushMicrotasks();
 
             expect(callback).toHaveBeenCalledOnce();
 
             endCommit();
+            await flushMicrotasks();
 
             expect(callback).toHaveBeenCalledOnce();
         });
 
-        it("deduplicates same callback during commit", () => {
+        it("deduplicates same callback during commit", async () => {
             const callback = vi.fn();
 
             beginCommit();
@@ -67,11 +75,12 @@ describe("batch", () => {
             scheduleFlush(callback);
             scheduleFlush(callback);
             endCommit();
+            await flushMicrotasks();
 
             expect(callback).toHaveBeenCalledOnce();
         });
 
-        it("handles nested begin/end commit correctly", () => {
+        it("handles nested begin/end commit correctly", async () => {
             const callback = vi.fn();
 
             beginCommit();
@@ -82,6 +91,7 @@ describe("batch", () => {
             expect(callback).not.toHaveBeenCalled();
 
             endCommit();
+            await flushMicrotasks();
 
             expect(callback).toHaveBeenCalledOnce();
         });

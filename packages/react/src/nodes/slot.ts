@@ -42,7 +42,7 @@ export class SlotNode extends Node<never> {
         const setter = parentWidget[setterName as keyof Gtk.Widget];
 
         if (typeof setter === "function") {
-            (setter as (ptr: unknown) => void).call(parentWidget, childWidget?.ptr ?? null);
+            (setter as (id: unknown) => void).call(parentWidget, childWidget?.id ?? null);
         }
     }
 

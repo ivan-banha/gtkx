@@ -1,4 +1,4 @@
-import { getObject, getObjectId } from "@gtkx/ffi";
+import { getObject, getObjectAddr } from "@gtkx/ffi";
 import type * as Gio from "@gtkx/ffi/gio";
 import * as Gtk from "@gtkx/ffi/gtk";
 import type Reconciler from "react-reconciler";
@@ -53,8 +53,8 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewStat
         this.state.factory = factory;
 
         factory.connect("setup", (_self, listItemObj) => {
-            const listItem = getObject(listItemObj.ptr, Gtk.ListItem);
-            const id = getObjectId(listItemObj.ptr);
+            const listItem = getObject<Gtk.ListItem>(listItemObj.id);
+            const id = getObjectAddr(listItemObj.id);
 
             const box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
             listItem.setChild(box);
@@ -67,8 +67,8 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewStat
         });
 
         factory.connect("bind", (_self, listItemObj) => {
-            const listItem = getObject(listItemObj.ptr, Gtk.ListItem);
-            const id = getObjectId(listItemObj.ptr);
+            const listItem = getObject<Gtk.ListItem>(listItemObj.id);
+            const id = getObjectAddr(listItemObj.id);
             const info = this.state.listItemCache.get(id);
 
             if (!info) return;
@@ -80,7 +80,7 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewStat
         });
 
         factory.connect("unbind", (_self, listItemObj) => {
-            const id = getObjectId(listItemObj.ptr);
+            const id = getObjectAddr(listItemObj.id);
             const info = this.state.listItemCache.get(id);
 
             if (!info) return;
@@ -89,7 +89,7 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewStat
         });
 
         factory.connect("teardown", (_self, listItemObj) => {
-            const id = getObjectId(listItemObj.ptr);
+            const id = getObjectAddr(listItemObj.id);
             const info = this.state.listItemCache.get(id);
 
             if (info) {

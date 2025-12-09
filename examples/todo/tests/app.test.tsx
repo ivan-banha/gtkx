@@ -1,5 +1,5 @@
-import { getObject } from "@gtkx/ffi";
-import { AccessibleRole, CheckButton, Editable, Label, Widget } from "@gtkx/ffi/gtk";
+import { cast } from "@gtkx/ffi";
+import { AccessibleRole, type CheckButton, type Editable, type Label } from "@gtkx/ffi/gtk";
 import { cleanup, render, screen, userEvent, waitFor, within } from "@gtkx/testing";
 import type { ReactNode } from "react";
 import { Fragment } from "react";
@@ -73,7 +73,7 @@ describe("Todo App", () => {
             await userEvent.click(addButton);
 
             await waitFor(() => {
-                const currentText = getObject(input.ptr, Editable).getText();
+                const currentText = cast<Editable>(input).getText();
                 if (currentText !== "") throw new Error("Input not cleared");
             });
         });
@@ -157,7 +157,7 @@ describe("Todo App", () => {
             const checkbox = await screen.findByRole(AccessibleRole.CHECKBOX);
             await userEvent.click(checkbox);
 
-            expect(getObject(checkbox.ptr, CheckButton).getActive()).toBe(true);
+            expect((checkbox as CheckButton).getActive()).toBe(true);
         });
 
         it("can toggle a completed todo back to active", async () => {
@@ -173,7 +173,7 @@ describe("Todo App", () => {
             await userEvent.click(checkbox);
             await userEvent.click(checkbox);
 
-            expect(getObject(checkbox.ptr, CheckButton).getActive()).toBe(false);
+            expect((checkbox as CheckButton).getActive()).toBe(false);
         });
 
         it("updates item count when completing todos", async () => {
@@ -188,7 +188,7 @@ describe("Todo App", () => {
             await userEvent.click(addButton);
 
             let itemsLeft = await screen.findByTestId("items-left");
-            expect(getObject(itemsLeft.ptr, Label).getLabel()).toContain("2");
+            expect((itemsLeft as Label).getLabel()).toContain("2");
 
             const checkboxes = await screen.findAllByRole(AccessibleRole.CHECKBOX);
             const firstCheckbox = checkboxes[0];
@@ -196,7 +196,7 @@ describe("Todo App", () => {
             await userEvent.click(firstCheckbox);
 
             itemsLeft = await screen.findByTestId("items-left");
-            expect(getObject(itemsLeft.ptr, Label).getLabel()).toContain("1");
+            expect((itemsLeft as Label).getLabel()).toContain("1");
         });
     });
 
@@ -316,13 +316,13 @@ describe("Todo App", () => {
             await setupTodosWithMixedState();
 
             const filterAll = await screen.findByTestId("filter-all");
-            expect(getObject(filterAll.ptr, Widget).getSensitive()).toBe(false);
+            expect(filterAll.getSensitive()).toBe(false);
 
             const filterActive = await screen.findByTestId("filter-active");
             await userEvent.click(filterActive);
 
-            expect(getObject(filterActive.ptr, Widget).getSensitive()).toBe(false);
-            expect(getObject(filterAll.ptr, Widget).getSensitive()).toBe(true);
+            expect(filterActive.getSensitive()).toBe(false);
+            expect(filterAll.getSensitive()).toBe(true);
         });
     });
 
@@ -367,7 +367,7 @@ describe("Todo App", () => {
             await userEvent.click(addButton);
 
             const clearButton = await screen.findByTestId("clear-completed");
-            expect(getObject(clearButton.ptr, Widget).getSensitive()).toBe(false);
+            expect(clearButton.getSensitive()).toBe(false);
         });
 
         it("becomes enabled when a todo is completed", async () => {
@@ -380,12 +380,12 @@ describe("Todo App", () => {
             await userEvent.click(addButton);
 
             const clearButton = await screen.findByTestId("clear-completed");
-            expect(getObject(clearButton.ptr, Widget).getSensitive()).toBe(false);
+            expect(clearButton.getSensitive()).toBe(false);
 
             const checkbox = await screen.findByRole(AccessibleRole.CHECKBOX);
             await userEvent.click(checkbox);
 
-            expect(getObject(clearButton.ptr, Widget).getSensitive()).toBe(true);
+            expect(clearButton.getSensitive()).toBe(true);
         });
     });
 
@@ -400,7 +400,7 @@ describe("Todo App", () => {
             await userEvent.click(addButton);
 
             const itemsLeft = await screen.findByTestId("items-left");
-            expect(getObject(itemsLeft.ptr, Label).getLabel()).toBe("1 item left");
+            expect((itemsLeft as Label).getLabel()).toBe("1 item left");
         });
 
         it("shows plural 'items' for multiple todos", async () => {
@@ -415,7 +415,7 @@ describe("Todo App", () => {
             await userEvent.click(addButton);
 
             const itemsLeft = await screen.findByTestId("items-left");
-            expect(getObject(itemsLeft.ptr, Label).getLabel()).toBe("2 items left");
+            expect((itemsLeft as Label).getLabel()).toBe("2 items left");
         });
 
         it("shows plural 'items' for zero todos", async () => {
@@ -431,7 +431,7 @@ describe("Todo App", () => {
             await userEvent.click(checkbox);
 
             const itemsLeft = await screen.findByTestId("items-left");
-            expect(getObject(itemsLeft.ptr, Label).getLabel()).toBe("0 items left");
+            expect((itemsLeft as Label).getLabel()).toBe("0 items left");
         });
     });
 

@@ -277,6 +277,7 @@ export class CodeGenerator {
     private usesAlloc = false;
     private usesNativeError = false;
     private usesGetObject = false;
+    private usesRegisterClass = false;
     private usesSignalMeta = false;
     private usedEnums = new Set<string>();
     private usedRecords = new Set<string>();
@@ -416,6 +417,7 @@ export class CodeGenerator {
         this.usesAlloc = false;
         this.usesNativeError = false;
         this.usesGetObject = false;
+        this.usesRegisterClass = false;
         this.usesSignalMeta = false;
         this.usedEnums.clear();
         this.usedRecords.clear();
@@ -504,7 +506,7 @@ export class CodeGenerator {
         }
 
         if (!parentInfo.hasParent) {
-            sections.push(`  ptr: unknown;\n`);
+            sections.push(`  id: unknown;\n`);
         }
 
         sections.push(this.generateConstructors(cls, sharedLibrary, parentInfo.hasParent));
@@ -532,6 +534,11 @@ export class CodeGenerator {
         }
 
         sections.push("}");
+
+        if (cls.glibTypeName) {
+            this.usesRegisterClass = true;
+            sections.push(`\nregisterClass(${className});`);
+        }
 
         if (signalMetaConstant) {
             const classDefIndex = sections.findIndex((s) => s.startsWith("export class "));
@@ -720,7 +727,7 @@ export class CodeGenerator {
             if (hasParent) {
                 sections.push(`  constructor(...args: unknown[]) {\n    super(...args);\n  }\n`);
             } else {
-                sections.push(`  constructor(...args: unknown[]) {\n    this.ptr = this.createPtr(args);\n  }\n`);
+                sections.push(`  constructor(...args: unknown[]) {\n    this.id = this.createPtr(args);\n  }\n`);
             }
         }
 
@@ -735,7 +742,7 @@ export class CodeGenerator {
             if (hasParent) {
                 return `${ctorDoc}  constructor(...args: unknown[]) {\n    super(...args);\n  }\n`;
             }
-            return `${ctorDoc}  constructor(...args: unknown[]) {\n    this.ptr = this.createPtr(args);\n  }\n`;
+            return `${ctorDoc}  constructor(...args: unknown[]) {\n    this.id = this.createPtr(args);\n  }\n`;
         }
 
         const typedParams = this.generateParameterList(ctor.parameters, false);
@@ -752,7 +759,7 @@ export class CodeGenerator {
         return `${ctorDoc}  constructor(${typedParams});
   constructor(...args: unknown[]);
   constructor(...args: unknown[]) {
-    this.ptr = this.createPtr(args);
+    this.id = this.createPtr(args);
   }
 `;
     }
@@ -844,7 +851,7 @@ ${args}
       ],
       { type: "gobject", borrowed: ${borrowed} }
     );
-    return getObject(ptr, ${className});
+    return getObject(ptr) as ${className};
   }
 `;
     }
@@ -902,7 +909,7 @@ ${allArgs ? `${allArgs},` : ""}
             if (func.throws) {
                 lines.push(this.generateErrorCheck());
             }
-            lines.push(`    return getObject(ptr, ${className});`);
+            lines.push(`    return getObject(ptr) as ${className};`);
         } else {
             const callPrefix = func.throws
                 ? hasReturnValue
@@ -1115,7 +1122,7 @@ ${allArgs ? `${allArgs},` : ""}
                 const mapped = this.typeMapper.mapParameter(param);
                 const jsParamName = toValidIdentifier(toCamelCase(param.name));
                 const needsPtr = mapped.ffi.type === "gobject" || mapped.ffi.type === "boxed";
-                const valueName = needsPtr ? `(${jsParamName} as any)?.ptr ?? ${jsParamName}` : jsParamName;
+                const valueName = needsPtr ? `(${jsParamName} as any)?.id ?? ${jsParamName}` : jsParamName;
                 return `          {\n            type: ${this.generateTypeDescriptor(mapped.ffi)},\n            value: ${valueName},\n          }`;
             })
             .join(",\n");
@@ -1141,7 +1148,7 @@ ${allArgs ? `${allArgs},` : ""}
             lines.push(`            "${sharedLibrary}",`);
             lines.push(`            "${finishMethod.cIdentifier}",`);
             lines.push(`            [`);
-            lines.push(`              { type: { type: "gobject" }, value: this.ptr },`);
+            lines.push(`              { type: { type: "gobject" }, value: this.id },`);
             lines.push(`${finishCallArgs}${errorArg}`);
             lines.push(`            ],`);
             lines.push(`            ${this.generateTypeDescriptor(finishReturnType.ffi)}`);
@@ -1151,7 +1158,7 @@ ${allArgs ? `${allArgs},` : ""}
             lines.push(`            "${sharedLibrary}",`);
             lines.push(`            "${finishMethod.cIdentifier}",`);
             lines.push(`            [`);
-            lines.push(`              { type: { type: "gobject" }, value: this.ptr },`);
+            lines.push(`              { type: { type: "gobject" }, value: this.id },`);
             lines.push(`${finishCallArgs}${errorArg}`);
             lines.push(`            ],`);
             lines.push(`            { type: "undefined" }`);
@@ -1172,7 +1179,7 @@ ${allArgs ? `${allArgs},` : ""}
                     if (isNullable) {
                         lines.push(`          if (ptr === null) { resolve(null); return; }`);
                     }
-                    lines.push(`          resolve(getObject(ptr, ${finishReturnType.ts}));`);
+                    lines.push(`          resolve(getObject(ptr) as ${finishReturnType.ts});`);
                 } else {
                     lines.push(`          resolve(result);`);
                 }
@@ -1186,10 +1193,10 @@ ${allArgs ? `${allArgs},` : ""}
                     this.usesGetObject = true;
                     if (isNullable) {
                         lines.push(
-                            `          const result = (ptr === null ? null : getObject(ptr, ${finishReturnType.ts})) as ${finishReturnType.ts} | null;`,
+                            `          const result = (ptr === null ? null : getObject(ptr)) as ${finishReturnType.ts} | null;`,
                         );
                     } else {
-                        lines.push(`          const result = getObject(ptr, ${finishReturnType.ts});`);
+                        lines.push(`          const result = getObject(ptr) as ${finishReturnType.ts};`);
                     }
                 }
                 resolveFields.push("result");
@@ -1215,7 +1222,7 @@ ${allArgs ? `${allArgs},` : ""}
         lines.push(`        "${sharedLibrary}",`);
         lines.push(`        "${method.cIdentifier}",`);
         lines.push(`        [`);
-        lines.push(`          { type: { type: "gobject" }, value: this.ptr },`);
+        lines.push(`          { type: { type: "gobject" }, value: this.id },`);
         if (asyncCallArgs) {
             lines.push(`${asyncCallArgs},`);
         }
@@ -1246,7 +1253,7 @@ ${allArgs ? `${allArgs},` : ""}
                 }
                 const mapped = this.typeMapper.mapParameter(param);
                 const needsPtr = mapped.ffi.type === "gobject" || mapped.ffi.type === "boxed";
-                const valueName = needsPtr ? `(${paramName} as any)?.ptr ?? ${paramName}` : paramName;
+                const valueName = needsPtr ? `(${paramName} as any)?.id ?? ${paramName}` : paramName;
                 return `              { type: ${this.generateTypeDescriptor(mapped.ffi)}, value: ${valueName} }`;
             })
             .join(",\n");
@@ -1310,7 +1317,7 @@ ${allArgs ? `${allArgs},` : ""}
       [
         {
           type: ${selfTypeDescriptor},
-          value: this.ptr,
+          value: this.id,
         },
 ${allArgs ? `${allArgs},` : ""}
       ],
@@ -1323,10 +1330,10 @@ ${allArgs ? `${allArgs},` : ""}
                 lines.push(`    if (ptr === null) return null;`);
             }
             if (isCyclic) {
-                lines.push(`    return { ptr } as unknown as ${baseReturnType};`);
+                lines.push(`    return { id: ptr } as unknown as ${baseReturnType};`);
             } else {
                 this.usesGetObject = true;
-                lines.push(`    return getObject(ptr, ${baseReturnType});`);
+                lines.push(`    return getObject(ptr) as ${baseReturnType};`);
             }
         } else if (needsArrayWrap && hasReturnValue) {
             const elementType = baseReturnType.slice(0, -2);
@@ -1337,7 +1344,7 @@ ${allArgs ? `${allArgs},` : ""}
       [
         {
           type: ${selfTypeDescriptor},
-          value: this.ptr,
+          value: this.id,
         },
 ${allArgs ? `${allArgs},` : ""}
       ],
@@ -1346,7 +1353,7 @@ ${allArgs ? `${allArgs},` : ""}
             if (method.throws) {
                 lines.push(this.generateErrorCheck());
             }
-            lines.push(`    return ptrs.map(ptr => getObject(ptr, ${elementType}));`);
+            lines.push(`    return ptrs.map(ptr => getObject(ptr) as ${elementType});`);
         } else {
             const callPrefix = method.throws
                 ? hasReturnValue
@@ -1364,7 +1371,7 @@ ${allArgs ? `${allArgs},` : ""}
       [
         {
           type: ${selfTypeDescriptor},
-          value: this.ptr,
+          value: this.id,
         },
 ${allArgs ? `${allArgs},` : ""}
       ],
@@ -1518,19 +1525,19 @@ ${allArgs ? `${allArgs},` : ""}
         const wrapperCode =
             signalMetadata.length > 0
                 ? `const wrappedHandler = (...args: unknown[]) => {
-      const self = getObject(args[0], ${className});
+      const self = getObject(args[0]);
       const signalArgs = args.slice(1);
       if (!meta) return handler(self, ...signalArgs);
       const wrapped = meta.params.map((m, i) => {
         if (m.getCls && signalArgs[i] != null) {
-          return getObject(signalArgs[i], m.getCls());
+          return getObject(signalArgs[i]);
         }
         return signalArgs[i];
       });
       return handler(self, ...wrapped);
     };`
                 : `const wrappedHandler = (...args: unknown[]) => {
-      const self = getObject(args[0], ${className});
+      const self = getObject(args[0]);
       return handler(self, ...args.slice(1));
     };`;
 
@@ -1547,7 +1554,7 @@ ${allArgs ? `${allArgs},` : ""}
       "${sharedLibrary}",
       "g_signal_connect_closure",
       [
-        { type: { type: "gobject" }, value: this.ptr },
+        { type: { type: "gobject" }, value: this.id },
         { type: { type: "string" }, value: signal },
         { type: { type: "callback", argTypes, returnType }, value: wrappedHandler },
         { type: { type: "boolean" }, value: after },
@@ -1577,14 +1584,14 @@ ${allArgs ? `${allArgs},` : ""}
             sections.push(formatDoc(iface.doc));
         }
         sections.push(`export class ${interfaceName} {`);
-        sections.push(`  ptr: unknown;`);
+        sections.push(`  id: unknown;`);
         sections.push(``);
-        sections.push(`  protected constructor(ptr: unknown) {`);
-        sections.push(`    this.ptr = ptr;`);
+        sections.push(`  protected constructor(id: unknown) {`);
+        sections.push(`    this.id = id;`);
         sections.push(`  }`);
         sections.push(``);
-        sections.push(`  static fromPtr(ptr: unknown): ${interfaceName} {`);
-        sections.push(`    return new ${interfaceName}(ptr);`);
+        sections.push(`  static fromPtr(id: unknown): ${interfaceName} {`);
+        sections.push(`    return new ${interfaceName}(id);`);
         sections.push(`  }`);
 
         if (iface.methods.length > 0) {
@@ -1623,7 +1630,10 @@ ${allArgs ? `${allArgs},` : ""}
             sections.push(formatDoc(record.doc));
         }
         sections.push(`export class ${recordName} {`);
-        sections.push(`  ptr: unknown;\n`);
+        if (record.glibTypeName) {
+            sections.push(`  static readonly glibTypeName: string = "${record.glibTypeName}";\n`);
+        }
+        sections.push(`  id: unknown;\n`);
 
         sections.push(this.generateRecordConstructors(record, sharedLibrary));
         sections.push(this.generateRecordStaticFunctions(record.functions, sharedLibrary, recordName));
@@ -1631,6 +1641,11 @@ ${allArgs ? `${allArgs},` : ""}
         sections.push(this.generateRecordFields(record.fields, record.methods));
 
         sections.push("}");
+
+        if (record.glibTypeName) {
+            this.usesRegisterClass = true;
+            sections.push(`\nregisterClass(${recordName});`);
+        }
 
         const imports = this.generateImports(recordName);
         return this.formatCode(imports + sections.join("\n"));
@@ -1657,7 +1672,7 @@ ${allArgs ? `${allArgs},` : ""}
             const filteredParams = mainConstructor.parameters.filter((p) => !isVararg(p));
 
             if (filteredParams.length === 0) {
-                sections.push(`${ctorDoc}  constructor() {\n    this.ptr = this.createPtr([]);\n  }\n`);
+                sections.push(`${ctorDoc}  constructor() {\n    this.id = this.createPtr([]);\n  }\n`);
             } else {
                 const typedParams = this.generateParameterList(mainConstructor.parameters, false);
                 const paramNames = filteredParams.map((p) => toValidIdentifier(toCamelCase(p.name)));
@@ -1667,7 +1682,7 @@ ${allArgs ? `${allArgs},` : ""}
                 if (isFirstParamArray) {
                     sections.push(`${ctorDoc}  constructor(${typedParams}) {
     const _args = [${paramNames.join(", ")}];
-    this.ptr = this.createPtr(_args);
+    this.id = this.createPtr(_args);
   }
 `);
                 } else {
@@ -1675,7 +1690,7 @@ ${allArgs ? `${allArgs},` : ""}
   constructor(_args: unknown[]);
   constructor(...args: unknown[]) {
     const _args = args.length === 1 && Array.isArray(args[0]) ? args[0] : args;
-    this.ptr = this.createPtr(_args);
+    this.id = this.createPtr(_args);
   }
 `);
                 }
@@ -1690,10 +1705,10 @@ ${allArgs ? `${allArgs},` : ""}
             const initFields = this.getWritableFields(record.fields);
             if (initFields.length > 0) {
                 sections.push(
-                    `  constructor(init: ${recordName}Init = {}) {\n    this.ptr = this.createPtr(init);\n  }\n`,
+                    `  constructor(init: ${recordName}Init = {}) {\n    this.id = this.createPtr(init);\n  }\n`,
                 );
             } else {
-                sections.push(`  constructor() {\n    this.ptr = this.createPtr({});\n  }\n`);
+                sections.push(`  constructor() {\n    this.id = this.createPtr({});\n  }\n`);
             }
         }
 
@@ -1830,7 +1845,7 @@ ${args}
       ],
       { type: "boxed", borrowed: true, innerType: "${recordName}" }
     );
-    return getObject(ptr, ${recordName});
+    return getObject(ptr) as ${recordName};
   }
 `;
     }
@@ -1880,7 +1895,7 @@ ${args}
 
             if (isReadable) {
                 sections.push(`  get ${fieldName}(): ${typeMapping.ts} {
-    return read(this.ptr, ${this.generateTypeDescriptor(typeMapping.ffi)}, ${offset}) as ${typeMapping.ts};
+    return read(this.id, ${this.generateTypeDescriptor(typeMapping.ffi)}, ${offset}) as ${typeMapping.ts};
   }
 `);
             }
@@ -1888,7 +1903,7 @@ ${args}
             if (isWritable && this.isWritableType(field.type)) {
                 this.usesWrite = true;
                 sections.push(`  set ${fieldName}(value: ${typeMapping.ts}) {
-    write(this.ptr, ${this.generateTypeDescriptor(typeMapping.ffi)}, ${offset}, value);
+    write(this.id, ${this.generateTypeDescriptor(typeMapping.ffi)}, ${offset}, value);
   }
 `);
             }
@@ -2036,7 +2051,7 @@ ${allArgs ? `${allArgs},` : ""}
             if (isNullable) {
                 lines.push(`  if (ptr === null) return null;`);
             }
-            lines.push(`  return getObject(ptr, ${baseReturnType});`);
+            lines.push(`  return getObject(ptr) as ${baseReturnType};`);
         } else {
             const callPrefix = func.throws
                 ? hasReturnValue
@@ -2115,7 +2130,7 @@ ${allArgs ? `${allArgs},` : ""}
                 const mapped = this.typeMapper.mapParameter(param);
                 const jsParamName = toValidIdentifier(toCamelCase(param.name));
                 const needsPtr = mapped.ffi.type === "gobject" || mapped.ffi.type === "boxed";
-                const valueName = needsPtr ? `(${jsParamName} as any)?.ptr ?? ${jsParamName}` : jsParamName;
+                const valueName = needsPtr ? `(${jsParamName} as any)?.id ?? ${jsParamName}` : jsParamName;
                 const isOptional = this.typeMapper.isNullable(param);
                 const optionalPart = isOptional ? `,\n${indent}    optional: true` : "";
                 return `${indent}  {\n${indent}    type: ${this.generateTypeDescriptor(mapped.ffi)},\n${indent}    value: ${valueName}${optionalPart},\n${indent}  }`;
@@ -2203,6 +2218,7 @@ ${indent}  }`;
         const ffiImports: string[] = [];
         if (this.usesNativeError) ffiImports.push("NativeError");
         if (this.usesGetObject) ffiImports.push("getObject");
+        if (this.usesRegisterClass) ffiImports.push("registerClass");
         if (ffiImports.length > 0) {
             lines.push(`import { ${ffiImports.join(", ")} } from "@gtkx/ffi";`);
         }

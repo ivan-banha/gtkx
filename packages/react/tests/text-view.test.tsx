@@ -107,7 +107,7 @@ describe("TextView widget", () => {
 
         render(<App />);
 
-        expect(textViewRef?.getBuffer().ptr).toStrictEqual(buffer.ptr);
+        expect(textViewRef?.getBuffer().id).toStrictEqual(buffer.id);
     });
 
     it("updates buffer when prop changes", () => {
@@ -132,10 +132,10 @@ describe("TextView widget", () => {
         };
 
         render(<App />);
-        expect(textViewRef?.getBuffer().ptr).toStrictEqual(buffer1.ptr);
+        expect(textViewRef?.getBuffer().id).toStrictEqual(buffer1.id);
 
         flushSync(() => setBuffer(buffer2));
-        expect(textViewRef?.getBuffer().ptr).toStrictEqual(buffer2.ptr);
+        expect(textViewRef?.getBuffer().id).toStrictEqual(buffer2.id);
     });
 
     it("preserves buffer when other props change", () => {
@@ -159,11 +159,11 @@ describe("TextView widget", () => {
         };
 
         render(<App />);
-        const initialBufferPtr = textViewRef?.getBuffer().ptr;
+        const initialBufferPtr = textViewRef?.getBuffer().id;
 
         flushSync(() => setEditable(false));
 
-        expect(textViewRef?.getBuffer().ptr).toStrictEqual(initialBufferPtr);
+        expect(textViewRef?.getBuffer().id).toStrictEqual(initialBufferPtr);
         expect(textViewRef?.getEditable()).toBe(false);
     });
 });

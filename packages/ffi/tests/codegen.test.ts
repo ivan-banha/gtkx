@@ -211,10 +211,10 @@ describe("Generated FFI Types Quality", () => {
                 const hasClass = content.match(/^export class \w+/m);
                 if (!hasClass) continue;
 
-                const hasPtr = content.includes("ptr: unknown");
+                const hasId = content.includes("id: unknown");
                 const hasExtends = content.match(/^export class \w+ extends/m);
 
-                if (!hasPtr && !hasExtends) {
+                if (!hasId && !hasExtends) {
                     classesWithoutPtr++;
                     issues.push(relativePath);
                 }
@@ -222,7 +222,7 @@ describe("Generated FFI Types Quality", () => {
 
             if (classesWithoutPtr > 0) {
                 expect.fail(
-                    `Found ${classesWithoutPtr} classes without ptr property and not extending another class:\n  ${issues.slice(0, 10).join("\n  ")}`,
+                    `Found ${classesWithoutPtr} classes without id property and not extending another class:\n  ${issues.slice(0, 10).join("\n  ")}`,
                 );
             }
         });

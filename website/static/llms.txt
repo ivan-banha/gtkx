@@ -869,12 +869,17 @@ Functions:
 - `start(appId)`: Start GTK application
 - `stop()`: Stop GTK application
 - `getCurrentApp()`: Get current GTK Application instance
-- `getObject(pointer, Class)`: Wrap native pointer in class instance
+- `getObject<T>(id)`: Wrap native pointer in class instance with runtime type lookup
+- `cast<T>(obj)`: Type-only cast for interface access (no runtime validation)
+- `registerClass(Class)`: Register a class for runtime type lookup
 
 Variables:
 - `events`: EventEmitter for GTK lifecycle ("start", "stop")
 - `createRef`: Create refs for GTK widgets
-- `getObjectId`: Get unique ID for GTK objects
+- `getObjectAddr`: Get native pointer address for GTK objects
+
+Types:
+- `NativeObject`: Base interface for all native GLib/GTK objects (`{ id: unknown }`)
 
 Classes:
 - `NativeError`: Error wrapping GLib GError

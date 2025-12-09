@@ -20,7 +20,7 @@ export const fireEvent = (element: Gtk.Widget, signalName: string, ...args: Arg[
     call(
         "libgobject-2.0.so.0",
         "g_signal_emit_by_name",
-        [{ type: { type: "gobject" }, value: element.ptr }, { type: { type: "string" }, value: signalName }, ...args],
+        [{ type: { type: "gobject" }, value: element.id }, { type: { type: "string" }, value: signalName }, ...args],
         { type: "undefined" },
     );
 };

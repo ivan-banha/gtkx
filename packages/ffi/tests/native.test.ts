@@ -1,11 +1,19 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as Gtk from "../src/generated/gtk/index.js";
-import { getCurrentApp, getObject, isInstanceOf, start, stop } from "../src/native.js";
+import { getCurrentApp, getObject, registerClass, start, stop } from "../src/native.js";
 
 const APP_ID = "com.gtkx.test.ffi";
 
 describe("native module", () => {
     beforeAll(() => {
+        registerClass(Gtk.Application);
+        registerClass(Gtk.Widget);
+        registerClass(Gtk.Button);
+        registerClass(Gtk.Label);
+        registerClass(Gtk.Entry);
+        registerClass(Gtk.Box);
+        registerClass(Gtk.Window);
+        registerClass(Gtk.ApplicationWindow);
         start(APP_ID);
     });
 
@@ -13,65 +21,71 @@ describe("native module", () => {
         stop();
     });
 
-    describe("isInstanceOf", () => {
+    describe("instanceof with dynamic getObject", () => {
         it("returns true for exact type match", () => {
             const button = new Gtk.Button();
-            expect(isInstanceOf(button, Gtk.Button)).toBe(true);
+            expect(button instanceof Gtk.Button).toBe(true);
+        });
+
+        it("returns true for parent type match", () => {
+            const button = new Gtk.Button();
+            expect(button instanceof Gtk.Widget).toBe(true);
         });
 
         it("returns false for non-matching type", () => {
             const button = new Gtk.Button();
-            expect(isInstanceOf(button, Gtk.Label)).toBe(false);
+            expect(button instanceof Gtk.Label).toBe(false);
         });
 
         it("returns false when checking child type against parent instance", () => {
             const widget = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-            expect(isInstanceOf(widget, Gtk.Button)).toBe(false);
+            expect(widget instanceof Gtk.Button).toBe(false);
         });
 
         it("works with ApplicationWindow", () => {
             const app = getCurrentApp();
             const window = new Gtk.ApplicationWindow(app);
-            expect(isInstanceOf(window, Gtk.ApplicationWindow)).toBe(true);
-            expect(isInstanceOf(window, Gtk.Window)).toBe(false);
-            expect(isInstanceOf(window, Gtk.Button)).toBe(false);
+            expect(window instanceof Gtk.ApplicationWindow).toBe(true);
+            expect(window instanceof Gtk.Window).toBe(true);
+            expect(window instanceof Gtk.Button).toBe(false);
         });
 
         it("works with Box", () => {
             const box = new Gtk.Box(Gtk.Orientation.VERTICAL, 10);
-            expect(isInstanceOf(box, Gtk.Box)).toBe(true);
-            expect(isInstanceOf(box, Gtk.Label)).toBe(false);
+            expect(box instanceof Gtk.Box).toBe(true);
+            expect(box instanceof Gtk.Label).toBe(false);
         });
 
         it("works with Label", () => {
             const label = new Gtk.Label("Test");
-            expect(isInstanceOf(label, Gtk.Label)).toBe(true);
-            expect(isInstanceOf(label, Gtk.Button)).toBe(false);
+            expect(label instanceof Gtk.Label).toBe(true);
+            expect(label instanceof Gtk.Button).toBe(false);
         });
 
         it("works with Entry", () => {
             const entry = new Gtk.Entry();
-            expect(isInstanceOf(entry, Gtk.Entry)).toBe(true);
-            expect(isInstanceOf(entry, Gtk.Label)).toBe(false);
+            expect(entry instanceof Gtk.Entry).toBe(true);
+            expect(entry instanceof Gtk.Label).toBe(false);
         });
 
-        it("works with getObject-wrapped pointers", () => {
+        it("getObject wraps with correct runtime type", () => {
             const button = new Gtk.Button();
-            const wrapped = getObject(button.ptr, Gtk.Widget);
-            expect(isInstanceOf(wrapped, Gtk.Button)).toBe(true);
-            expect(isInstanceOf(wrapped, Gtk.Label)).toBe(false);
+            const wrapped = getObject<Gtk.Widget>(button.id);
+            expect(wrapped instanceof Gtk.Button).toBe(true);
+            expect(wrapped instanceof Gtk.Widget).toBe(true);
+            expect(wrapped instanceof Gtk.Label).toBe(false);
         });
 
         it("can narrow types correctly", () => {
-            const widgets: { ptr: unknown }[] = [new Gtk.Button(), new Gtk.Label("Test"), new Gtk.Entry()];
+            const widgets: Gtk.Widget[] = [new Gtk.Button(), new Gtk.Label("Test"), new Gtk.Entry()];
 
-            const buttons = widgets.filter((w): w is Gtk.Button => isInstanceOf(w, Gtk.Button));
+            const buttons = widgets.filter((w): w is Gtk.Button => w instanceof Gtk.Button);
             expect(buttons.length).toBe(1);
-            expect(buttons[0]).toBeInstanceOf(Gtk.Button);
+            expect(buttons[0] instanceof Gtk.Button).toBe(true);
 
-            const labels = widgets.filter((w): w is Gtk.Label => isInstanceOf(w, Gtk.Label));
+            const labels = widgets.filter((w): w is Gtk.Label => w instanceof Gtk.Label);
             expect(labels.length).toBe(1);
-            expect(labels[0]).toBeInstanceOf(Gtk.Label);
+            expect(labels[0] instanceof Gtk.Label).toBe(true);
         });
     });
 

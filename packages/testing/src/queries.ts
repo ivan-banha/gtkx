@@ -1,22 +1,22 @@
-import { getObject } from "@gtkx/ffi";
+import { cast } from "@gtkx/ffi";
 import type * as Gtk from "@gtkx/ffi/gtk";
 import {
+    type Accessible,
     AccessibleRole,
-    Button,
-    CheckButton,
-    Editable,
-    Expander,
-    Frame,
-    Label,
-    StackPage,
-    Switch,
-    ToggleButton,
-    Window,
+    type Button,
+    type CheckButton,
+    type Editable,
+    type Expander,
+    type Frame,
+    type Label,
+    type StackPage,
+    type Switch,
+    type ToggleButton,
+    type Window,
 } from "@gtkx/ffi/gtk";
 import { findAll } from "./traversal.js";
 import type { ByRoleOptions, TextMatchOptions } from "./types.js";
 import { waitFor } from "./wait-for.js";
-import { asAccessible } from "./widget.js";
 
 type Container = Gtk.Application | Gtk.Widget;
 
@@ -40,15 +40,6 @@ const matchText = (actual: string | null, expected: string | RegExp, options?: T
     return expected.test(normalizedActual);
 };
 
-const asButton = (widget: Gtk.Widget): Button => getObject(widget.ptr, Button);
-const asLabel = (widget: Gtk.Widget): Label => getObject(widget.ptr, Label);
-const asCheckButton = (widget: Gtk.Widget): CheckButton => getObject(widget.ptr, CheckButton);
-const asToggleButton = (widget: Gtk.Widget): ToggleButton => getObject(widget.ptr, ToggleButton);
-const asExpander = (widget: Gtk.Widget): Expander => getObject(widget.ptr, Expander);
-const asFrame = (widget: Gtk.Widget): Frame => getObject(widget.ptr, Frame);
-const asWindow = (widget: Gtk.Widget): Window => getObject(widget.ptr, Window);
-const asStackPage = (widget: Gtk.Widget): StackPage => getObject(widget.ptr, StackPage);
-
 const ROLES_WITH_INTERNAL_LABELS = new Set([
     AccessibleRole.BUTTON,
     AccessibleRole.TOGGLE_BUTTON,
@@ -62,50 +53,50 @@ const ROLES_WITH_INTERNAL_LABELS = new Set([
 ]);
 
 const isInternalLabel = (widget: Gtk.Widget): boolean => {
-    const accessible = asAccessible(widget);
+    const accessible = cast<Accessible>(widget);
     if (accessible.getAccessibleRole() !== AccessibleRole.LABEL) return false;
 
     const parent = widget.getParent();
     if (!parent) return false;
 
-    const parentRole = asAccessible(parent).getAccessibleRole();
+    const parentRole = cast<Accessible>(parent).getAccessibleRole();
     return ROLES_WITH_INTERNAL_LABELS.has(parentRole);
 };
 
 const getWidgetText = (widget: Gtk.Widget): string | null => {
     if (isInternalLabel(widget)) return null;
 
-    const role = asAccessible(widget).getAccessibleRole();
+    const role = cast<Accessible>(widget).getAccessibleRole();
 
     switch (role) {
         case AccessibleRole.BUTTON:
         case AccessibleRole.LINK:
         case AccessibleRole.TAB:
-            return asButton(widget).getLabel();
+            return cast<Button>(widget).getLabel();
         case AccessibleRole.TOGGLE_BUTTON:
-            return asToggleButton(widget).getLabel();
+            return cast<ToggleButton>(widget).getLabel();
         case AccessibleRole.CHECKBOX:
         case AccessibleRole.RADIO:
-            return asCheckButton(widget).getLabel();
+            return cast<CheckButton>(widget).getLabel();
         case AccessibleRole.LABEL:
-            return asLabel(widget).getLabel();
+            return cast<Label>(widget).getLabel();
         case AccessibleRole.TEXT_BOX:
         case AccessibleRole.SEARCH_BOX:
         case AccessibleRole.SPIN_BUTTON:
-            return getObject(widget.ptr, Editable).getText();
+            return cast<Editable>(widget).getText();
         case AccessibleRole.GROUP:
             try {
-                return asFrame(widget).getLabel();
+                return cast<Frame>(widget).getLabel();
             } catch {
                 return null;
             }
         case AccessibleRole.WINDOW:
         case AccessibleRole.DIALOG:
         case AccessibleRole.ALERT_DIALOG:
-            return asWindow(widget).getTitle();
+            return cast<Window>(widget).getTitle();
         case AccessibleRole.TAB_PANEL:
             try {
-                return asStackPage(widget).getTitle();
+                return cast<StackPage>(widget).getTitle();
             } catch {
                 return null;
             }
@@ -120,31 +111,29 @@ const getWidgetTestId = (widget: Gtk.Widget): string | null => {
     return widget.getName();
 };
 
-const asSwitch = (widget: Gtk.Widget): Switch => getObject(widget.ptr, Switch);
-
 const getWidgetCheckedState = (widget: Gtk.Widget): boolean | undefined => {
-    const role = asAccessible(widget).getAccessibleRole();
+    const role = cast<Accessible>(widget).getAccessibleRole();
 
     switch (role) {
         case AccessibleRole.CHECKBOX:
         case AccessibleRole.RADIO:
-            return asCheckButton(widget).getActive();
+            return cast<CheckButton>(widget).getActive();
         case AccessibleRole.TOGGLE_BUTTON:
-            return asToggleButton(widget).getActive();
+            return cast<ToggleButton>(widget).getActive();
         case AccessibleRole.SWITCH:
-            return asSwitch(widget).getActive();
+            return cast<Switch>(widget).getActive();
         default:
             return undefined;
     }
 };
 
 const getWidgetExpandedState = (widget: Gtk.Widget): boolean | undefined => {
-    const role = asAccessible(widget).getAccessibleRole();
+    const role = cast<Accessible>(widget).getAccessibleRole();
 
     if (role === AccessibleRole.BUTTON) {
         const parent = widget.getParent();
         if (!parent) return undefined;
-        return asExpander(parent).getExpanded();
+        return cast<Expander>(parent).getExpanded();
     }
 
     return undefined;
@@ -186,7 +175,7 @@ const formatByRoleError = (role: AccessibleRole, options?: ByRoleOptions): strin
 
 const getAllByRole = (container: Container, role: AccessibleRole, options?: ByRoleOptions): Gtk.Widget[] => {
     const matches = findAll(container, (node) => {
-        if (asAccessible(node).getAccessibleRole() !== role) return false;
+        if (cast<Accessible>(node).getAccessibleRole() !== role) return false;
         return matchByRoleOptions(node, options);
     });
 

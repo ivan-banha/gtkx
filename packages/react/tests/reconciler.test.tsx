@@ -1,4 +1,4 @@
-import { getObject } from "@gtkx/ffi";
+import * as Gio from "@gtkx/ffi/gio";
 import * as Gtk from "@gtkx/ffi/gtk";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
@@ -29,18 +29,12 @@ const getChildren = (widget: Gtk.Widget): Gtk.Widget[] => {
 
 const getChildLabels = (widget: Gtk.Widget): string[] =>
     getChildren(widget).map((child) => {
-        const ptr = child.ptr;
-
-        try {
-            const label = getObject(ptr, Gtk.Label);
-            return label.getLabel() ?? "";
-        } catch {}
-
-        try {
-            const button = getObject(ptr, Gtk.Button);
-            return button.getLabel() ?? "";
-        } catch {}
-
+        if (child instanceof Gtk.Label) {
+            return child.getLabel() ?? "";
+        }
+        if (child instanceof Gtk.Button) {
+            return child.getLabel() ?? "";
+        }
         return "";
     });
 
@@ -298,7 +292,7 @@ describe("React Reconciler", () => {
             const overlay = parent.getWidget() as Gtk.Overlay;
             const mainChild = overlay.getChild();
             expect(mainChild).not.toBeNull();
-            const mainLabel = getObject(assertDefined(mainChild).ptr, Gtk.Label);
+            const mainLabel = assertDefined(mainChild) as Gtk.Label;
             expect(mainLabel.getLabel()).toBe("Main");
         });
 
@@ -526,8 +520,10 @@ describe("React Reconciler", () => {
 
             const dropdownWidget = dropdown.getWidget() as Gtk.DropDown;
             const model = dropdownWidget.getModel();
-            expect(model).not.toBeNull();
-            expect((model as unknown as { getNItems: () => number }).getNItems()).toBe(3);
+            if (model === null) throw new Error("Model should not be null");
+            // Use Gio.ListModel.fromPtr to access interface methods
+            const listModel = Gio.ListModel.fromPtr(model.id);
+            expect(listModel.getNItems()).toBe(3);
         });
 
         it("removes items from dropdown", () => {
@@ -541,8 +537,10 @@ describe("React Reconciler", () => {
 
             const dropdownWidget = dropdown.getWidget() as Gtk.DropDown;
             const model = dropdownWidget.getModel();
-            expect(model).not.toBeNull();
-            expect((model as unknown as { getNItems: () => number }).getNItems()).toBe(1);
+            if (model === null) throw new Error("Model should not be null");
+            // Use Gio.ListModel.fromPtr to access interface methods
+            const listModel = Gio.ListModel.fromPtr(model.id);
+            expect(listModel.getNItems()).toBe(1);
         });
     });
 
@@ -665,7 +663,7 @@ describe("React Reconciler", () => {
 
             const widget = columnView.getWidget() as Gtk.ColumnView;
             const columns = widget.getColumns();
-            const gtkColumn = getObject(columns.getObject(0)?.ptr, Gtk.ColumnViewColumn);
+            const gtkColumn = columns.getObject(0) as Gtk.ColumnViewColumn;
             expect(gtkColumn?.getId()).toBe("name-column");
         });
 
@@ -679,7 +677,7 @@ describe("React Reconciler", () => {
 
             const widget = columnView.getWidget() as Gtk.ColumnView;
             const columns = widget.getColumns();
-            const gtkColumn = getObject(columns.getObject(0)?.ptr, Gtk.ColumnViewColumn);
+            const gtkColumn = columns.getObject(0) as Gtk.ColumnViewColumn;
             expect(gtkColumn?.getSorter()).not.toBeNull();
         });
 
@@ -696,7 +694,7 @@ describe("React Reconciler", () => {
             columnView.appendChild(column);
 
             const widget = columnView.getWidget() as Gtk.ColumnView;
-            const sorter = getObject(widget.getSorter()?.ptr, Gtk.ColumnViewSorter);
+            const sorter = widget.getSorter() as Gtk.ColumnViewSorter;
             const primaryColumn = sorter?.getPrimarySortColumn();
             expect(primaryColumn?.getId()).toBe("name-column");
         });
@@ -717,7 +715,7 @@ describe("React Reconciler", () => {
             );
 
             const widget = columnView.getWidget() as Gtk.ColumnView;
-            const sorter = getObject(widget.getSorter()?.ptr, Gtk.ColumnViewSorter);
+            const sorter = widget.getSorter() as Gtk.ColumnViewSorter;
             const primaryColumn = sorter?.getPrimarySortColumn();
             expect(primaryColumn?.getId()).toBe("age-column");
             expect(sorter?.getPrimarySortOrder()).toBe(Gtk.SortType.DESCENDING);
@@ -736,7 +734,7 @@ describe("React Reconciler", () => {
             const expanderWidget = expander.getWidget() as Gtk.Expander;
             const rawChild = expanderWidget.getChild();
             expect(rawChild).not.toBeNull();
-            const child = getObject(assertDefined(rawChild).ptr, Gtk.Label);
+            const child = assertDefined(rawChild) as Gtk.Label;
             expect(child.getLabel()).toBe("Content");
         });
 
@@ -1436,26 +1434,26 @@ describe("React Reconciler", () => {
     });
 
     describe("GObject introspection", () => {
-        it("typeNameFromInstance works with GObject ptr", async () => {
-            const { getObjectId } = await import("@gtkx/ffi");
+        it("typeNameFromInstance works with GObject id", async () => {
+            const { getObjectAddr } = await import("@gtkx/ffi");
             const GObject = await import("@gtkx/ffi/gobject");
             const button = new Gtk.Button();
-            const typeName = GObject.typeNameFromInstance(getObjectId(button.ptr));
+            const typeName = GObject.typeNameFromInstance(getObjectAddr(button.id));
             expect(typeName).toBe("GtkButton");
         });
 
         it("typeNameFromInstance returns correct type for different widgets", async () => {
-            const { getObjectId } = await import("@gtkx/ffi");
+            const { getObjectAddr } = await import("@gtkx/ffi");
             const GObject = await import("@gtkx/ffi/gobject");
 
             const label = new Gtk.Label("");
-            expect(GObject.typeNameFromInstance(getObjectId(label.ptr))).toBe("GtkLabel");
+            expect(GObject.typeNameFromInstance(getObjectAddr(label.id))).toBe("GtkLabel");
 
             const box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
-            expect(GObject.typeNameFromInstance(getObjectId(box.ptr))).toBe("GtkBox");
+            expect(GObject.typeNameFromInstance(getObjectAddr(box.id))).toBe("GtkBox");
 
             const entry = new Gtk.Entry();
-            expect(GObject.typeNameFromInstance(getObjectId(entry.ptr))).toBe("GtkEntry");
+            expect(GObject.typeNameFromInstance(getObjectAddr(entry.id))).toBe("GtkEntry");
         });
     });
 });

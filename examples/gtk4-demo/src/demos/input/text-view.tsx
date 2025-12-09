@@ -9,8 +9,8 @@ import type { Demo } from "../types.js";
 const getBufferText = (buffer: Gtk.TextBuffer): string => {
     const startIter = new Gtk.TextIter();
     const endIter = new Gtk.TextIter();
-    buffer.getStartIter(createRef(startIter.ptr));
-    buffer.getEndIter(createRef(endIter.ptr));
+    buffer.getStartIter(createRef(startIter.id));
+    buffer.getEndIter(createRef(endIter.id));
     return buffer.getText(startIter, endIter, true);
 };
 

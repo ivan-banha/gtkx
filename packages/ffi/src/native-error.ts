@@ -6,7 +6,7 @@ import { read } from "@gtkx/native";
  */
 export class NativeError extends Error {
     /** The raw GError pointer */
-    readonly ptr: unknown;
+    readonly id: unknown;
 
     /** The GLib error domain (GQuark) */
     readonly domain: number;
@@ -16,15 +16,15 @@ export class NativeError extends Error {
 
     /**
      * Creates a NativeError from a GError pointer.
-     * @param ptr - The GError pointer from a failed FFI call
+     * @param id - The GError pointer from a failed FFI call
      */
-    constructor(ptr: unknown) {
-        const message = read(ptr, { type: "string" }, 8) as string;
+    constructor(id: unknown) {
+        const message = read(id, { type: "string" }, 8) as string;
         super(message ?? "Unknown error");
 
-        this.ptr = ptr;
-        this.domain = read(ptr, { type: "int", size: 32, unsigned: true }, 0) as number;
-        this.code = read(ptr, { type: "int", size: 32, unsigned: false }, 4) as number;
+        this.id = id;
+        this.domain = read(id, { type: "int", size: 32, unsigned: true }, 0) as number;
+        this.code = read(id, { type: "int", size: 32, unsigned: false }, 4) as number;
 
         this.name = "NativeError";
 

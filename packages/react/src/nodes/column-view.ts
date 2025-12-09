@@ -1,4 +1,4 @@
-import { getObject, getObjectId } from "@gtkx/ffi";
+import { getObject, getObjectAddr } from "@gtkx/ffi";
 import type * as Gio from "@gtkx/ffi/gio";
 import * as GObject from "@gtkx/ffi/gobject";
 import * as Gtk from "@gtkx/ffi/gtk";
@@ -109,7 +109,7 @@ export class ColumnViewNode
         const baseSorter = this.widget.getSorter();
         if (!baseSorter) return;
 
-        const sorter = getObject(baseSorter.ptr, Gtk.ColumnViewSorter);
+        const sorter = getObject<Gtk.ColumnViewSorter>(baseSorter.id);
         const column = sorter.getPrimarySortColumn();
         const order = sorter.getPrimarySortOrder();
         const columnId = column?.getId() ?? null;
@@ -331,8 +331,8 @@ export class ColumnViewColumnNode extends Node<never, ColumnViewColumnState> {
         }
 
         factory.connect("setup", (_self, listItemObj) => {
-            const listItem = getObject(listItemObj.ptr, Gtk.ListItem);
-            const id = getObjectId(listItemObj.ptr);
+            const listItem = getObject<Gtk.ListItem>(listItemObj.id);
+            const id = getObjectAddr(listItemObj.id);
 
             const box = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
             listItem.setChild(box);
@@ -345,8 +345,8 @@ export class ColumnViewColumnNode extends Node<never, ColumnViewColumnState> {
         });
 
         factory.connect("bind", (_self, listItemObj) => {
-            const listItem = getObject(listItemObj.ptr, Gtk.ListItem);
-            const id = getObjectId(listItemObj.ptr);
+            const listItem = getObject<Gtk.ListItem>(listItemObj.id);
+            const id = getObjectAddr(listItemObj.id);
             const info = this.state.listItemCache.get(id);
 
             if (!info) return;
@@ -362,7 +362,7 @@ export class ColumnViewColumnNode extends Node<never, ColumnViewColumnState> {
         });
 
         factory.connect("unbind", (_self, listItemObj) => {
-            const id = getObjectId(listItemObj.ptr);
+            const id = getObjectAddr(listItemObj.id);
             const info = this.state.listItemCache.get(id);
 
             if (!info) return;
@@ -371,7 +371,7 @@ export class ColumnViewColumnNode extends Node<never, ColumnViewColumnState> {
         });
 
         factory.connect("teardown", (_self, listItemObj) => {
-            const id = getObjectId(listItemObj.ptr);
+            const id = getObjectAddr(listItemObj.id);
             const info = this.state.listItemCache.get(id);
 
             if (info) {
@@ -413,8 +413,8 @@ export class ColumnViewColumnNode extends Node<never, ColumnViewColumnState> {
         const wrappedSortFn = (stringObjPtrA: unknown, stringObjPtrB: unknown): number => {
             const items = columnView.getItems();
 
-            const stringObjA = getObject(stringObjPtrA, Gtk.StringObject);
-            const stringObjB = getObject(stringObjPtrB, Gtk.StringObject);
+            const stringObjA = getObject<Gtk.StringObject>(stringObjPtrA);
+            const stringObjB = getObject<Gtk.StringObject>(stringObjPtrB);
             const indexA = Number.parseInt(stringObjA.getString(), 10);
             const indexB = Number.parseInt(stringObjB.getString(), 10);
 

@@ -1,8 +1,9 @@
 import { EventEmitter } from "node:events";
-import { getObjectId, start as nativeStart, stop as nativeStop } from "@gtkx/native";
+import { getObjectAddr, start as nativeStart, stop as nativeStop } from "@gtkx/native";
 import type { ApplicationFlags } from "./generated/gio/enums.js";
-import { typeNameFromInstance } from "./generated/gobject/functions.js";
-import { Application } from "./generated/gtk/application.js";
+import { typeFromName, typeName, typeNameFromInstance, typeParent } from "./generated/gobject/functions.js";
+import type { Application } from "./generated/gtk/application.js";
+import { getClassByTypeName, type NativeObject } from "./registry.js";
 
 type NativeEventMap = {
     start: [];
@@ -19,18 +20,57 @@ let keepAliveTimeout: NodeJS.Timeout | null = null;
 export const events = new EventEmitter<NativeEventMap>();
 
 /**
- * Wraps a native pointer in a class instance without calling the constructor.
- * Used when receiving pointers from FFI calls that need to be wrapped as TypeScript objects.
- * @param ptr - The native pointer to wrap
- * @param cls - The class whose prototype should be used
- * @param cls.prototype - The prototype object to assign to the new instance
- * @returns A new instance with the pointer attached
+ * Finds the nearest registered class by walking up the type hierarchy.
+ * @param glibTypeName - The GLib type name to start from
+ * @returns The registered class, or undefined if none found
  */
-export function getObject<T extends object>(ptr: unknown, cls: { prototype: T }): T {
-    const instance = Object.create(cls.prototype) as T & { ptr: unknown };
-    instance.ptr = ptr;
+const findRegisteredClass = (glibTypeName: string) => {
+    let currentTypeName: string | null = glibTypeName;
+
+    while (currentTypeName) {
+        const cls = getClassByTypeName(currentTypeName);
+        if (cls) return cls;
+
+        const gtype = typeFromName(currentTypeName);
+        if (gtype === 0) break;
+
+        const parentGtype = typeParent(gtype);
+        if (parentGtype === 0) break;
+
+        currentTypeName = typeName(parentGtype);
+    }
+
+    return undefined;
+};
+
+/**
+ * Wraps a native pointer in a class instance without calling the constructor.
+ * Uses GLib's type system to determine the actual runtime type and wraps
+ * with the correct class prototype. If the exact type is not registered,
+ * walks up the type hierarchy to find the nearest registered parent class.
+ * @param id - The native pointer to wrap
+ * @returns A new instance with the pointer attached
+ * @throws Error if no registered class is found in the type hierarchy
+ */
+export function getObject<T extends NativeObject = NativeObject>(id: unknown): T {
+    const runtimeTypeName = typeNameFromInstance(getObjectAddr(id));
+    const cls = findRegisteredClass(runtimeTypeName);
+    if (!cls) {
+        throw new Error(`Unknown GLib type: ${runtimeTypeName}. Make sure the class is registered.`);
+    }
+    const instance = Object.create(cls.prototype) as T;
+    instance.id = id;
     return instance;
 }
+
+/**
+ * Casts a native object to a different type without runtime validation.
+ * Use this when you know the object implements an interface (like Editable or Accessible)
+ * but TypeScript doesn't have that information statically.
+ * @param obj - The object to cast
+ * @returns The same object typed as T
+ */
+export const cast = <T extends NativeObject>(obj: NativeObject): T => obj as T;
 
 const keepAlive = (): void => {
     keepAliveTimeout = setTimeout(() => keepAlive(), 2147483647);
@@ -50,7 +90,7 @@ export const start = (appId: string, flags?: ApplicationFlags): Application => {
     }
 
     const app = nativeStart(appId, flags);
-    currentApp = getObject(app, Application);
+    currentApp = getObject<Application>(app);
     events.emit("start");
 
     keepAlive();
@@ -90,32 +130,5 @@ export const stop = (): void => {
     currentApp = null;
 };
 
-export { createRef, getObjectId } from "@gtkx/native";
-
-/**
- * Type guard that checks if an object is an instance of a specific GTK class.
- * Uses GLib's type system to check the actual runtime type.
- * @param obj - The object to check
- * @param obj.ptr - The native pointer to the GObject instance
- * @param cls - The class to check against
- * @param cls.glibTypeName - The GLib type name (e.g., "GtkButton")
- * @param cls.prototype - The class prototype used for type narrowing
- * @returns True if the object is an instance of the class
- * @example
- * ```ts
- * if (isInstanceOf(widget, Gtk.ApplicationWindow)) {
- *   widget.setShowMenubar(true); // TypeScript knows widget is ApplicationWindow
- * }
- * ```
- */
-export function isInstanceOf<T extends { ptr: unknown }>(
-    obj: { ptr: unknown },
-    cls: { glibTypeName: string; prototype: T },
-): obj is T {
-    const typeName = typeNameFromInstance(getObjectId(obj.ptr));
-    const isInstance = typeName === cls.glibTypeName;
-    if (isInstance) {
-        Object.setPrototypeOf(obj, cls.prototype);
-    }
-    return isInstance;
-}
+export { createRef, getObjectAddr } from "@gtkx/native";
+export { type NativeObject, registerClass } from "./registry.js";

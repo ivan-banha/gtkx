@@ -177,6 +177,6 @@ This compiles TypeScript and runs the built application without HMR.
 
 ## Next Steps
 
-- [CLI Guide](./guides/cli) — Learn more about the gtkx CLI
-- [Styling Guide](./guides/styling) — Add custom styles with CSS-in-JS
-- [Testing Guide](./guides/testing) — Write tests for your components
+- [CLI](./cli) — Learn more about the gtkx CLI
+- [Styling](./styling) — Add custom styles with CSS-in-JS
+- [Testing](./testing) — Write tests for your components

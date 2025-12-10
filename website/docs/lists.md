@@ -1,8 +1,8 @@
 ---
-sidebar_position: 2
+sidebar_position: 8
 ---
 
-# Lists and Data Binding
+# Lists
 
 GTKX provides virtualized list components that efficiently render large datasets. These use GTK's native list infrastructure with a declarative JSX-based rendering approach.
 
@@ -102,8 +102,7 @@ const PhotoGrid = () => (
 For tabular data with multiple columns, use `ColumnView`. Each column has its own `renderCell` function:
 
 ```tsx
-import type { RefCallback } from "react";
-import type * as Gtk from "@gtkx/ffi/gtk";
+import * as Gtk from "@gtkx/ffi/gtk";
 import { ColumnView, Label, ScrolledWindow } from "@gtkx/react";
 
 interface Product {
@@ -116,7 +115,6 @@ interface Product {
 const products: Product[] = [
   { id: "1", name: "Widget", price: 9.99, stock: 100 },
   { id: "2", name: "Gadget", price: 19.99, stock: 50 },
-  // ...
 ];
 
 const ProductTable = () => (
@@ -125,9 +123,8 @@ const ProductTable = () => (
       <ColumnView.Column
         title="Name"
         expand
-        renderCell={(product: Product | null, ref: RefCallback<Gtk.Widget>) => (
+        renderCell={(product: Product | null) => (
           <Label.Root
-            ref={ref}
             label={product?.name ?? ""}
             halign={Gtk.Align.START}
           />
@@ -136,21 +133,15 @@ const ProductTable = () => (
       <ColumnView.Column
         title="Price"
         fixedWidth={100}
-        renderCell={(product: Product | null, ref: RefCallback<Gtk.Widget>) => (
-          <Label.Root
-            ref={ref}
-            label={product ? `$${product.price.toFixed(2)}` : ""}
-          />
+        renderCell={(product: Product | null) => (
+          <Label.Root label={product ? `$${product.price.toFixed(2)}` : ""} />
         )}
       />
       <ColumnView.Column
         title="Stock"
         fixedWidth={80}
-        renderCell={(product: Product | null, ref: RefCallback<Gtk.Widget>) => (
-          <Label.Root
-            ref={ref}
-            label={product?.stock.toString() ?? ""}
-          />
+        renderCell={(product: Product | null) => (
+          <Label.Root label={product?.stock.toString() ?? ""} />
         )}
       />
       {products.map(product => (
@@ -166,8 +157,7 @@ const ProductTable = () => (
 ColumnView supports sortable columns. When the user clicks a column header, the table is sorted by that column:
 
 ```tsx
-import type { RefCallback } from "react";
-import type * as Gtk from "@gtkx/ffi/gtk";
+import * as Gtk from "@gtkx/ffi/gtk";
 import { ColumnView, Label, ScrolledWindow } from "@gtkx/react";
 import { useState } from "react";
 
@@ -177,7 +167,10 @@ interface Product {
   price: number;
 }
 
-const products: Product[] = [/* ... */];
+const products: Product[] = [
+  { id: "1", name: "Widget", price: 9.99 },
+  { id: "2", name: "Gadget", price: 19.99 },
+];
 
 type ColumnId = "name" | "price";
 
@@ -206,16 +199,16 @@ const SortableTable = () => {
           id="name"
           title="Name"
           expand
-          renderCell={(product, ref) => (
-            <Label.Root ref={ref} label={product?.name ?? ""} />
+          renderCell={(product) => (
+            <Label.Root label={product?.name ?? ""} />
           )}
         />
         <ColumnView.Column<Product>
           id="price"
           title="Price"
           fixedWidth={100}
-          renderCell={(product, ref) => (
-            <Label.Root ref={ref} label={product ? `$${product.price}` : ""} />
+          renderCell={(product) => (
+            <Label.Root label={product ? `$${product.price}` : ""} />
           )}
         />
         {products.map(product => (
@@ -240,7 +233,7 @@ const SortableTable = () => {
 |------|------|-------------|
 | `id` | `string` | Column identifier (required for sorting) |
 | `title` | `string` | Column header text |
-| `renderCell` | `(item: T \| null, ref: RefCallback) => ReactElement` | Renders the cell content |
+| `renderCell` | `(item: T \| null) => ReactElement` | Renders the cell content |
 | `expand` | `boolean` | Whether the column should expand to fill space |
 | `resizable` | `boolean` | Whether the column can be resized |
 | `fixedWidth` | `number` | Fixed width in pixels |
@@ -322,16 +315,16 @@ const UserListWithRemove = () => {
     <ScrolledWindow vexpand>
       <ListView.Root
         renderItem={(user: User | null) => (
-          <Box.Root
+          <Box
             orientation={Gtk.Orientation.HORIZONTAL}
             spacing={8}
           >
             <Label.Root label={user?.name ?? ""} hexpand />
-            <Button.Root
+            <Button
               label="Remove"
               onClicked={() => user && removeUser(user.id)}
             />
-          </Box.Root>
+          </Box>
         )}
       >
         {users.map(user => (

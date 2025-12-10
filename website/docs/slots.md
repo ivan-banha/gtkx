@@ -1,8 +1,8 @@
 ---
-sidebar_position: 1
+sidebar_position: 6
 ---
 
-# Widget Slots
+# Slots
 
 GTK widgets often have named child properties like `titleWidget`, `child`, or `label`. GTKX exposes these as **slots** — special components that place children into specific widget properties rather than generic child containers.
 

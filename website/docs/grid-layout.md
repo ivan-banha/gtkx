@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 7
 ---
 
 # Grid Layout
@@ -10,18 +10,19 @@ The `Grid` component provides a two-dimensional layout system where you can posi
 
 ```tsx
 import { Grid, Label, Entry, Button } from "@gtkx/react";
+import { Align } from "@gtkx/ffi/gtk";
 
 const LoginForm = () => (
   <Grid.Root columnSpacing={12} rowSpacing={8}>
     <Grid.Child row={0} column={0}>
-      <Label.Root label="Username:" halign={2} />
+      <Label.Root label="Username:" halign={Align.END} />
     </Grid.Child>
     <Grid.Child row={0} column={1}>
       <Entry hexpand />
     </Grid.Child>
 
     <Grid.Child row={1} column={0}>
-      <Label.Root label="Password:" halign={2} />
+      <Label.Root label="Password:" halign={Align.END} />
     </Grid.Child>
     <Grid.Child row={1} column={1}>
       <Entry visibility={false} hexpand />

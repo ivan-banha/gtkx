@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 5
 ---
 
 # Testing
@@ -150,16 +150,6 @@ await userEvent.type(input, "Hello, World!");
 
 // Clear input field
 await userEvent.clear(input);
-```
-
-### Custom Configuration
-
-Use `userEvent.setup()` to create an instance with custom options:
-
-```tsx
-const user = userEvent.setup({ delay: 100 });
-await user.click(button);
-await user.type(input, "text");
 ```
 
 ## Low-Level Events
@@ -480,10 +470,13 @@ await screen.findByRole(AccessibleRole.BUTTON, {
 |----------|-------------|
 | `userEvent.click(element)` | Click an element |
 | `userEvent.dblClick(element)` | Double-click an element |
+| `userEvent.tripleClick(element)` | Triple-click an element |
 | `userEvent.activate(element)` | Activate an element (e.g., press Enter in input) |
 | `userEvent.type(element, text)` | Type text into an input |
 | `userEvent.clear(element)` | Clear an input field |
-| `userEvent.setup(options?)` | Create instance with custom options |
+| `userEvent.tab(element, options?)` | Simulate Tab navigation |
+| `userEvent.selectOptions(element, values)` | Select options in ComboBox/ListBox |
+| `userEvent.deselectOptions(element, values)` | Deselect options in ListBox |
 
 ### Fire Event
 

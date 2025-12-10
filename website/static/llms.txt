@@ -18,7 +18,8 @@ GTKX is a framework for building native GTK4 desktop applications using React an
 - Homepage: https://eugeniodepalo.github.io/gtkx/
 - Introduction: https://eugeniodepalo.github.io/gtkx/docs/introduction
 - Getting Started: https://eugeniodepalo.github.io/gtkx/docs/getting-started
-- API Reference: https://eugeniodepalo.github.io/gtkx/docs/api/react
+- Styling: https://eugeniodepalo.github.io/gtkx/docs/styling
+- Testing: https://eugeniodepalo.github.io/gtkx/docs/testing
 - GitHub: https://github.com/eugeniodepalo/gtkx
 
 ## Architecture
@@ -361,16 +362,16 @@ const sortFn = (a: Product, b: Product, columnId: string) => {
     id="name"
     title="Name"
     expand
-    renderCell={(product: Product | null, ref: RefCallback<Gtk.Widget>) => (
-      <Label.Root ref={ref} label={product?.name ?? ""} />
+    renderCell={(product: Product | null) => (
+      <Label.Root label={product?.name ?? ""} />
     )}
   />
   <ColumnView.Column
     id="price"
     title="Price"
     fixedWidth={100}
-    renderCell={(product: Product | null, ref: RefCallback<Gtk.Widget>) => (
-      <Label.Root ref={ref} label={product ? `$${product.price}` : ""} />
+    renderCell={(product: Product | null) => (
+      <Label.Root label={product ? `$${product.price}` : ""} />
     )}
   />
   {products.map(product => (
@@ -870,13 +871,13 @@ Functions:
 - `stop()`: Stop GTK application
 - `getCurrentApp()`: Get current GTK Application instance
 - `getObject<T>(id)`: Wrap native pointer in class instance with runtime type lookup
-- `cast<T>(obj)`: Type-only cast for interface access (no runtime validation)
+- `getInterface<T>(obj, targetType)`: Get interface view of native object with runtime validation
 - `registerClass(Class)`: Register a class for runtime type lookup
 
 Variables:
 - `events`: EventEmitter for GTK lifecycle ("start", "stop")
 - `createRef`: Create refs for GTK widgets
-- `getObjectAddr`: Get native pointer address for GTK objects
+- `getObjectId`: Get native pointer identifier for GTK objects
 
 Types:
 - `NativeObject`: Base interface for all native GLib/GTK objects (`{ id: unknown }`)

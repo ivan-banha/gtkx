@@ -93,6 +93,6 @@ render(<App />, "org.example.Counter");
 ## Next Steps
 
 - [Getting Started](./getting-started) — Create your first app with the CLI
-- [CLI Guide](./guides/cli) — Learn about dev server, HMR, and project scaffolding
-- [Styling Guide](./guides/styling) — Style your app with CSS-in-JS
-- [Testing Guide](./guides/testing) — Write tests for your components
+- [CLI](./cli) — Learn about dev server, HMR, and project scaffolding
+- [Styling](./styling) — Style your app with CSS-in-JS
+- [Testing](./testing) — Write tests for your components

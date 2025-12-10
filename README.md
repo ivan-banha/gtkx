@@ -64,7 +64,6 @@ npm install -D @types/react typescript
 Create your first app:
 
 ```tsx
-// src/app.tsx
 import { useState } from "react";
 import * as Gtk from "@gtkx/ffi/gtk";
 import { ApplicationWindow, Box, Button, Label, quit } from "@gtkx/react";
@@ -98,7 +97,6 @@ export const appId = "org.example.MyApp";
 ```
 
 ```tsx
-// src/index.tsx
 import { render } from "@gtkx/react";
 import App, { appId } from "./app.js";
 
@@ -147,7 +145,6 @@ import { cleanup, render, screen, userEvent, fireEvent } from "@gtkx/testing";
 import { AccessibleRole } from "@gtkx/ffi/gtk";
 import { App } from "./app.js";
 
-// Clean up after each test
 afterEach(async () => {
   await cleanup();
 });

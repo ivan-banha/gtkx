@@ -1,19 +1,19 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as Gtk from "../src/generated/gtk/index.js";
-import { getCurrentApp, getObject, registerClass, start, stop } from "../src/native.js";
+import { getCurrentApp, getObject, registerType, start, stop } from "../src/native.js";
 
 const APP_ID = "com.gtkx.test.ffi";
 
 describe("native module", () => {
     beforeAll(() => {
-        registerClass(Gtk.Application);
-        registerClass(Gtk.Widget);
-        registerClass(Gtk.Button);
-        registerClass(Gtk.Label);
-        registerClass(Gtk.Entry);
-        registerClass(Gtk.Box);
-        registerClass(Gtk.Window);
-        registerClass(Gtk.ApplicationWindow);
+        registerType(Gtk.Application);
+        registerType(Gtk.Widget);
+        registerType(Gtk.Button);
+        registerType(Gtk.Label);
+        registerType(Gtk.Entry);
+        registerType(Gtk.Box);
+        registerType(Gtk.Window);
+        registerType(Gtk.ApplicationWindow);
         start(APP_ID);
     });
 

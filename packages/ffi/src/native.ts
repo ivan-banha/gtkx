@@ -156,4 +156,4 @@ export const stop = (): void => {
 };
 
 export { createRef, getObjectId } from "@gtkx/native";
-export { type NativeObject, registerClass } from "./registry.js";
+export { type NativeObject, registerType } from "./registry.js";

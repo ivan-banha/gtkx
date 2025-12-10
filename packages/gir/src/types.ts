@@ -418,7 +418,7 @@ export class TypeRegistry {
      * @param namespace - The namespace containing the class
      * @param name - The class name
      */
-    registerClass(namespace: string, name: string): void {
+    registerType(namespace: string, name: string): void {
         const transformedName = normalizeTypeName(name);
         this.types.set(`${namespace}.${name}`, {
             kind: "class",
@@ -521,7 +521,7 @@ export class TypeRegistry {
         const registry = new TypeRegistry();
         for (const ns of namespaces) {
             for (const cls of ns.classes) {
-                registry.registerClass(ns.name, cls.name);
+                registry.registerType(ns.name, cls.name);
             }
             for (const iface of ns.interfaces) {
                 registry.registerInterface(ns.name, iface.name);

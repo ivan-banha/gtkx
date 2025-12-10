@@ -277,7 +277,7 @@ export class CodeGenerator {
     private usesAlloc = false;
     private usesNativeError = false;
     private usesGetObject = false;
-    private usesRegisterClass = false;
+    private usesRegisterType = false;
     private usesSignalMeta = false;
     private usedEnums = new Set<string>();
     private usedRecords = new Set<string>();
@@ -417,7 +417,7 @@ export class CodeGenerator {
         this.usesAlloc = false;
         this.usesNativeError = false;
         this.usesGetObject = false;
-        this.usesRegisterClass = false;
+        this.usesRegisterType = false;
         this.usesSignalMeta = false;
         this.usedEnums.clear();
         this.usedRecords.clear();
@@ -536,8 +536,8 @@ export class CodeGenerator {
         sections.push("}");
 
         if (cls.glibTypeName) {
-            this.usesRegisterClass = true;
-            sections.push(`\nregisterClass(${className});`);
+            this.usesRegisterType = true;
+            sections.push(`\nregisterType(${className});`);
         }
 
         if (signalMetaConstant) {
@@ -1649,8 +1649,8 @@ ${allArgs ? `${allArgs},` : ""}
         sections.push("}");
 
         if (record.glibTypeName) {
-            this.usesRegisterClass = true;
-            sections.push(`\nregisterClass(${recordName});`);
+            this.usesRegisterType = true;
+            sections.push(`\nregisterType(${recordName});`);
         }
 
         const imports = this.generateImports(recordName);
@@ -2224,7 +2224,7 @@ ${indent}  }`;
         const ffiImports: string[] = [];
         if (this.usesNativeError) ffiImports.push("NativeError");
         if (this.usesGetObject) ffiImports.push("getObject");
-        if (this.usesRegisterClass) ffiImports.push("registerClass");
+        if (this.usesRegisterType) ffiImports.push("registerType");
         if (ffiImports.length > 0) {
             lines.push(`import { ${ffiImports.join(", ")} } from "@gtkx/ffi";`);
         }

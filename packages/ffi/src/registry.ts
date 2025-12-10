@@ -16,7 +16,7 @@ const classRegistry = new Map<string, GObjectClass>();
  * Called by generated code at module load time.
  * @param cls - The class to register
  */
-export function registerClass(cls: GObjectClass): void {
+export function registerType(cls: GObjectClass): void {
     classRegistry.set(cls.glibTypeName, cls);
 }
 

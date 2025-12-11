@@ -17,17 +17,17 @@ export type TextMatch = string | RegExp | TextMatchFunction;
 /**
  * Options for normalizing text before comparison.
  */
-export interface NormalizerOptions {
+export type NormalizerOptions = {
     /** Whether to trim whitespace from text. Defaults to true. */
     trim?: boolean;
     /** Whether to collapse multiple whitespace into single spaces. Defaults to true. */
     collapseWhitespace?: boolean;
-}
+};
 
 /**
  * Options for text matching in queries.
  */
-export interface TextMatchOptions {
+export type TextMatchOptions = {
     /** Whether to match the entire string exactly. Defaults to true. */
     exact?: boolean;
     /**
@@ -41,12 +41,12 @@ export interface TextMatchOptions {
     collapseWhitespace?: boolean;
     /** Maximum time in milliseconds to wait for a match. */
     timeout?: number;
-}
+};
 
 /**
  * Options for querying elements by their accessible role.
  */
-export interface ByRoleOptions extends TextMatchOptions {
+export type ByRoleOptions = TextMatchOptions & {
     /** Filter by the element's accessible name. Supports string, RegExp, or function matcher. */
     name?: TextMatch;
     /** Filter checkboxes/switches by checked state. */
@@ -59,24 +59,24 @@ export interface ByRoleOptions extends TextMatchOptions {
     expanded?: boolean;
     /** Filter headings by their level (1-6). */
     level?: number;
-}
+};
 
 /**
  * Options for waitFor and related async utilities.
  */
-export interface WaitForOptions {
+export type WaitForOptions = {
     /** Maximum time in milliseconds to wait. Defaults to 1000ms. */
     timeout?: number;
     /** Interval in milliseconds between condition checks. Defaults to 50ms. */
     interval?: number;
     /** Custom error handler called when timeout is reached. */
     onTimeout?: (error: Error) => Error;
-}
+};
 
 /**
  * Options for the render function.
  */
-export interface RenderOptions {
+export type RenderOptions = {
     /**
      * Controls how the rendered element is wrapped.
      * - `true` (default): Wrap in ApplicationWindow
@@ -84,13 +84,13 @@ export interface RenderOptions {
      * - Component: Use a custom wrapper component
      */
     wrapper?: boolean | ComponentType<{ children: ReactNode }>;
-}
+};
 
 /**
  * Query methods bound to a specific container. All queries return promises
  * that resolve when a matching element is found or reject on timeout.
  */
-export interface BoundQueries {
+export type BoundQueries = {
     /** Find a single element by its accessible role. */
     findByRole: (role: AccessibleRole, options?: ByRoleOptions) => Promise<Gtk.Widget>;
     /** Find a single element by its associated label text. */
@@ -108,13 +108,13 @@ export interface BoundQueries {
     findAllByText: (text: TextMatch, options?: TextMatchOptions) => Promise<Gtk.Widget[]>;
     /** Find all elements with matching test ID. */
     findAllByTestId: (testId: TextMatch, options?: TextMatchOptions) => Promise<Gtk.Widget[]>;
-}
+};
 
 /**
  * The result returned by the render function. Includes query methods
  * and utilities for interacting with the rendered component.
  */
-export interface RenderResult extends BoundQueries {
+export type RenderResult = BoundQueries & {
     /** The GTK Application instance containing the rendered component. */
     container: Gtk.Application;
 
@@ -124,4 +124,4 @@ export interface RenderResult extends BoundQueries {
     rerender: (element: ReactNode) => Promise<void>;
     /** Print the current widget tree to the console for debugging. */
     debug: () => void;
-}
+};

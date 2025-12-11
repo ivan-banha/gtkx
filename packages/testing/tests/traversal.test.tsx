@@ -82,7 +82,10 @@ describe("findAll", () => {
                 </Box>,
             );
 
-            const allWidgets = findAll(container, () => true);
+            const activeWindow = container.getActiveWindow();
+            expect(activeWindow).not.toBeNull();
+
+            const allWidgets = findAll(activeWindow as Window, () => true);
 
             expect(allWidgets.length).toBeGreaterThan(0);
         });

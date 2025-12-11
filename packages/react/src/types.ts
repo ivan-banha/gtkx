@@ -5,25 +5,25 @@ import type { ReactElement, ReactNode } from "react";
  * Props for slot components that accept children.
  * Used by container widgets that render child elements in designated slots.
  */
-export interface SlotProps {
+export type SlotProps = {
     children?: ReactNode;
-}
+};
 
 /**
  * Props passed to list item components.
  * @typeParam I - The type of the data item
  */
-export interface ListItemProps<I = unknown> {
+export type ListItemProps<I = unknown> = {
     /** The data item to render. */
     item: I;
-}
+};
 
-export interface GridChildProps extends SlotProps {
+export type GridChildProps = SlotProps & {
     column?: number;
     row?: number;
     columnSpan?: number;
     rowSpan?: number;
-}
+};
 
 /**
  * Render function for ListView/GridView items.
@@ -35,10 +35,10 @@ export type RenderItemFn<T> = (item: T | null) => ReactElement;
  * Props for ListView and GridView components.
  * @typeParam T - The type of the data items in the list
  */
-export interface ListViewRenderProps<T = unknown> {
+export type ListViewRenderProps<T = unknown> = {
     /** Render function called for each item in the list. */
     renderItem: RenderItemFn<T>;
-}
+};
 
 /**
  * Comparison function for sorting items by column.
@@ -53,7 +53,7 @@ export type ColumnSortFn<T, C extends string = string> = (a: T, b: T, columnId: 
  * Props for individual columns in a ColumnView.
  * @typeParam T - The type of the data items displayed in the column
  */
-export interface ColumnViewColumnProps<T = unknown> {
+export type ColumnViewColumnProps<T = unknown> = {
     /** The column header title. */
     title?: string;
     /** Whether the column should expand to fill available space. */
@@ -70,14 +70,14 @@ export interface ColumnViewColumnProps<T = unknown> {
      * Always annotate your callback parameter type to include null, e.g.: `(item: MyItem | null) => ...`
      */
     renderCell: (item: T | null) => ReactElement;
-}
+};
 
 /**
  * Props for the ColumnView root component.
  * @typeParam T - The type of the data items in the view
  * @typeParam C - The union type of column IDs
  */
-export interface ColumnViewRootProps<T = unknown, C extends string = string> {
+export type ColumnViewRootProps<T = unknown, C extends string = string> = {
     /** The ID of the currently sorted column, or null if unsorted. */
     sortColumn?: C | null;
     /** The current sort direction. */
@@ -86,62 +86,62 @@ export interface ColumnViewRootProps<T = unknown, C extends string = string> {
     onSortChange?: (column: C | null, order: SortType) => void;
     /** Custom comparison function for sorting items. */
     sortFn?: ColumnSortFn<T, C>;
-}
+};
 
-export interface NotebookPageProps extends SlotProps {
+export type NotebookPageProps = SlotProps & {
     label: string;
-}
+};
 
-export interface StackRootProps extends SlotProps {
+export type StackRootProps = SlotProps & {
     visibleChildName?: string;
-}
+};
 
-export interface StackPageProps extends SlotProps {
+export type StackPageProps = SlotProps & {
     name?: string;
     title?: string;
     iconName?: string;
     needsAttention?: boolean;
     visible?: boolean;
     useUnderline?: boolean;
-}
+};
 
 /**
  * Props for the Menu.Root component.
  * Root container for declarative menu structures.
  */
-export interface MenuRootProps {
+export type MenuRootProps = {
     children?: ReactNode;
-}
+};
 
 /**
  * Props for Menu.Item components.
  * Represents a single menu item with an action.
  */
-export interface MenuItemProps {
+export type MenuItemProps = {
     /** The visible label for the menu item. */
     label: string;
     /** Callback invoked when the menu item is activated. */
     onActivate?: () => void;
     /** Keyboard accelerators for this menu item (e.g., `"<Control>q"` or `["<Control>q", "<Control>w"]`). */
     accels?: string | string[];
-}
+};
 
 /**
  * Props for Menu.Section components.
  * Groups related menu items with optional label.
  */
-export interface MenuSectionProps {
+export type MenuSectionProps = {
     /** Optional section label displayed as a header. */
     label?: string;
     children?: ReactNode;
-}
+};
 
 /**
  * Props for Menu.Submenu components.
  * Creates a nested submenu with its own items.
  */
-export interface MenuSubmenuProps {
+export type MenuSubmenuProps = {
     /** The submenu label shown in parent menu. */
     label: string;
     children?: ReactNode;
-}
+};

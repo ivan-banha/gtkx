@@ -42,9 +42,13 @@ export class ColumnViewNode
     }
 
     override initialize(props: Props): void {
-        // State must be initialized before super.initialize() since updateProps accesses this.state.
-        // GTK objects can't be created yet because this.widget doesn't exist until super.initialize().
-        // The null placeholders are immediately replaced after super.initialize() completes.
+        this.initializeStateWithPlaceholders(props);
+        super.initialize(props);
+        this.createGtkModels();
+        this.connectSorterChangedSignal();
+    }
+
+    private initializeStateWithPlaceholders(props: Props): void {
         this.state = {
             stringList: null as unknown as Gtk.StringList,
             selectionModel: null as unknown as Gtk.SingleSelection,
@@ -61,9 +65,9 @@ export class ColumnViewNode
             lastNotifiedColumn: null,
             lastNotifiedOrder: Gtk.SortType.ASCENDING,
         };
+    }
 
-        super.initialize(props);
-
+    private createGtkModels(): void {
         const stringList = new Gtk.StringList([]);
         const sortListModel = new Gtk.SortListModel(getInterface(stringList, Gio.ListModel), this.widget.getSorter());
         sortListModel.setIncremental(true);
@@ -73,8 +77,6 @@ export class ColumnViewNode
         this.state.stringList = stringList;
         this.state.sortListModel = sortListModel;
         this.state.selectionModel = selectionModel;
-
-        this.connectSorterChangedSignal();
     }
 
     private connectSorterChangedSignal(): void {
@@ -300,8 +302,6 @@ export class ColumnViewColumnNode extends Node<never, ColumnViewColumnState> {
     private columnView: ColumnViewNode | null = null;
 
     override initialize(props: Props): void {
-        // Unlike ColumnViewNode, we can create GTK objects before super.initialize() here
-        // since this is a virtual node (no widget created by parent class).
         const factory = new Gtk.SignalListItemFactory();
         const column = new Gtk.ColumnViewColumn(props.title as string | undefined, factory);
         const columnId = (props.id as string | null) ?? null;

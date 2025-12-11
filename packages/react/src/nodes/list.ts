@@ -31,9 +31,15 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewStat
     }
 
     override initialize(props: Props): void {
-        // State must be initialized before super.initialize() since updateProps accesses this.state.
-        // GTK objects can't be created yet because this.widget doesn't exist until super.initialize().
-        // The null placeholders are immediately replaced after super.initialize() completes.
+        this.initializeStateWithPlaceholders(props);
+        super.initialize(props);
+        this.createGtkModels();
+        this.connectFactorySignals();
+        this.widget.setModel(this.state.selectionModel);
+        this.widget.setFactory(this.state.factory);
+    }
+
+    private initializeStateWithPlaceholders(props: Props): void {
         this.state = {
             stringList: null as unknown as Gtk.StringList,
             selectionModel: null as unknown as Gtk.SingleSelection,
@@ -43,9 +49,9 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewStat
             items: [],
             committedLength: 0,
         };
+    }
 
-        super.initialize(props);
-
+    private createGtkModels(): void {
         const stringList = new Gtk.StringList([]);
         const selectionModel = new Gtk.SingleSelection(getInterface(stringList, Gio.ListModel));
         const factory = new Gtk.SignalListItemFactory();
@@ -53,6 +59,10 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewStat
         this.state.stringList = stringList;
         this.state.selectionModel = selectionModel;
         this.state.factory = factory;
+    }
+
+    private connectFactorySignals(): void {
+        const factory = this.state.factory;
 
         factory.connect("setup", (_self, listItemObj) => {
             const listItem = getObject<Gtk.ListItem>(listItemObj.id);
@@ -99,9 +109,6 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewStat
                 this.state.listItemCache.delete(id);
             }
         });
-
-        this.widget.setModel(selectionModel);
-        this.widget.setFactory(factory);
     }
 
     private syncStringList = (): void => {

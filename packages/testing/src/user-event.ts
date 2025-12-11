@@ -21,10 +21,10 @@ import { isEditable } from "./widget.js";
 /**
  * Options for the tab user event.
  */
-export interface TabOptions {
+export type TabOptions = {
     /** If true, navigates backwards (Shift+Tab behavior). */
     shift?: boolean;
-}
+};
 
 const TOGGLEABLE_ROLES = new Set([
     AccessibleRole.CHECKBOX,

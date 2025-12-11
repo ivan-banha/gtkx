@@ -1287,7 +1287,6 @@ ${allArgs ? `${allArgs},` : ""}
             baseReturnType.endsWith("[]");
         const hasReturnValue = returnTypeMapping.ts !== "void";
 
-        // For records (boxed types), use "boxed" type with innerType; for classes, use "gobject"
         const selfTypeDescriptor =
             isRecord && className
                 ? `{ type: "boxed", borrowed: true, innerType: "${className}", lib: "${sharedLibrary}" }`
@@ -1329,9 +1328,7 @@ ${allArgs ? `${allArgs},` : ""}
                 lines.push(`    if (ptr === null) return null;`);
             }
             if (isCyclic) {
-                // For cyclic types, return a minimal NativeObject wrapper. Cast is necessary
-                // because the full type interface isn't available without circular imports.
-                lines.push(`    return { id: ptr } as unknown as ${baseReturnType};`);
+                lines.push(this.generateCyclicTypeReturn(baseReturnType));
             } else {
                 this.usesGetObject = true;
                 lines.push(`    return getObject(ptr) as ${baseReturnType};`);
@@ -1502,11 +1499,7 @@ ${allArgs ? `${allArgs},` : ""}
             });
         }
 
-        // Signal handler catch-all overload must use `any` for compatibility with typed overloads.
-        // The typed overloads have specific return types, and unknown is not assignable to them.
-        signalOverloads.push(
-            `  ${methodName}(signal: string, handler: (...args: any[]) => any, after?: boolean): number;`,
-        );
+        this.addSignalCatchAllOverload(signalOverloads, methodName);
 
         this.usesType = true;
         this.usesGetObject = true;
@@ -2310,5 +2303,19 @@ ${indent}  }`;
             console.warn("Failed to format code:", error);
             return code;
         }
+    }
+
+    private generateCyclicTypeReturn(baseReturnType: string): string {
+        return `    return { id: ptr } as unknown as ${baseReturnType};`;
+    }
+
+    /**
+     * Adds a catch-all signal handler overload.
+     * Uses `any` for TypeScript compatibility with typed overloads.
+     */
+    private addSignalCatchAllOverload(signalOverloads: string[], methodName: string): void {
+        signalOverloads.push(
+            `  ${methodName}(signal: string, handler: (...args: any[]) => any, after?: boolean): number;`,
+        );
     }
 }

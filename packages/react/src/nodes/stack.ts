@@ -42,8 +42,6 @@ export class StackNode extends Node<Gtk.Stack> implements StackPageContainer, Ch
     }
 
     insertStackPageBefore(child: Gtk.Widget, props: StackPageProps, _beforeChild: Gtk.Widget): void {
-        // Stack doesn't have insertBefore, so we add and rely on order
-        // For now, just add at the end - GTK Stack doesn't support insertion at position
         this.addStackPage(child, props);
     }
 
@@ -82,7 +80,6 @@ export class StackNode extends Node<Gtk.Stack> implements StackPageContainer, Ch
     }
 
     insertChildBefore(child: Gtk.Widget, _before: Gtk.Widget): void {
-        // Stack doesn't support insertion at position
         this.widget.addChild(child);
     }
 
@@ -96,17 +93,20 @@ export class StackNode extends Node<Gtk.Stack> implements StackPageContainer, Ch
         return consumed;
     }
 
+    private setVisibleChildOrDefer(name: string): void {
+        const child = this.widget.getChildByName(name);
+
+        if (child) {
+            this.widget.setVisibleChild(child);
+            this.pendingVisibleChildName = null;
+        } else {
+            this.pendingVisibleChildName = name;
+        }
+    }
+
     override updateProps(oldProps: Props, newProps: Props): void {
         if (newProps.visibleChildName !== undefined) {
-            const name = newProps.visibleChildName as string;
-            const child = this.widget.getChildByName(name);
-            if (child) {
-                this.widget.setVisibleChild(child);
-                this.pendingVisibleChildName = null;
-            } else {
-                // Child not yet added, defer until it's added
-                this.pendingVisibleChildName = name;
-            }
+            this.setVisibleChildOrDefer(newProps.visibleChildName as string);
         }
 
         super.updateProps(oldProps, newProps);

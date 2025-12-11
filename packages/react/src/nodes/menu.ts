@@ -179,21 +179,20 @@ export class MenuItemNode extends Node<never> {
         return consumed;
     }
 
+    private isFieldInitializationIncomplete(): boolean {
+        return !this.entry;
+    }
+
     override updateProps(oldProps: Props, newProps: Props): void {
-        // If entry doesn't exist yet, fields aren't initialized
-        // This happens when base class constructor calls updateProps
-        // before derived class field initializers run - skip in that case
-        if (!this.entry) {
+        if (this.isFieldInitializationIncomplete()) {
             super.updateProps(oldProps, newProps);
             return;
         }
 
         const labelChanged = oldProps.label !== newProps.label;
-        const hadCallback = oldProps.onActivate !== undefined;
-        const hasCallback = newProps.onActivate !== undefined;
+        const callbackPresenceChanged = (oldProps.onActivate !== undefined) !== (newProps.onActivate !== undefined);
         const accelsChanged = oldProps.accels !== newProps.accels;
 
-        // Always update the callback reference - the signal handler uses this
         this.onActivateCallback = newProps.onActivate as (() => void) | undefined;
         this.currentAccels = newProps.accels as string | string[] | undefined;
 
@@ -201,9 +200,7 @@ export class MenuItemNode extends Node<never> {
             this.entry.label = newProps.label as string | undefined;
         }
 
-        // Only cleanup/setup action if the presence of a callback changed
-        // (not when the callback reference changes - we store the ref and call it)
-        if (this.isAttached && hadCallback !== hasCallback) {
+        if (this.isAttached && callbackPresenceChanged) {
             this.cleanupAction();
             this.setupAction();
         }
@@ -215,15 +212,16 @@ export class MenuItemNode extends Node<never> {
         super.updateProps(oldProps, newProps);
     }
 
+    private invokeCurrentCallback(): void {
+        this.onActivateCallback?.();
+    }
+
     private setupAction(): void {
         if (!this.onActivateCallback) return;
 
         this.actionName = generateActionName();
         this.action = new Gio.SimpleAction(this.actionName);
-        this.signalHandlerId = this.action.connect("activate", () => {
-            // Call the current callback (may have been updated via updateProps)
-            this.onActivateCallback?.();
-        });
+        this.signalHandlerId = this.action.connect("activate", () => this.invokeCurrentCallback());
 
         const app = getCurrentApp();
         const action = getInterface(this.action, Gio.Action);

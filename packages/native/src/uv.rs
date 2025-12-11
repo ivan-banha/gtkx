@@ -18,7 +18,7 @@ pub struct UvLoop {
 
 /// Run mode for libuv event loop iteration.
 #[repr(C)]
-#[allow(dead_code)]
+#[expect(dead_code)]
 pub enum UvRunMode {
     /// Run until no more active handles or requests.
     Default = 0,

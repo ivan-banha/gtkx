@@ -6,16 +6,16 @@ import { createServer, type InlineConfig, type ViteDevServer } from "vite";
 /**
  * Options for creating a GTKX development server.
  */
-export interface DevServerOptions {
+export type DevServerOptions = {
     /** Path to the app entry file (e.g., "./src/app.tsx"). */
     entry: string;
     /** Vite configuration overrides for customizing the dev server. */
     vite?: InlineConfig;
-}
+};
 
-interface AppModule {
+type AppModule = {
     default: () => React.ReactNode;
-}
+};
 
 /**
  * Creates and starts a GTKX development server with HMR support.

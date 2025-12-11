@@ -708,7 +708,6 @@ ${widgetPropsContent}
             const docComment = widget.doc ? formatDoc(widget.doc).trimEnd() : "";
 
             if (hasMeaningfulSlots) {
-                // For list widgets, generate wrapper components with proper generics
                 if (
                     isListWidget(widget.name) ||
                     isColumnViewWidget(widget.name) ||
@@ -754,8 +753,13 @@ ${widgetPropsContent}
             }
         }
 
-        // Add ApplicationMenu and Menu namespace components
-        lines.push(`/**
+        lines.push(this.generateApplicationMenuComponents());
+
+        return `${lines.join("\n")}\n`;
+    }
+
+    private generateApplicationMenuComponents(): string {
+        return `/**
  * Sets the application-wide menu bar.
  * The menu will appear in the window's title bar on supported platforms.
  * Use Menu.Item, Menu.Section, and Menu.Submenu as children.
@@ -783,9 +787,7 @@ export const Menu = {
 \tSection: MenuSection,
 \tSubmenu: MenuSubmenu,
 };
-`);
-
-        return `${lines.join("\n")}\n`;
+`;
     }
 
     private getWrapperExportMembers(widgetName: string, metadata: ContainerMetadata): string[] {
@@ -807,7 +809,6 @@ export const Menu = {
             members.push(`Submenu: ${name}Submenu`);
         }
 
-        // Add named child slots
         for (const slot of metadata.namedChildSlots) {
             members.push(`${slot.slotName}: ${name}${slot.slotName}`);
         }
@@ -985,12 +986,7 @@ export const Menu = {
             }
         }
 
-        // Add shared Menu elements (used by PopoverMenu, PopoverMenuBar, and ApplicationMenu)
-        elements.push(`"Menu.Item": MenuItemProps;`);
-        elements.push(`"Menu.Section": MenuSectionProps;`);
-        elements.push(`"Menu.Submenu": MenuSubmenuProps;`);
-
-        // Add ApplicationMenu element
+        this.addMenuIntrinsicElements(elements);
         elements.push(`ApplicationMenu: MenuRootProps;`);
 
         return `
@@ -1004,6 +1000,12 @@ declare global {
 \t}
 }
 `;
+    }
+
+    private addMenuIntrinsicElements(elements: string[]): void {
+        elements.push(`"Menu.Item": MenuItemProps;`);
+        elements.push(`"Menu.Section": MenuSectionProps;`);
+        elements.push(`"Menu.Submenu": MenuSubmenuProps;`);
     }
 
     private async formatCode(code: string): Promise<string> {

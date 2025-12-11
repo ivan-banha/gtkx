@@ -12,7 +12,7 @@ export type TestingFramework = "vitest" | "jest" | "node" | "none";
 /**
  * Options for creating a new GTKX application.
  */
-export interface CreateOptions {
+export type CreateOptions = {
     /** Project name (lowercase letters, numbers, and hyphens only). */
     name?: string;
     /** Application ID in reverse domain notation (e.g., com.example.myapp). */
@@ -23,7 +23,7 @@ export interface CreateOptions {
     testing?: TestingFramework;
     /** Whether to include Claude Code skills for AI assistance. */
     claudeSkills?: boolean;
-}
+};
 
 const DEPENDENCIES = ["@gtkx/css", "@gtkx/ffi", "@gtkx/react", "react"];
 

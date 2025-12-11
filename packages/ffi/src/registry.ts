@@ -1,11 +1,11 @@
 /**
- * Base interface for all native GLib/GTK objects.
- * All generated classes implement this interface.
+ * Base type for all native GLib/GTK objects.
+ * All generated classes implement this type.
  */
-export interface NativeObject {
+export type NativeObject = {
     /** The native pointer/handle to the underlying GLib object */
     id: unknown;
-}
+};
 
 type GObjectClass = { glibTypeName: string; prototype: NativeObject };
 

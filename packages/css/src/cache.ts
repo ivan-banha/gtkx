@@ -7,6 +7,9 @@ let gtkCache: EmotionCache | null = null;
 /**
  * Creates and returns a singleton Emotion cache configured for GTK.
  * Uses StyleSheet to inject styles into GTK's CssProvider.
+ *
+ * Implementation note: Emotion's internal sheet type is not publicly exported,
+ * so we cast our StyleSheet which implements the required interface.
  */
 export const getGtkCache = (): EmotionCache => {
     if (!gtkCache) {
@@ -17,8 +20,6 @@ export const getGtkCache = (): EmotionCache => {
             container: null,
         });
 
-        // Emotion's internal sheet type is not publicly exported, but our StyleSheet
-        // implements the required interface (key, insert, flush, hydrate).
         gtkCache.sheet = sheet as unknown as typeof gtkCache.sheet;
     }
 

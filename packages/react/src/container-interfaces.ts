@@ -2,75 +2,75 @@ import type * as Gtk from "@gtkx/ffi/gtk";
 import type { Node } from "./node.js";
 
 /**
- * Interface for containers that manage child widgets with attach/detach semantics.
+ * Type for containers that manage child widgets with attach/detach semantics.
  * Used by ActionBar, FlowBox, ListBox, Overlay.
  */
-export interface ChildContainer {
+export type ChildContainer = {
     attachChild(child: Gtk.Widget): void;
     insertChildBefore(child: Gtk.Widget, before: Gtk.Widget): void;
     detachChild(child: Gtk.Widget): void;
-}
+};
 
 /**
- * Interface for page-based containers like Notebook.
+ * Type for page-based containers like Notebook.
  */
-export interface PageContainer {
+export type PageContainer = {
     addPage(child: Gtk.Widget, label: string): void;
     insertPageBefore(child: Gtk.Widget, label: string, beforeChild: Gtk.Widget): void;
     removePage(child: Gtk.Widget): void;
     updatePageLabel(child: Gtk.Widget, label: string): void;
-}
+};
 
 /**
  * Props for Stack pages.
  */
-export interface StackPageProps {
+export type StackPageProps = {
     name?: string;
     title?: string;
     iconName?: string;
     needsAttention?: boolean;
     visible?: boolean;
     useUnderline?: boolean;
-}
+};
 
 /**
- * Interface for Stack containers.
+ * Type for Stack containers.
  */
-export interface StackPageContainer {
+export type StackPageContainer = {
     addStackPage(child: Gtk.Widget, props: StackPageProps): void;
     insertStackPageBefore(child: Gtk.Widget, props: StackPageProps, beforeChild: Gtk.Widget): void;
     removeStackPage(child: Gtk.Widget): void;
     updateStackPageProps(child: Gtk.Widget, props: StackPageProps): void;
-}
+};
 
 /**
- * Interface for grid-based containers.
+ * Type for grid-based containers.
  */
-export interface GridContainer {
+export type GridContainer = {
     attachToGrid(child: Gtk.Widget, column: number, row: number, colSpan: number, rowSpan: number): void;
     removeFromGrid(child: Gtk.Widget): void;
-}
+};
 
 /**
- * Interface for item-based containers like ListView, ColumnView, DropDown.
+ * Type for item-based containers like ListView, ColumnView, DropDown.
  */
-export interface ItemContainer<T> {
+export type ItemContainer<T> = {
     addItem(item: T): void;
     insertItemBefore(item: T, beforeItem: T): void;
     removeItem(item: T): void;
-}
+};
 
 /**
- * Interface for column-based containers like ColumnView.
+ * Type for column-based containers like ColumnView.
  * Note: Column type is generic to support both raw Gtk.ColumnViewColumn and wrapper nodes.
  */
-export interface ColumnContainer {
+export type ColumnContainer = {
     addColumn(column: unknown): void;
     insertColumnBefore(column: unknown, beforeColumn: unknown): void;
     removeColumn(column: unknown): void;
     getItems(): unknown[];
     getSortFn(): ((a: unknown, b: unknown, columnId: string) => number) | null;
-}
+};
 
 export const isChildContainer = (node: Node): node is Node & ChildContainer =>
     "attachChild" in node && "detachChild" in node && "insertChildBefore" in node;

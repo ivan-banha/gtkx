@@ -3,10 +3,10 @@
 use std::sync::mpsc;
 
 use anyhow::bail;
-use gtk4::glib;
 use neon::prelude::*;
 
 use crate::{
+    ffi_source,
     object::ObjectId,
     types::{FloatSize, IntegerSign, IntegerSize, Type},
     value::Value,
@@ -28,7 +28,7 @@ pub fn write(mut cx: FunctionContext) -> JsResult<JsUndefined> {
     let object_id = *object_id.as_inner();
     let (tx, rx) = mpsc::channel::<anyhow::Result<()>>();
 
-    glib::idle_add_once(move || {
+    ffi_source::schedule(move || {
         let _ = tx.send(handle_write(object_id, &type_, offset, &value));
     });
 

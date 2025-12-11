@@ -50,4 +50,3 @@ jobs:
           pnpm test
         env:
           DISPLAY: ":99"
-          GTK_A11Y: none

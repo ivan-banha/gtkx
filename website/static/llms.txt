@@ -79,7 +79,6 @@ Never edit generated code directly. Run `pnpm codegen` after modifying generator
 
 - Tests require GTK4/X11. CI uses Xvfb on Fedora.
 - Tests run serially due to GTK's single-threaded nature.
-- GTK_A11Y=none is set in test configs.
 
 ## Requirements
 

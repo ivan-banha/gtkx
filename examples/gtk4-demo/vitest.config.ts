@@ -7,9 +7,6 @@ export default mergeConfig(baseConfig, {
         typecheck: {
             tsconfig: "tsconfig.test.json",
         },
-        env: {
-            GTK_A11Y: "none",
-        },
         pool: "forks",
         poolOptions: {
             forks: {

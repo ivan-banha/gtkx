@@ -66,6 +66,23 @@ const isInternalLabel = (widget: Gtk.Widget): boolean => {
     return ROLES_WITH_INTERNAL_LABELS.has(parentAccessible.getAccessibleRole());
 };
 
+const collectChildLabels = (widget: Gtk.Widget): string[] => {
+    const labels: string[] = [];
+    let child = widget.getFirstChild();
+    while (child) {
+        const childAccessible = getInterface(child, Accessible);
+        if (childAccessible?.getAccessibleRole() === AccessibleRole.LABEL) {
+            const labelText = getInterface(child, Label)?.getLabel();
+            if (labelText) labels.push(labelText);
+        }
+
+        labels.push(...collectChildLabels(child));
+        child = child.getNextSibling();
+    }
+
+    return labels;
+};
+
 const getWidgetText = (widget: Gtk.Widget): string | null => {
     if (isInternalLabel(widget)) return null;
 
@@ -75,8 +92,18 @@ const getWidgetText = (widget: Gtk.Widget): string | null => {
     switch (role) {
         case AccessibleRole.BUTTON:
         case AccessibleRole.LINK:
-        case AccessibleRole.TAB:
-            return getInterface(widget, Button)?.getLabel() ?? getInterface(widget, MenuButton)?.getLabel() ?? null;
+        case AccessibleRole.TAB: {
+            const directLabel =
+                getInterface(widget, Button)?.getLabel() ?? getInterface(widget, MenuButton)?.getLabel();
+            if (directLabel) return directLabel;
+
+            const expanderLabel = getInterface(widget, Expander)?.getLabel();
+            if (expanderLabel) return expanderLabel;
+
+            const childLabels = collectChildLabels(widget);
+            return childLabels.length > 0 ? childLabels.join(" ") : null;
+        }
+
         case AccessibleRole.TOGGLE_BUTTON:
             return getInterface(widget, ToggleButton)?.getLabel() ?? null;
         case AccessibleRole.CHECKBOX:

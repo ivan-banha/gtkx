@@ -2,11 +2,12 @@
 
 use std::sync::mpsc;
 
-use gtk4::glib::{self, ffi::g_malloc0};
+use gtk4::glib::ffi::g_malloc0;
 use neon::prelude::*;
 
 use crate::{
     boxed::Boxed,
+    ffi_source,
     object::{Object, ObjectId},
     types::BoxedType,
 };
@@ -26,7 +27,7 @@ pub fn alloc(mut cx: FunctionContext) -> JsResult<JsValue> {
 
     let (tx, rx) = mpsc::channel::<anyhow::Result<ObjectId>>();
 
-    glib::idle_add_once(move || {
+    ffi_source::schedule(move || {
         let _ = tx.send(handle_alloc(size, &type_name, lib_name.as_deref()));
     });
 

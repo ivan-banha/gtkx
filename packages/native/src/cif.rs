@@ -17,7 +17,7 @@ use neon::prelude::*;
 
 use crate::{
     arg::{self, Arg},
-    callback,
+    callback, ffi_source,
     types::*,
     value,
 };
@@ -109,13 +109,16 @@ fn wait_for_js_result<T, F>(
 where
     F: FnOnce(Result<value::Value, ()>) -> T,
 {
-    let main_context = glib::MainContext::default();
-
     loop {
         match rx.try_recv() {
             Ok(result) => return on_result(result),
             Err(std::sync::mpsc::TryRecvError::Empty) => {
-                main_context.iteration(false);
+                // Only dispatch our FFI callbacks, not the entire main loop.
+                // This prevents re-entrancy issues during signal handling.
+                ffi_source::dispatch_pending();
+
+                // Small yield to avoid busy-spinning
+                std::thread::yield_now();
             }
             Err(std::sync::mpsc::TryRecvError::Disconnected) => {
                 panic!("{}", error_message);

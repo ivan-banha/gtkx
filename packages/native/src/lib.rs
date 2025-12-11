@@ -8,6 +8,7 @@ mod arg;
 mod boxed;
 mod callback;
 mod cif;
+mod ffi_source;
 mod module;
 mod object;
 mod state;

@@ -64,6 +64,7 @@ JSX → React Element → Reconciler → Node Factory → Node Tree → GTK Widg
 ```
 
 Key files:
+
 - `factory.ts` - NODE_CLASSES array, iteration-based type matching
 - `node.ts` - Base Node class
 - `nodes/` - Specialized nodes (WindowNode, GridNode, ListViewNode, etc.)
@@ -84,9 +85,9 @@ Never edit generated code directly. Run `pnpm codegen` after modifying generator
 - Tests require GTK4/X11. CI uses Xvfb on Fedora 43.
 - Tests run serially (`--concurrency=1`) due to GTK's single-threaded nature.
 - Each GTK-dependent package uses `pool: "forks"` with `singleFork: true` in vitest config.
-- `GTK_A11Y=none` is set in test configs.
 
 Run a single test file:
+
 ```bash
 cd packages/react && pnpm test tests/specific.test.tsx
 ```

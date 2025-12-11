@@ -2,10 +2,9 @@
 
 use std::sync::mpsc;
 
-use gtk4::glib;
 use neon::prelude::*;
 
-use crate::object::ObjectId;
+use crate::{ffi_source, object::ObjectId};
 
 /// Gets the native pointer address for an object.
 ///
@@ -19,7 +18,7 @@ pub fn get_object_id(mut cx: FunctionContext) -> JsResult<JsNumber> {
     let (tx, rx) = mpsc::channel::<Option<usize>>();
     let id = *object_id.as_inner();
 
-    glib::idle_add_once(move || {
+    ffi_source::schedule(move || {
         let _ = tx.send(id.try_as_ptr());
     });
 

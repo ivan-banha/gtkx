@@ -7,13 +7,12 @@ use std::{
 };
 
 use anyhow::bail;
-use gtk4::glib;
 use libffi::middle as ffi;
 use neon::prelude::*;
 
 use crate::{
     arg::Arg,
-    cif,
+    cif, ffi_source,
     state::GtkThreadState,
     types::{CallbackTrampoline, FloatSize, IntegerSign, IntegerSize, Type},
     uv,
@@ -44,7 +43,7 @@ pub fn call(mut cx: FunctionContext) -> JsResult<JsValue> {
 
     let (tx, rx) = mpsc::channel::<anyhow::Result<(Value, Vec<RefUpdate>)>>();
 
-    glib::idle_add_once(move || {
+    ffi_source::schedule(move || {
         let _ = tx.send(handle_call(library_name, symbol_name, args, result_type));
     });
 
@@ -248,7 +247,7 @@ pub fn batch_call(mut cx: FunctionContext) -> JsResult<JsUndefined> {
 
     let (tx, rx) = mpsc::channel::<anyhow::Result<()>>();
 
-    glib::idle_add_once(move || {
+    ffi_source::schedule(move || {
         let result = handle_batch_calls(descriptors);
         let _ = tx.send(result);
     });

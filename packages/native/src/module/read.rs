@@ -9,6 +9,7 @@ use neon::prelude::*;
 
 use crate::{
     boxed::Boxed,
+    ffi_source,
     object::{Object, ObjectId},
     types::{FloatSize, IntegerSign, IntegerSize, Type},
     value::Value,
@@ -28,7 +29,7 @@ pub fn read(mut cx: FunctionContext) -> JsResult<JsValue> {
     let object_id = *object_id.as_inner();
     let (tx, rx) = mpsc::channel::<anyhow::Result<Value>>();
 
-    glib::idle_add_once(move || {
+    ffi_source::schedule(move || {
         let _ = tx.send(handle_read(object_id, &type_, offset));
     });
 

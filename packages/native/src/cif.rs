@@ -113,11 +113,7 @@ where
         match rx.try_recv() {
             Ok(result) => return on_result(result),
             Err(std::sync::mpsc::TryRecvError::Empty) => {
-                // Only dispatch our FFI callbacks, not the entire main loop.
-                // This prevents re-entrancy issues during signal handling.
                 ffi::dispatch_pending();
-
-                // Small yield to avoid busy-spinning
                 std::thread::yield_now();
             }
             Err(std::sync::mpsc::TryRecvError::Disconnected) => {
@@ -125,6 +121,24 @@ where
             }
         }
     }
+}
+
+fn invoke_and_wait_for_js_result<T, F>(
+    channel: &Channel,
+    callback: &Arc<Root<JsFunction>>,
+    args_values: Vec<value::Value>,
+    capture_result: bool,
+    error_message: &str,
+    on_result: F,
+) -> T
+where
+    F: FnOnce(Result<value::Value, ()>) -> T,
+{
+    ffi::set_in_signal_handler(true);
+    let rx = invoke_js_callback(channel, callback, args_values, capture_result);
+    let result = wait_for_js_result(rx, error_message, on_result);
+    ffi::set_in_signal_handler(false);
+    result
 }
 
 /// Transfers ownership of a closure to C, returning a raw pointer.
@@ -504,10 +518,11 @@ impl Value {
                     let args_values = convert_glib_args(args, &arg_types);
                     let return_type = *return_type.clone().unwrap_or(Box::new(Type::Undefined));
 
-                    let rx = invoke_js_callback(&channel, &callback, args_values, true);
-
-                    wait_for_js_result(
-                        rx,
+                    invoke_and_wait_for_js_result(
+                        &channel,
+                        &callback,
+                        args_values,
+                        true,
                         "JS thread disconnected while waiting for callback result",
                         |result| match result {
                             Ok(value) => value::Value::into_glib_value_with_default(
@@ -542,10 +557,12 @@ impl Value {
                         .unwrap_or(value::Value::Null);
 
                     let args_values = vec![source_value, result_value];
-                    let rx = invoke_js_callback(&channel, &callback, args_values, false);
 
-                    wait_for_js_result(
-                        rx,
+                    invoke_and_wait_for_js_result(
+                        &channel,
+                        &callback,
+                        args_values,
+                        false,
                         "JS thread disconnected while waiting for async callback",
                         |_| None::<glib::Value>,
                     )
@@ -563,10 +580,11 @@ impl Value {
 
             CallbackTrampoline::Destroy => {
                 let closure = glib::Closure::new(move |_args: &[glib::Value]| {
-                    let rx = invoke_js_callback(&channel, &callback, vec![], false);
-
-                    wait_for_js_result(
-                        rx,
+                    invoke_and_wait_for_js_result(
+                        &channel,
+                        &callback,
+                        vec![],
+                        false,
                         "JS thread disconnected while waiting for destroy callback",
                         |_| None::<glib::Value>,
                     )
@@ -584,10 +602,11 @@ impl Value {
 
             CallbackTrampoline::SourceFunc => {
                 let closure = glib::Closure::new(move |_args: &[glib::Value]| {
-                    let rx = invoke_js_callback(&channel, &callback, vec![], true);
-
-                    wait_for_js_result(
-                        rx,
+                    invoke_and_wait_for_js_result(
+                        &channel,
+                        &callback,
+                        vec![],
+                        true,
                         "JS thread disconnected while waiting for source func callback",
                         |result| match result {
                             Ok(value) => value.into(),
@@ -611,10 +630,12 @@ impl Value {
 
                 let closure = glib::Closure::new(move |args: &[glib::Value]| {
                     let args_values = convert_glib_args(args, &arg_types);
-                    let rx = invoke_js_callback(&channel, &callback, args_values, false);
 
-                    wait_for_js_result(
-                        rx,
+                    invoke_and_wait_for_js_result(
+                        &channel,
+                        &callback,
+                        args_values,
+                        false,
                         "JS thread disconnected while waiting for draw func callback",
                         |_| None::<glib::Value>,
                     )
@@ -642,10 +663,12 @@ impl Value {
 
                 let closure = glib::Closure::new(move |args: &[glib::Value]| {
                     let args_values = convert_glib_args(args, &arg_types);
-                    let rx = invoke_js_callback(&channel, &callback, args_values, true);
 
-                    wait_for_js_result(
-                        rx,
+                    invoke_and_wait_for_js_result(
+                        &channel,
+                        &callback,
+                        args_values,
+                        true,
                         "JS thread disconnected while waiting for compare func callback",
                         |result| match result {
                             Ok(value) => {

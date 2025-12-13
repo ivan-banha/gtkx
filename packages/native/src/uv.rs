@@ -10,6 +10,8 @@ use std::sync::mpsc::{Receiver, TryRecvError};
 use neon::prelude::*;
 use neon::sys::bindings as napi;
 
+use crate::ffi;
+
 /// Opaque type representing a libuv event loop.
 #[repr(C)]
 pub struct UvLoop {
@@ -62,11 +64,12 @@ pub fn run_nowait(uv_loop: *mut UvLoop) {
     }
 }
 
-/// Waits for a result from a channel while pumping the event loop.
+/// Waits for a result from a channel, pumping the event loop only when needed.
 ///
-/// This function spins on the channel, running the libuv event loop in NoWait
-/// mode between attempts. This allows JavaScript promises and other async
-/// operations to make progress while waiting for the GTK thread.
+/// This function spins on the channel. When a synchronous signal handler is
+/// active (indicated by `ffi::in_signal_handler()`), it runs the libuv event
+/// loop in NoWait mode to process Neon channel callbacks. Otherwise, it yields
+/// without pumping UV to avoid processing unrelated async operations.
 ///
 /// # Panics
 ///
@@ -76,7 +79,11 @@ pub fn wait_for_result<T>(uv_loop: *mut UvLoop, rx: &Receiver<T>, error_message:
         match rx.try_recv() {
             Ok(result) => return result,
             Err(TryRecvError::Empty) => {
-                run_nowait(uv_loop);
+                if ffi::in_signal_handler() {
+                    run_nowait(uv_loop);
+                } else {
+                    std::thread::yield_now();
+                }
             }
             Err(TryRecvError::Disconnected) => {
                 panic!("Channel disconnected: {}", error_message);

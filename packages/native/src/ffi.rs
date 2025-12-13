@@ -41,6 +41,24 @@ impl Queue {
 
 static FFI_QUEUE: Queue = Queue::new();
 
+static IN_SIGNAL_HANDLER: AtomicBool = AtomicBool::new(false);
+
+/// Returns whether we're currently inside a synchronous signal handler.
+///
+/// When true, the JS thread should pump the UV event loop to process
+/// Neon channel callbacks. When false, UV pumping can be skipped since
+/// no signal handler is waiting for a JS callback result.
+pub fn in_signal_handler() -> bool {
+    IN_SIGNAL_HANDLER.load(Ordering::Acquire)
+}
+
+/// Sets the signal handler flag.
+///
+/// Called when entering a signal handler that needs to invoke a JS callback.
+pub fn set_in_signal_handler(value: bool) {
+    IN_SIGNAL_HANDLER.store(value, Ordering::Release);
+}
+
 /// Schedules a callback to be executed on the GTK thread.
 ///
 /// The callback is added to a queue and will be dispatched either:

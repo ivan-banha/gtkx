@@ -3,7 +3,6 @@
 use std::sync::mpsc;
 
 use gtk4::{gio::ApplicationFlags, prelude::*};
-use libadwaita as adw;
 use neon::prelude::*;
 
 use crate::{
@@ -34,8 +33,6 @@ pub fn start(mut cx: FunctionContext) -> JsResult<JsValue> {
     let (tx, rx) = mpsc::channel::<ObjectId>();
 
     std::thread::spawn(move || {
-        adw::init().expect("Failed to initialize libadwaita");
-
         let app = gtk4::Application::builder()
             .application_id(app_id)
             .flags(flags)

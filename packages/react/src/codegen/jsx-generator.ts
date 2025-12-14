@@ -54,7 +54,7 @@ const isPrimitive = (tsType: string): boolean => {
     return primitives.has(tsType);
 };
 
-const toJsxPropertyType = (tsType: string, namespace: string): string => {
+const toJsxPropertyTypeBase = (tsType: string, namespace: string): string => {
     let result = tsType;
 
     if (result.startsWith("Ref<")) {
@@ -183,16 +183,14 @@ export class JsxGenerator {
         this.widgetPropertyNames = new Set(widgetClass?.properties.map((p) => toCamelCase(p.name)) ?? []);
         this.widgetSignalNames = new Set(widgetClass?.signals.map((s) => toCamelCase(s.name)) ?? []);
 
+        const commonTypes = this.generateCommonTypes(widgetClass);
         const widgetPropsInterfaces = this.generateWidgetPropsInterfaces(allWidgets, containerMetadata);
+        const exports = this.generateExports(allWidgets, containerMetadata);
+        const jsxNamespace = this.generateJsxNamespace(allWidgets, containerMetadata);
 
-        const jsxSections = [
-            this.generateImports(),
-            this.generateCommonTypes(widgetClass),
-            widgetPropsInterfaces,
-            this.generateExports(allWidgets, containerMetadata),
-            this.generateJsxNamespace(allWidgets, containerMetadata),
-            "export {};",
-        ];
+        const imports = this.generateImports();
+
+        const jsxSections = [imports, commonTypes, widgetPropsInterfaces, exports, jsxNamespace, "export {};"];
 
         const internalSections = [
             this.generateInternalImports(),
@@ -252,7 +250,7 @@ ${widgetPropsContent}
         if (widgetClass) {
             for (const prop of widgetClass.properties) {
                 const propName = toCamelCase(prop.name);
-                const tsType = toJsxPropertyType(this.typeMapper.mapType(prop.type).ts, "Gtk");
+                const tsType = this.toJsxPropertyType(this.typeMapper.mapType(prop.type).ts, "Gtk");
 
                 if (prop.doc) {
                     lines.push(formatDoc(prop.doc, "\t").trimEnd());
@@ -433,7 +431,7 @@ ${widgetPropsContent}
             const propName = toCamelCase(prop.name);
             emittedProps.add(prop.name);
             const typeMapping = this.typeMapper.mapType(prop.type);
-            const tsType = toJsxPropertyType(typeMapping.ts, this.currentNamespace);
+            const tsType = this.toJsxPropertyType(typeMapping.ts, this.currentNamespace);
             const isRequiredByProperty = prop.constructOnly && !prop.hasDefault;
             const isRequiredByConstructor = requiredCtorParams.has(prop.name);
             const isRequired = isRequiredByProperty || isRequiredByConstructor;
@@ -449,7 +447,7 @@ ${widgetPropsContent}
             const inheritedProp = this.findInheritedProperty(widget, paramName);
             if (inheritedProp) {
                 const typeMapping = this.typeMapper.mapType(inheritedProp.type);
-                const tsType = toJsxPropertyType(typeMapping.ts, this.currentNamespace);
+                const tsType = this.toJsxPropertyType(typeMapping.ts, this.currentNamespace);
                 lines.push(`\t${propName}: ${tsType};`);
             }
         }
@@ -706,19 +704,22 @@ ${widgetPropsContent}
         if (typeName.includes(".")) {
             const [ns, className] = typeName.split(".", 2);
             if (ns && className) {
-                const qualifiedName = `${ns}.${className}`;
-                if (this.classMap.has(qualifiedName)) {
+                const registered = this.typeRegistry.resolve(`${ns}.${className}`);
+                if (registered && (registered.kind === "class" || registered.kind === "interface")) {
                     this.usedNamespaces.add(ns);
-                    return `${ns}.${toPascalCase(className)}`;
+                    return `${ns}.${registered.transformedName}`;
                 }
             }
             return undefined;
         }
 
-        const normalizedName = toPascalCase(typeName);
-        const qualifiedName = `${this.currentNamespace}.${normalizedName}`;
-        if (this.classMap.has(qualifiedName) || this.classMap.has(typeName) || this.classMap.has(normalizedName)) {
-            return `${this.currentNamespace}.${normalizedName}`;
+        const registered = this.typeRegistry.resolveInNamespace(typeName, this.currentNamespace);
+        if (registered && (registered.kind === "class" || registered.kind === "interface")) {
+            this.usedNamespaces.add(registered.namespace);
+            if (registered.namespace === this.currentNamespace) {
+                return `${this.currentNamespace}.${registered.transformedName}`;
+            }
+            return `${registered.namespace}.${registered.transformedName}`;
         }
 
         return undefined;
@@ -729,6 +730,19 @@ ${widgetPropsContent}
         if (primitives.has(tsType)) return tsType;
         if (tsType.includes(".") || tsType.includes("<") || tsType.includes("(")) return tsType;
         return `${this.currentNamespace}.${tsType}`;
+    }
+
+    private toJsxPropertyType(tsType: string, namespace: string): string {
+        const result = toJsxPropertyTypeBase(tsType, namespace);
+
+        if (result.includes(".") && !result.includes("<") && !result.includes("(")) {
+            const ns = result.split(".")[0];
+            if (ns) {
+                this.usedNamespaces.add(ns);
+            }
+        }
+
+        return result;
     }
 
     private buildSignalHandlerType(signal: GirSignal, widgetName: string): string {

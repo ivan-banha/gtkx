@@ -14,6 +14,18 @@ const internalOutputFile = resolve(outputDir, "internal.ts");
 
 const WIDGET_NAMESPACES = ["Gtk-4.0.gir", "Adw-1.gir"];
 
+const DEPENDENCY_NAMESPACES = [
+    "GLib-2.0.gir",
+    "GObject-2.0.gir",
+    "Gio-2.0.gir",
+    "Gdk-4.0.gir",
+    "Gsk-4.0.gir",
+    "Pango-1.0.gir",
+    "GdkPixbuf-2.0.gir",
+    "Graphene-1.0.gir",
+    "cairo-1.0.gir",
+];
+
 const parseGirFile = (filename: string): GirNamespace => {
     const filePath = join(girsDir, filename);
     console.log(`Reading GIR file: ${filePath}`);
@@ -28,7 +40,18 @@ const generateJsxTypes = async (): Promise<void> => {
         console.log(`Created output directory: ${outputDir}`);
     }
 
-    const namespaces: GirNamespace[] = [];
+    const allNamespacesForRegistry: GirNamespace[] = [];
+    for (const filename of DEPENDENCY_NAMESPACES) {
+        const filePath = join(girsDir, filename);
+        if (!existsSync(filePath)) {
+            continue;
+        }
+
+        const namespace = parseGirFile(filename);
+        allNamespacesForRegistry.push(namespace);
+    }
+
+    const widgetNamespaces: GirNamespace[] = [];
     for (const filename of WIDGET_NAMESPACES) {
         const filePath = join(girsDir, filename);
         if (!existsSync(filePath)) {
@@ -37,12 +60,13 @@ const generateJsxTypes = async (): Promise<void> => {
         }
 
         const namespace = parseGirFile(filename);
-        console.log(`Parsed namespace: ${namespace.name} v${namespace.version}`);
-        namespaces.push(namespace);
+        console.log(`Parsed widget namespace: ${namespace.name} v${namespace.version}`);
+        widgetNamespaces.push(namespace);
+        allNamespacesForRegistry.push(namespace);
     }
 
     const combinedClassMap = new Map<string, GirClass>();
-    for (const ns of namespaces) {
+    for (const ns of widgetNamespaces) {
         const nsClassMap = buildClassMap(ns.classes);
         for (const [name, cls] of nsClassMap) {
             combinedClassMap.set(`${ns.name}.${name}`, cls);
@@ -52,13 +76,13 @@ const generateJsxTypes = async (): Promise<void> => {
         }
     }
 
-    const typeRegistry = TypeRegistry.fromNamespaces(namespaces);
+    const typeRegistry = TypeRegistry.fromNamespaces(allNamespacesForRegistry);
     const typeMapper = new TypeMapper();
-    for (const ns of namespaces) {
+    for (const ns of widgetNamespaces) {
         registerEnumsFromNamespace(typeMapper, ns);
     }
 
-    const gtkNamespace = namespaces.find((ns) => ns.name === "Gtk");
+    const gtkNamespace = widgetNamespaces.find((ns) => ns.name === "Gtk");
     if (!gtkNamespace) {
         throw new Error("GTK namespace is required");
     }
@@ -67,7 +91,7 @@ const generateJsxTypes = async (): Promise<void> => {
     const generator = new JsxGenerator(typeMapper, typeRegistry, combinedClassMap, {});
 
     console.log(`Generating JSX type definitions...`);
-    const result = await generator.generate(namespaces);
+    const result = await generator.generate(widgetNamespaces);
 
     console.log(`Writing ${jsxOutputFile}`);
     writeFileSync(jsxOutputFile, result.jsx);

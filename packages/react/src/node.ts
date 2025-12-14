@@ -2,18 +2,32 @@ import { getCurrentApp } from "@gtkx/ffi";
 import * as Adw from "@gtkx/ffi/adw";
 import * as GObject from "@gtkx/ffi/gobject";
 import * as Gtk from "@gtkx/ffi/gtk";
+import * as GtkSource from "@gtkx/ffi/gtksource";
+import * as Vte from "@gtkx/ffi/vte";
+import * as WebKit from "@gtkx/ffi/webkit";
 import type { Props, ROOT_NODE_CONTAINER } from "./factory.js";
 import { CONSTRUCTOR_PARAMS, PROP_SETTERS, SETTER_GETTERS } from "./generated/internal.js";
 import { isAddable, isAppendable, isRemovable, isSingleChild } from "./predicates.js";
 
 type WidgetConstructor = new (...args: unknown[]) => Gtk.Widget;
+type Namespace = Record<string, unknown>;
+
+const NAMESPACE_REGISTRY: [string, Namespace][] = [
+    ["GtkSource", GtkSource],
+    ["WebKit", WebKit],
+    ["Adw", Adw],
+    ["Vte", Vte],
+];
 
 const resolveWidgetClass = (type: string): WidgetConstructor | undefined => {
-    if (type.startsWith("Adw")) {
-        const adwType = type.slice(3);
-        return Adw[adwType as keyof typeof Adw] as WidgetConstructor | undefined;
+    for (const [prefix, namespace] of NAMESPACE_REGISTRY) {
+        if (type.startsWith(prefix)) {
+            const className = type.slice(prefix.length);
+            return namespace[className] as WidgetConstructor | undefined;
+        }
     }
 
+    // biome-ignore lint/performance/noDynamicNamespaceImportAccess: dynamic widget resolution by name
     return Gtk[type as keyof typeof Gtk] as WidgetConstructor | undefined;
 };
 

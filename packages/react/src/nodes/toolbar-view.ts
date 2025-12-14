@@ -1,4 +1,5 @@
 import type * as Adw from "@gtkx/ffi/adw";
+import type * as Gtk from "@gtkx/ffi/gtk";
 import { Node } from "../node.js";
 
 type ToolbarViewSlotType = "Top" | "Bottom";
@@ -34,7 +35,7 @@ export class ToolbarViewSlotNode extends Node<never> {
     }
 
     override appendChild(child: Node): void {
-        const childWidget = child.getWidget();
+        const childWidget = child.getWidget() as Gtk.Widget | undefined;
 
         if (!childWidget) return;
 
@@ -52,7 +53,7 @@ export class ToolbarViewSlotNode extends Node<never> {
             this.children.splice(index, 1);
         }
 
-        const childWidget = child.getWidget();
+        const childWidget = child.getWidget() as Gtk.Widget | undefined;
 
         if (this.parentNode && childWidget) {
             this.removeBarFromParent(childWidget);
@@ -63,7 +64,7 @@ export class ToolbarViewSlotNode extends Node<never> {
         this.parentNode = parent;
 
         for (const child of this.children) {
-            const childWidget = child.getWidget();
+            const childWidget = child.getWidget() as Gtk.Widget | undefined;
 
             if (childWidget) {
                 this.addBarToParent(childWidget);
@@ -73,7 +74,7 @@ export class ToolbarViewSlotNode extends Node<never> {
 
     override detachFromParent(_parent: Node): void {
         for (const child of this.children) {
-            const childWidget = child.getWidget();
+            const childWidget = child.getWidget() as Gtk.Widget | undefined;
 
             if (childWidget) {
                 this.removeBarFromParent(childWidget);
@@ -83,23 +84,23 @@ export class ToolbarViewSlotNode extends Node<never> {
         this.parentNode = null;
     }
 
-    private addBarToParent(childWidget: unknown): void {
+    private addBarToParent(childWidget: Gtk.Widget): void {
         const parentWidget = this.parentNode?.getWidget() as Adw.ToolbarView | undefined;
 
         if (!parentWidget) return;
 
         if (this.slotType === "Top") {
-            parentWidget.addTopBar(childWidget as any);
+            parentWidget.addTopBar(childWidget);
         } else {
-            parentWidget.addBottomBar(childWidget as any);
+            parentWidget.addBottomBar(childWidget);
         }
     }
 
-    private removeBarFromParent(childWidget: unknown): void {
+    private removeBarFromParent(childWidget: Gtk.Widget): void {
         const parentWidget = this.parentNode?.getWidget() as Adw.ToolbarView | undefined;
 
         if (!parentWidget) return;
 
-        parentWidget.remove(childWidget as any);
+        parentWidget.remove(childWidget);
     }
 }

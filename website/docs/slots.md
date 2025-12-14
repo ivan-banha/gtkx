@@ -86,6 +86,49 @@ import { Window, HeaderBar, Button, quit } from "@gtkx/react";
 </Window.Root>
 ```
 
+### Adwaita Toolbar View
+
+`AdwToolbarView` uses slots for top bars, bottom bars, and main content:
+
+```tsx
+import {
+    AdwToolbarView,
+    AdwHeaderBar,
+    AdwWindowTitle,
+    Label,
+} from "@gtkx/react";
+
+<AdwToolbarView.Root>
+  <AdwToolbarView.Top>
+    <AdwHeaderBar.Root>
+      <AdwHeaderBar.TitleWidget>
+        <AdwWindowTitle title="My App" subtitle="Welcome" />
+      </AdwHeaderBar.TitleWidget>
+    </AdwHeaderBar.Root>
+  </AdwToolbarView.Top>
+  <AdwToolbarView.Content>
+    <Label.Root label="Main content" />
+  </AdwToolbarView.Content>
+  <AdwToolbarView.Bottom>
+    {/* Optional bottom toolbar */}
+  </AdwToolbarView.Bottom>
+</AdwToolbarView.Root>
+```
+
+### Adwaita Application Window
+
+`AdwApplicationWindow` requires content to be placed in a slot:
+
+```tsx
+import { AdwApplicationWindow, quit } from "@gtkx/react";
+
+<AdwApplicationWindow.Root onCloseRequest={quit}>
+  <AdwApplicationWindow.Content>
+    {/* Your app content */}
+  </AdwApplicationWindow.Content>
+</AdwApplicationWindow.Root>
+```
+
 ## Root vs Slot Components
 
 Every widget with slots has two component types:

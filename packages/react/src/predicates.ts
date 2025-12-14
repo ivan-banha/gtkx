@@ -25,8 +25,7 @@ export const isAppendable = (widget: Gtk.Widget): widget is Appendable =>
 /**
  * Type guard that checks if a GTK widget supports adding children via an add method.
  */
-export const isAddable = (widget: Gtk.Widget): widget is Addable =>
-    "add" in widget && typeof widget.add === "function";
+export const isAddable = (widget: Gtk.Widget): widget is Addable => "add" in widget && typeof widget.add === "function";
 
 /**
  * Type guard that checks if a GTK widget supports a single child via setChild method.

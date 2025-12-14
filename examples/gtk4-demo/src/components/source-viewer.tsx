@@ -3,7 +3,7 @@ import * as Gdk from "@gtkx/ffi/gdk";
 import * as GLib from "@gtkx/ffi/glib";
 import * as Gtk from "@gtkx/ffi/gtk";
 import * as GtkSource from "@gtkx/ffi/gtksource";
-import { Box, Button, Label, ScrolledWindow } from "@gtkx/react";
+import { Box, Button, GtkSourceView, Label, ScrolledWindow } from "@gtkx/react";
 import { useEffect, useMemo, useRef } from "react";
 
 interface SourceViewerProps {
@@ -11,9 +11,29 @@ interface SourceViewerProps {
     title?: string;
 }
 
+const createBuffer = (): GtkSource.Buffer => {
+    const langManager = GtkSource.LanguageManager.getDefault();
+    const language = langManager.guessLanguage("example.tsx");
+
+    const schemeManager = GtkSource.StyleSchemeManager.getDefault();
+    const scheme = schemeManager.getScheme("Adwaita-dark");
+
+    const buffer = new GtkSource.Buffer();
+    if (language) buffer.setLanguage(language);
+    buffer.setHighlightSyntax(true);
+    if (scheme) buffer.setStyleScheme(scheme);
+
+    return buffer;
+};
+
 export const SourceViewer = ({ sourcePath, title = "Source Code" }: SourceViewerProps) => {
-    const scrollWindowRef = useRef<Gtk.ScrolledWindow | null>(null);
     const bufferRef = useRef<GtkSource.Buffer | null>(null);
+
+    if (!bufferRef.current) {
+        bufferRef.current = createBuffer();
+    }
+
+    const buffer = bufferRef.current;
 
     const source = useMemo(() => {
         if (!sourcePath) return null;
@@ -25,40 +45,8 @@ export const SourceViewer = ({ sourcePath, title = "Source Code" }: SourceViewer
     }, [sourcePath]);
 
     useEffect(() => {
-        const scrollWindow = scrollWindowRef.current;
-        if (!scrollWindow || bufferRef.current) return;
-
-        const langManager = GtkSource.LanguageManager.getDefault();
-        const language = langManager.guessLanguage("example.tsx");
-
-        const schemeManager = GtkSource.StyleSchemeManager.getDefault();
-        const scheme = schemeManager.getScheme("Adwaita-dark");
-
-        const buffer = new GtkSource.Buffer();
-        if (language) buffer.setLanguage(language);
-        buffer.setHighlightSyntax(true);
-        if (scheme) buffer.setStyleScheme(scheme);
-        bufferRef.current = buffer;
-
-        const view = GtkSource.View.viewNewWithBuffer(buffer);
-        view.setEditable(false);
-        view.setCursorVisible(false);
-        view.setMonospace(true);
-        view.setShowLineNumbers(true);
-        view.setLeftMargin(8);
-        view.setRightMargin(16);
-        view.setTopMargin(8);
-        view.setBottomMargin(8);
-        view.setWrapMode(Gtk.WrapMode.NONE);
-        scrollWindow.setChild(view);
-    }, []);
-
-    useEffect(() => {
-        const buffer = bufferRef.current;
-        if (buffer) {
-            buffer.setText(source ?? "", -1);
-        }
-    }, [source]);
+        buffer.setText(source ?? "", -1);
+    }, [source, buffer]);
 
     const handleCopy = () => {
         if (!source) return;
@@ -106,7 +94,20 @@ export const SourceViewer = ({ sourcePath, title = "Source Code" }: SourceViewer
                     onClicked={handleCopy}
                 />
             </Box>
-            <ScrolledWindow ref={scrollWindowRef} vexpand hexpand />
+            <ScrolledWindow vexpand hexpand>
+                <GtkSourceView
+                    buffer={buffer}
+                    editable={false}
+                    cursorVisible={false}
+                    monospace
+                    showLineNumbers
+                    leftMargin={8}
+                    rightMargin={16}
+                    topMargin={8}
+                    bottomMargin={8}
+                    wrapMode={Gtk.WrapMode.NONE}
+                />
+            </ScrolledWindow>
         </Box>
     );
 };

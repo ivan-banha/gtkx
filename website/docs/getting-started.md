@@ -34,6 +34,28 @@ On Arch Linux:
 sudo pacman -S gtk4
 ```
 
+### Installing libadwaita (Optional)
+
+For modern GNOME-style applications, install libadwaita:
+
+On Fedora:
+
+```bash
+sudo dnf install libadwaita
+```
+
+On Ubuntu/Debian:
+
+```bash
+sudo apt install libadwaita-1-0
+```
+
+On Arch Linux:
+
+```bash
+sudo pacman -S libadwaita
+```
+
 ## Create Your App
 
 The fastest way to start is with the GTKX CLI:
@@ -177,6 +199,7 @@ This compiles TypeScript and runs the built application without HMR.
 
 ## Next Steps
 
+- [Adwaita](./adwaita) — Build modern GNOME apps with libadwaita
 - [CLI](./cli) — Learn more about the gtkx CLI
 - [Styling](./styling) — Add custom styles with CSS-in-JS
 - [Testing](./testing) — Write tests for your components

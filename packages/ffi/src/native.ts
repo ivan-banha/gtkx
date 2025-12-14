@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
 import { getObjectId, start as nativeStart, stop as nativeStop } from "@gtkx/native";
+import { init as initAdwaita } from "./generated/adw/functions.js";
 import type { ApplicationFlags } from "./generated/gio/enums.js";
 import {
     typeCheckInstanceIsA,
@@ -110,6 +111,10 @@ export const start = (appId: string, flags?: ApplicationFlags): Application => {
     if (currentApp) {
         return currentApp;
     }
+
+    try {
+        initAdwaita();
+    } catch {}
 
     const app = nativeStart(appId, flags);
     currentApp = getObject<Application>(app);

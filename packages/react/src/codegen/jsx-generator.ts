@@ -84,7 +84,7 @@ const isToolbarViewWidget = (widgetName: string): boolean => widgetName === TOOL
 
 const sanitizeDoc = (doc: string): string => {
     let result = doc;
-    result = result.replace(/<picture>[\s\S]*?<\/picture>/gi, "");
+    result = result.replace(/<picture[^>]*>[\s\S]*?<\/picture>/gi, "");
     result = result.replace(/<img[^>]*>/gi, "");
     result = result.replace(/<source[^>]*>/gi, "");
     result = result.replace(/!\[[^\]]*\]\([^)]+\.png\)/gi, "");
@@ -93,6 +93,7 @@ const sanitizeDoc = (doc: string): string => {
     result = result.replace(/<\/kbd>/gi, "`");
     result = result.replace(/\[([^\]]+)\]\([^)]+\.html[^)]*\)/gi, "$1");
     result = result.replace(/@(\w+)\s/g, "`$1` ");
+    result = result.replace(/<(\/?)(child|object|property|signal|template)>/gi, "`<$1$2>`");
     return result.trim();
 };
 
@@ -728,6 +729,14 @@ ${widgetPropsContent}
     private addNamespacePrefix(tsType: string): string {
         const primitives = new Set(["boolean", "number", "string", "void", "unknown", "null", "undefined"]);
         if (primitives.has(tsType)) return tsType;
+
+        if (tsType.endsWith("[]")) {
+            const elementType = tsType.slice(0, -2);
+            if (primitives.has(elementType)) return tsType;
+            if (elementType.includes(".") || elementType.includes("<") || elementType.includes("(")) return tsType;
+            return `${this.currentNamespace}.${elementType}[]`;
+        }
+
         if (tsType.includes(".") || tsType.includes("<") || tsType.includes("(")) return tsType;
         return `${this.currentNamespace}.${tsType}`;
     }

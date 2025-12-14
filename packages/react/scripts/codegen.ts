@@ -12,7 +12,7 @@ const outputDir = resolve(__dirname, "../src/generated");
 const jsxOutputFile = resolve(outputDir, "jsx.ts");
 const internalOutputFile = resolve(outputDir, "internal.ts");
 
-const WIDGET_NAMESPACES = ["Gtk-4.0.gir", "Adw-1.gir"];
+const WIDGET_NAMESPACES = ["Gtk-4.0.gir", "Adw-1.gir", "GtkSource-5.gir", "Vte-3.91.gir", "WebKit-6.0.gir"];
 
 const DEPENDENCY_NAMESPACES = [
     "GLib-2.0.gir",

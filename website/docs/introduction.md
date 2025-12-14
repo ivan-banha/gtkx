@@ -37,9 +37,13 @@ GTKX provides the following packages:
 | --------------- | ---------------------------------------------------------- |
 | `@gtkx/cli`     | CLI for creating and developing GTKX apps with HMR         |
 | `@gtkx/react`   | React reconciler and JSX components                        |
-| `@gtkx/ffi`     | TypeScript FFI bindings for GTK4, GLib, GIO, Gdk, and more |
+| `@gtkx/ffi`     | TypeScript FFI bindings for GTK4, libadwaita, and more     |
 | `@gtkx/css`     | CSS-in-JS styling for GTK widgets (Emotion-style API)      |
 | `@gtkx/testing` | Testing utilities with a Testing Library-style API         |
+
+## Supported Libraries
+
+GTKX provides bindings for GTK4, libadwaita, and many other GNOME libraries including GLib, GIO, Gdk, GdkPixbuf, Pango, GtkSourceView, WebKit, and more.
 
 ## Example
 
@@ -91,6 +95,7 @@ render(<App />, "org.example.Counter");
 ## Next Steps
 
 - [Getting Started](./getting-started) — Create your first app with the CLI
+- [Adwaita](./adwaita) — Build modern GNOME apps with libadwaita widgets
 - [CLI](./cli) — Learn about dev server, HMR, and project scaffolding
 - [Styling](./styling) — Style your app with CSS-in-JS
 - [Testing](./testing) — Write tests for your components

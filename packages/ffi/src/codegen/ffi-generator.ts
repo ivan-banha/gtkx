@@ -120,6 +120,15 @@ const METHOD_RENAMES = new Map<string, Map<string, string>>([
     ["Cancellable", new Map([["connect", "connectCallback"]])],
     ["GutterRenderer", new Map([["activate", "activateRenderer"]])],
     ["GutterRendererText", new Map([["measure", "measureText"]])],
+    ["Adw.ActionRow", new Map([["activate", "activateRow"]])],
+    ["Adw.PreferencesPage", new Map([["getName", "getPageName"]])],
+    [
+        "Adw.SplitButton",
+        new Map([
+            ["getDirection", "getArrowDirection"],
+            ["setDirection", "setArrowDirection"],
+        ]),
+    ],
 ]);
 
 const CLASS_RENAMES = new Map<string, string>([["Error", "GError"]]);

@@ -22841,7 +22841,7 @@ linked against at application run time.</doc>
       <source-position filename="glib/gtypes.h" line="76"/>
       <type name="guint8" c:type="guint8"/>
     </constant>
-    <constant name="MICRO_VERSION" value="1" c:type="GLIB_MICRO_VERSION">
+    <constant name="MICRO_VERSION" value="3" c:type="GLIB_MICRO_VERSION">
       <doc xml:space="preserve"
            filename="glib/gversion.c"
            line="78">The micro version number of the GLib library.
@@ -25391,7 +25391,7 @@ matches.</doc>
               throws="1">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1404">Returns a new string containing the text in @string_to_expand with
+             line="1407">Returns a new string containing the text in @string_to_expand with
 references and escape sequences expanded. References refer to the last
 match done with @string against @regex and have the same syntax used by
 g_regex_replace().
@@ -25412,7 +25412,7 @@ contains references.</doc>
         <return-value transfer-ownership="full" nullable="1">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1428">the expanded string, or %NULL if an error occurred</doc>
+               line="1431">the expanded string, or %NULL if an error occurred</doc>
           <type name="utf8" c:type="gchar*"/>
         </return-value>
         <parameters>
@@ -25422,13 +25422,13 @@ contains references.</doc>
                               allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1406">a #GMatchInfo or %NULL</doc>
+                 line="1409">a #GMatchInfo or %NULL</doc>
             <type name="MatchInfo" c:type="const GMatchInfo*"/>
           </instance-parameter>
           <parameter name="string_to_expand" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1407">the string to expand</doc>
+                 line="1410">the string to expand</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
         </parameters>
@@ -25436,7 +25436,7 @@ contains references.</doc>
       <method name="fetch" c:identifier="g_match_info_fetch" version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1467">Retrieves the text matching the @match_num'th capturing
+             line="1470">Retrieves the text matching the @match_num'th capturing
 parentheses. 0 is the full text of the match, 1 is the first paren
 set, 2 the second, and so on.
 
@@ -25456,7 +25456,7 @@ so you cannot call this function after freeing the string.</doc>
         <return-value transfer-ownership="full" nullable="1">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1489">The matched substring, or %NULL if an error
+               line="1492">The matched substring, or %NULL if an error
     occurred. You have to free the string yourself</doc>
           <type name="utf8" c:type="gchar*"/>
         </return-value>
@@ -25464,13 +25464,13 @@ so you cannot call this function after freeing the string.</doc>
           <instance-parameter name="match_info" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1469">#GMatchInfo structure</doc>
+                 line="1472">#GMatchInfo structure</doc>
             <type name="MatchInfo" c:type="const GMatchInfo*"/>
           </instance-parameter>
           <parameter name="match_num" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1470">number of the sub expression</doc>
+                 line="1473">number of the sub expression</doc>
             <type name="gint" c:type="gint"/>
           </parameter>
         </parameters>
@@ -25480,7 +25480,7 @@ so you cannot call this function after freeing the string.</doc>
               version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1879">Bundles up pointers to each of the matching substrings from a match
+             line="1882">Bundles up pointers to each of the matching substrings from a match
 and stores them in an array of gchar pointers. The first element in
 the returned array is the match number 0, i.e. the entire matched
 text.
@@ -25500,7 +25500,7 @@ so you cannot call this function after freeing the string.</doc>
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1900">a %NULL-terminated array of gchar *
+               line="1903">a %NULL-terminated array of gchar *
     pointers.  It must be freed using g_strfreev(). If the previous
     match failed %NULL is returned</doc>
           <array c:type="gchar**">
@@ -25511,7 +25511,7 @@ so you cannot call this function after freeing the string.</doc>
           <instance-parameter name="match_info" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1881">a #GMatchInfo structure</doc>
+                 line="1884">a #GMatchInfo structure</doc>
             <type name="MatchInfo" c:type="const GMatchInfo*"/>
           </instance-parameter>
         </parameters>
@@ -25521,7 +25521,7 @@ so you cannot call this function after freeing the string.</doc>
               version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1802">Retrieves the text matching the capturing parentheses named @name.
+             line="1805">Retrieves the text matching the capturing parentheses named @name.
 
 If @name is a valid sub pattern name but it didn't match anything
 (e.g. sub pattern `"X"`, matching `"b"` against `"(?P&lt;X&gt;a)?b"`)
@@ -25533,7 +25533,7 @@ so you cannot call this function after freeing the string.</doc>
         <return-value transfer-ownership="full" nullable="1">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1816">The matched substring, or %NULL if an error
+               line="1819">The matched substring, or %NULL if an error
     occurred. You have to free the string yourself</doc>
           <type name="utf8" c:type="gchar*"/>
         </return-value>
@@ -25541,13 +25541,13 @@ so you cannot call this function after freeing the string.</doc>
           <instance-parameter name="match_info" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1804">#GMatchInfo structure</doc>
+                 line="1807">#GMatchInfo structure</doc>
             <type name="MatchInfo" c:type="const GMatchInfo*"/>
           </instance-parameter>
           <parameter name="name" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1805">name of the subexpression</doc>
+                 line="1808">name of the subexpression</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
         </parameters>
@@ -25557,7 +25557,7 @@ so you cannot call this function after freeing the string.</doc>
               version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1837">Retrieves the position in bytes of the capturing parentheses named @name.
+             line="1840">Retrieves the position in bytes of the capturing parentheses named @name.
 
 If @name is a valid sub pattern name but it didn't match anything
 (e.g. sub pattern `"X"`, matching `"b"` against `"(?P&lt;X&gt;a)?b"`)
@@ -25569,7 +25569,7 @@ the length of the match can be calculated as `end_pos - start_pos`.</doc>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1855">%TRUE if the position was fetched, %FALSE otherwise.
+               line="1858">%TRUE if the position was fetched, %FALSE otherwise.
     If the position cannot be fetched, @start_pos and @end_pos
     are left unchanged.</doc>
           <type name="gboolean" c:type="gboolean"/>
@@ -25578,13 +25578,13 @@ the length of the match can be calculated as `end_pos - start_pos`.</doc>
           <instance-parameter name="match_info" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1839">#GMatchInfo structure</doc>
+                 line="1842">#GMatchInfo structure</doc>
             <type name="MatchInfo" c:type="const GMatchInfo*"/>
           </instance-parameter>
           <parameter name="name" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1840">name of the subexpression</doc>
+                 line="1843">name of the subexpression</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="start_pos"
@@ -25595,7 +25595,7 @@ the length of the match can be calculated as `end_pos - start_pos`.</doc>
                      allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1841">pointer to location where to store
+                 line="1844">pointer to location where to store
     the start position, or %NULL</doc>
             <type name="gint" c:type="gint*"/>
           </parameter>
@@ -25607,7 +25607,7 @@ the length of the match can be calculated as `end_pos - start_pos`.</doc>
                      allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1843">pointer to location where to store
+                 line="1846">pointer to location where to store
     the end position (the byte after the final byte of the match), or %NULL</doc>
             <type name="gint" c:type="gint*"/>
           </parameter>
@@ -25618,7 +25618,7 @@ the length of the match can be calculated as `end_pos - start_pos`.</doc>
               version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1516">Returns the start and end positions (in bytes) of a successfully matching
+             line="1519">Returns the start and end positions (in bytes) of a successfully matching
 capture parenthesis.
 
 Valid values for @match_num are `0` for the full text of the match,
@@ -25825,7 +25825,7 @@ match_num Contents                  Return value returned start_pos returned end
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1729">True if @match_num is within range, false otherwise. If
+               line="1732">True if @match_num is within range, false otherwise. If
   the capture paren has a match, @start_pos and @end_pos contain the
   start and end positions (in bytes) of the matching substring. If the
   capture paren has no match, @start_pos and @end_pos are `-1`. If
@@ -25836,13 +25836,13 @@ match_num Contents                  Return value returned start_pos returned end
           <instance-parameter name="match_info" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1518">#GMatchInfo structure</doc>
+                 line="1521">#GMatchInfo structure</doc>
             <type name="MatchInfo" c:type="const GMatchInfo*"/>
           </instance-parameter>
           <parameter name="match_num" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1519">number of the capture parenthesis</doc>
+                 line="1522">number of the capture parenthesis</doc>
             <type name="gint" c:type="gint"/>
           </parameter>
           <parameter name="start_pos"
@@ -25853,7 +25853,7 @@ match_num Contents                  Return value returned start_pos returned end
                      allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1520">pointer to location where to store
+                 line="1523">pointer to location where to store
     the start position, or %NULL</doc>
             <type name="gint" c:type="gint*"/>
           </parameter>
@@ -25865,7 +25865,7 @@ match_num Contents                  Return value returned start_pos returned end
                      allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1522">pointer to location where to store
+                 line="1525">pointer to location where to store
     the end position (the byte after the final byte of the match), or %NULL</doc>
             <type name="gint" c:type="gint*"/>
           </parameter>
@@ -25874,7 +25874,7 @@ match_num Contents                  Return value returned start_pos returned end
       <method name="free" c:identifier="g_match_info_free" version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1131">If @match_info is not %NULL, calls g_match_info_unref(); otherwise does
+             line="1134">If @match_info is not %NULL, calls g_match_info_unref(); otherwise does
 nothing.</doc>
         <source-position filename="glib/gregex.h" line="577"/>
         <return-value transfer-ownership="none">
@@ -25887,7 +25887,7 @@ nothing.</doc>
                               allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1133">a #GMatchInfo, or %NULL</doc>
+                 line="1136">a #GMatchInfo, or %NULL</doc>
             <type name="MatchInfo" c:type="GMatchInfo*"/>
           </instance-parameter>
         </parameters>
@@ -25897,7 +25897,7 @@ nothing.</doc>
               version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1321">Retrieves the number of matched substrings (including substring 0,
+             line="1324">Retrieves the number of matched substrings (including substring 0,
 that is the whole matched text), so 1 is returned if the pattern
 has no substrings in it and 0 is returned if the match failed.
 
@@ -25909,14 +25909,14 @@ the number of matched substrings.</doc>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1334">Number of matched substrings, or -1 if an error occurred</doc>
+               line="1337">Number of matched substrings, or -1 if an error occurred</doc>
           <type name="gint" c:type="gint"/>
         </return-value>
         <parameters>
           <instance-parameter name="match_info" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1323">a #GMatchInfo structure</doc>
+                 line="1326">a #GMatchInfo structure</doc>
             <type name="MatchInfo" c:type="const GMatchInfo*"/>
           </instance-parameter>
         </parameters>
@@ -25926,21 +25926,21 @@ the number of matched substrings.</doc>
               version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1048">Returns #GRegex object used in @match_info. It belongs to Glib
+             line="1051">Returns #GRegex object used in @match_info. It belongs to Glib
 and must not be freed. Use g_regex_ref() if you need to keep it
 after you free @match_info object.</doc>
         <source-position filename="glib/gregex.h" line="568"/>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1056">#GRegex object used in @match_info</doc>
+               line="1059">#GRegex object used in @match_info</doc>
           <type name="Regex" c:type="GRegex*"/>
         </return-value>
         <parameters>
           <instance-parameter name="match_info" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1050">a #GMatchInfo</doc>
+                 line="1053">a #GMatchInfo</doc>
             <type name="MatchInfo" c:type="const GMatchInfo*"/>
           </instance-parameter>
         </parameters>
@@ -25950,21 +25950,21 @@ after you free @match_info object.</doc>
               version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1067">Returns the string searched with @match_info. This is the
+             line="1070">Returns the string searched with @match_info. This is the
 string passed to g_regex_match() or g_regex_replace() so
 you may not free it before calling this function.</doc>
         <source-position filename="glib/gregex.h" line="570"/>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1075">the string searched with @match_info</doc>
+               line="1078">the string searched with @match_info</doc>
           <type name="utf8" c:type="const gchar*"/>
         </return-value>
         <parameters>
           <instance-parameter name="match_info" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1069">a #GMatchInfo</doc>
+                 line="1072">a #GMatchInfo</doc>
             <type name="MatchInfo" c:type="const GMatchInfo*"/>
           </instance-parameter>
         </parameters>
@@ -25974,7 +25974,7 @@ you may not free it before calling this function.</doc>
               version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1354">Usually if the string passed to g_regex_match*() matches as far as
+             line="1357">Usually if the string passed to g_regex_match*() matches as far as
 it goes, but is too short to match the entire pattern, %FALSE is
 returned. There are circumstances where it might be helpful to
 distinguish this case from other cases in which there is no match.
@@ -26011,14 +26011,14 @@ See pcrepartial(3) for more information on partial matching.</doc>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1392">%TRUE if the match was partial, %FALSE otherwise</doc>
+               line="1395">%TRUE if the match was partial, %FALSE otherwise</doc>
           <type name="gboolean" c:type="gboolean"/>
         </return-value>
         <parameters>
           <instance-parameter name="match_info" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1356">a #GMatchInfo structure</doc>
+                 line="1359">a #GMatchInfo structure</doc>
             <type name="MatchInfo" c:type="const GMatchInfo*"/>
           </instance-parameter>
         </parameters>
@@ -26028,12 +26028,12 @@ See pcrepartial(3) for more information on partial matching.</doc>
               version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1302">Returns whether the previous match operation succeeded.</doc>
+             line="1305">Returns whether the previous match operation succeeded.</doc>
         <source-position filename="glib/gregex.h" line="582"/>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1308">%TRUE if the previous match operation succeeded,
+               line="1311">%TRUE if the previous match operation succeeded,
   %FALSE otherwise</doc>
           <type name="gboolean" c:type="gboolean"/>
         </return-value>
@@ -26041,7 +26041,7 @@ See pcrepartial(3) for more information on partial matching.</doc>
           <instance-parameter name="match_info" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1304">a #GMatchInfo structure</doc>
+                 line="1307">a #GMatchInfo structure</doc>
             <type name="MatchInfo" c:type="const GMatchInfo*"/>
           </instance-parameter>
         </parameters>
@@ -26052,7 +26052,7 @@ See pcrepartial(3) for more information on partial matching.</doc>
               throws="1">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1149">Scans for the next match using the same parameters of the previous
+             line="1152">Scans for the next match using the same parameters of the previous
 call to g_regex_match_full() or g_regex_match() that returned
 @match_info.
 
@@ -26062,14 +26062,14 @@ cannot free it before calling this function.</doc>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1161">%TRUE is the string matched, %FALSE otherwise</doc>
+               line="1164">%TRUE is the string matched, %FALSE otherwise</doc>
           <type name="gboolean" c:type="gboolean"/>
         </return-value>
         <parameters>
           <instance-parameter name="match_info" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1151">a #GMatchInfo structure</doc>
+                 line="1154">a #GMatchInfo structure</doc>
             <type name="MatchInfo" c:type="GMatchInfo*"/>
           </instance-parameter>
         </parameters>
@@ -26077,19 +26077,19 @@ cannot free it before calling this function.</doc>
       <method name="ref" c:identifier="g_match_info_ref" version="2.30">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1086">Increases reference count of @match_info by 1.</doc>
+             line="1089">Increases reference count of @match_info by 1.</doc>
         <source-position filename="glib/gregex.h" line="573"/>
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1092">@match_info</doc>
+               line="1095">@match_info</doc>
           <type name="MatchInfo" c:type="GMatchInfo*"/>
         </return-value>
         <parameters>
           <instance-parameter name="match_info" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1088">a #GMatchInfo</doc>
+                 line="1091">a #GMatchInfo</doc>
             <type name="MatchInfo" c:type="GMatchInfo*"/>
           </instance-parameter>
         </parameters>
@@ -26097,7 +26097,7 @@ cannot free it before calling this function.</doc>
       <method name="unref" c:identifier="g_match_info_unref" version="2.30">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1104">Decreases reference count of @match_info by 1. When reference count drops
+             line="1107">Decreases reference count of @match_info by 1. When reference count drops
 to zero, it frees all the memory associated with the match_info structure.</doc>
         <source-position filename="glib/gregex.h" line="575"/>
         <return-value transfer-ownership="none">
@@ -26107,7 +26107,7 @@ to zero, it frees all the memory associated with the match_info structure.</doc>
           <instance-parameter name="match_info" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1106">a #GMatchInfo</doc>
+                 line="1109">a #GMatchInfo</doc>
             <type name="MatchInfo" c:type="GMatchInfo*"/>
           </instance-parameter>
         </parameters>
@@ -34442,13 +34442,13 @@ the excellent [PCRE](http://www.pcre.org/) library written by Philip Hazel.</doc
                    throws="1">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1980">Compiles the regular expression to an internal form, and does
+             line="1983">Compiles the regular expression to an internal form, and does
 the initial setup of the #GRegex structure.</doc>
         <source-position filename="glib/gregex.h" line="450"/>
         <return-value transfer-ownership="full" nullable="1">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1990">a #GRegex structure or %NULL if an error occurred. Call
+               line="1993">a #GRegex structure or %NULL if an error occurred. Call
   g_regex_unref() when you are done with it</doc>
           <type name="Regex" c:type="GRegex*"/>
         </return-value>
@@ -34456,19 +34456,19 @@ the initial setup of the #GRegex structure.</doc>
           <parameter name="pattern" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1982">the regular expression</doc>
+                 line="1985">the regular expression</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="compile_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1983">compile options for the regular expression, or 0</doc>
+                 line="1986">compile options for the regular expression, or 0</doc>
             <type name="RegexCompileFlags" c:type="GRegexCompileFlags"/>
           </parameter>
           <parameter name="match_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1984">match options for the regular expression, or 0</doc>
+                 line="1987">match options for the regular expression, or 0</doc>
             <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
           </parameter>
         </parameters>
@@ -34478,19 +34478,19 @@ the initial setup of the #GRegex structure.</doc>
               version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2229">Returns the number of capturing subpatterns in the pattern.</doc>
+             line="2232">Returns the number of capturing subpatterns in the pattern.</doc>
         <source-position filename="glib/gregex.h" line="463"/>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2235">the number of capturing subpatterns</doc>
+               line="2238">the number of capturing subpatterns</doc>
           <type name="gint" c:type="gint"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2231">a #GRegex</doc>
+                 line="2234">a #GRegex</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
         </parameters>
@@ -34500,7 +34500,7 @@ the initial setup of the #GRegex structure.</doc>
               version="2.26">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2292">Returns the compile options that @regex was created with.
+             line="2295">Returns the compile options that @regex was created with.
 
 Depending on the version of PCRE that is used, this may or may not
 include flags set by option expressions such as `(?i)` found at the
@@ -34509,14 +34509,14 @@ top-level within the compiled pattern.</doc>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2302">flags from #GRegexCompileFlags</doc>
+               line="2305">flags from #GRegexCompileFlags</doc>
           <type name="RegexCompileFlags" c:type="GRegexCompileFlags"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2294">a #GRegex</doc>
+                 line="2297">a #GRegex</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
         </parameters>
@@ -34526,19 +34526,19 @@ top-level within the compiled pattern.</doc>
               version="2.34">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2249">Checks whether the pattern contains explicit CR or LF references.</doc>
+             line="2252">Checks whether the pattern contains explicit CR or LF references.</doc>
         <source-position filename="glib/gregex.h" line="465"/>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2255">%TRUE if the pattern contains explicit CR or LF references</doc>
+               line="2258">%TRUE if the pattern contains explicit CR or LF references</doc>
           <type name="gboolean" c:type="gboolean"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2251">a #GRegex structure</doc>
+                 line="2254">a #GRegex structure</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
         </parameters>
@@ -34548,19 +34548,19 @@ top-level within the compiled pattern.</doc>
               version="2.26">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2351">Returns the match options that @regex was created with.</doc>
+             line="2354">Returns the match options that @regex was created with.</doc>
         <source-position filename="glib/gregex.h" line="481"/>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2357">flags from #GRegexMatchFlags</doc>
+               line="2360">flags from #GRegexMatchFlags</doc>
           <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2353">a #GRegex</doc>
+                 line="2356">a #GRegex</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
         </parameters>
@@ -34570,21 +34570,21 @@ top-level within the compiled pattern.</doc>
               version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2207">Returns the number of the highest back reference
+             line="2210">Returns the number of the highest back reference
 in the pattern, or 0 if the pattern does not contain
 back references.</doc>
         <source-position filename="glib/gregex.h" line="461"/>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2215">the number of the highest back reference</doc>
+               line="2218">the number of the highest back reference</doc>
           <type name="gint" c:type="gint"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2209">a #GRegex</doc>
+                 line="2212">a #GRegex</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
         </parameters>
@@ -34594,21 +34594,21 @@ back references.</doc>
               version="2.38">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2269">Gets the number of characters in the longest lookbehind assertion in the
+             line="2272">Gets the number of characters in the longest lookbehind assertion in the
 pattern. This information is useful when doing multi-segment matching using
 the partial matching facilities.</doc>
         <source-position filename="glib/gregex.h" line="467"/>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2277">the number of characters in the longest lookbehind assertion.</doc>
+               line="2280">the number of characters in the longest lookbehind assertion.</doc>
           <type name="gint" c:type="gint"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2271">a #GRegex structure</doc>
+                 line="2274">a #GRegex structure</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
         </parameters>
@@ -34618,20 +34618,20 @@ the partial matching facilities.</doc>
               version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2188">Gets the pattern string associated with @regex, i.e. a copy of
+             line="2191">Gets the pattern string associated with @regex, i.e. a copy of
 the string passed to g_regex_new().</doc>
         <source-position filename="glib/gregex.h" line="459"/>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2195">the pattern of @regex</doc>
+               line="2198">the pattern of @regex</doc>
           <type name="utf8" c:type="const gchar*"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2190">a #GRegex structure</doc>
+                 line="2193">a #GRegex structure</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
         </parameters>
@@ -34641,12 +34641,12 @@ the string passed to g_regex_new().</doc>
               version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2773">Retrieves the number of the subexpression named @name.</doc>
+             line="2776">Retrieves the number of the subexpression named @name.</doc>
         <source-position filename="glib/gregex.h" line="469"/>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2780">The number of the subexpression or -1 if @name
+               line="2783">The number of the subexpression or -1 if @name
   does not exists</doc>
           <type name="gint" c:type="gint"/>
         </return-value>
@@ -34654,13 +34654,13 @@ the string passed to g_regex_new().</doc>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2775">#GRegex structure</doc>
+                 line="2778">#GRegex structure</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
           <parameter name="name" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2776">name of the subexpression</doc>
+                 line="2779">name of the subexpression</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
         </parameters>
@@ -34668,7 +34668,7 @@ the string passed to g_regex_new().</doc>
       <method name="match" c:identifier="g_regex_match" version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2414">Scans for a match in @string for the pattern in @regex.
+             line="2417">Scans for a match in @string for the pattern in @regex.
 The @match_options are combined with the match options specified
 when the @regex structure was created, letting you have more
 flexibility in reusing #GRegex structures.
@@ -34712,26 +34712,26 @@ freeing or modifying @string then the behaviour is undefined.</doc>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2463">%TRUE is the string matched, %FALSE otherwise</doc>
+               line="2466">%TRUE is the string matched, %FALSE otherwise</doc>
           <type name="gboolean" c:type="gboolean"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2416">a #GRegex structure from g_regex_new()</doc>
+                 line="2419">a #GRegex structure from g_regex_new()</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
           <parameter name="string" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2417">the string to scan for matches</doc>
+                 line="2420">the string to scan for matches</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="match_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2418">match options</doc>
+                 line="2421">match options</doc>
             <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
           </parameter>
           <parameter name="match_info"
@@ -34742,7 +34742,7 @@ freeing or modifying @string then the behaviour is undefined.</doc>
                      allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2419">pointer to location where to store
+                 line="2422">pointer to location where to store
     the #GMatchInfo, or %NULL if you do not need it</doc>
             <type name="MatchInfo" c:type="GMatchInfo**"/>
           </parameter>
@@ -34751,7 +34751,7 @@ freeing or modifying @string then the behaviour is undefined.</doc>
       <method name="match_all" c:identifier="g_regex_match_all" version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2573">Using the standard algorithm for regular expression matching only
+             line="2576">Using the standard algorithm for regular expression matching only
 the longest match in the string is retrieved. This function uses
 a different algorithm so it can retrieve all the possible matches.
 For more documentation see g_regex_match_all_full().
@@ -34769,26 +34769,26 @@ freeing or modifying @string then the behaviour is undefined.</doc>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2596">%TRUE is the string matched, %FALSE otherwise</doc>
+               line="2599">%TRUE is the string matched, %FALSE otherwise</doc>
           <type name="gboolean" c:type="gboolean"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2575">a #GRegex structure from g_regex_new()</doc>
+                 line="2578">a #GRegex structure from g_regex_new()</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
           <parameter name="string" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2576">the string to scan for matches</doc>
+                 line="2579">the string to scan for matches</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="match_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2577">match options</doc>
+                 line="2580">match options</doc>
             <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
           </parameter>
           <parameter name="match_info"
@@ -34799,7 +34799,7 @@ freeing or modifying @string then the behaviour is undefined.</doc>
                      allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2578">pointer to location where to store
+                 line="2581">pointer to location where to store
     the #GMatchInfo, or %NULL if you do not need it</doc>
             <type name="MatchInfo" c:type="GMatchInfo**"/>
           </parameter>
@@ -34811,7 +34811,7 @@ freeing or modifying @string then the behaviour is undefined.</doc>
               throws="1">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2610">Using the standard algorithm for regular expression matching only
+             line="2613">Using the standard algorithm for regular expression matching only
 the longest match in the @string is retrieved, it is not possible
 to obtain all the available matches. For instance matching
 `"&lt;a&gt; &lt;b&gt; &lt;c&gt;"` against the pattern `"&lt;.*&gt;"`
@@ -34853,20 +34853,20 @@ freeing or modifying @string then the behaviour is undefined.</doc>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2660">%TRUE is the string matched, %FALSE otherwise</doc>
+               line="2663">%TRUE is the string matched, %FALSE otherwise</doc>
           <type name="gboolean" c:type="gboolean"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2612">a #GRegex structure from g_regex_new()</doc>
+                 line="2615">a #GRegex structure from g_regex_new()</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
           <parameter name="string" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2613">the string to scan for matches</doc>
+                 line="2616">the string to scan for matches</doc>
             <array length="1" zero-terminated="0" c:type="const gchar*">
               <type name="utf8" c:type="gchar"/>
             </array>
@@ -34874,19 +34874,19 @@ freeing or modifying @string then the behaviour is undefined.</doc>
           <parameter name="string_len" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2614">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
+                 line="2617">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
             <type name="gssize" c:type="gssize"/>
           </parameter>
           <parameter name="start_position" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2615">starting index of the string to match, in bytes</doc>
+                 line="2618">starting index of the string to match, in bytes</doc>
             <type name="gint" c:type="gint"/>
           </parameter>
           <parameter name="match_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2616">match options</doc>
+                 line="2619">match options</doc>
             <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
           </parameter>
           <parameter name="match_info"
@@ -34897,7 +34897,7 @@ freeing or modifying @string then the behaviour is undefined.</doc>
                      allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2617">pointer to location where to store
+                 line="2620">pointer to location where to store
     the #GMatchInfo, or %NULL if you do not need it</doc>
             <type name="MatchInfo" c:type="GMatchInfo**"/>
           </parameter>
@@ -34909,7 +34909,7 @@ freeing or modifying @string then the behaviour is undefined.</doc>
               throws="1">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2477">Scans for a match in @string for the pattern in @regex.
+             line="2480">Scans for a match in @string for the pattern in @regex.
 The @match_options are combined with the match options specified
 when the @regex structure was created, letting you have more
 flexibility in reusing #GRegex structures.
@@ -34964,20 +34964,20 @@ print_uppercase_words (const gchar *string)
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2540">%TRUE is the string matched, %FALSE otherwise</doc>
+               line="2543">%TRUE is the string matched, %FALSE otherwise</doc>
           <type name="gboolean" c:type="gboolean"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2479">a #GRegex structure from g_regex_new()</doc>
+                 line="2482">a #GRegex structure from g_regex_new()</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
           <parameter name="string" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2480">the string to scan for matches</doc>
+                 line="2483">the string to scan for matches</doc>
             <array length="1" zero-terminated="0" c:type="const gchar*">
               <type name="utf8" c:type="gchar"/>
             </array>
@@ -34985,19 +34985,19 @@ print_uppercase_words (const gchar *string)
           <parameter name="string_len" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2481">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
+                 line="2484">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
             <type name="gssize" c:type="gssize"/>
           </parameter>
           <parameter name="start_position" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2482">starting index of the string to match, in bytes</doc>
+                 line="2485">starting index of the string to match, in bytes</doc>
             <type name="gint" c:type="gint"/>
           </parameter>
           <parameter name="match_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2483">match options</doc>
+                 line="2486">match options</doc>
             <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
           </parameter>
           <parameter name="match_info"
@@ -35008,7 +35008,7 @@ print_uppercase_words (const gchar *string)
                      allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2484">pointer to location where to store
+                 line="2487">pointer to location where to store
     the #GMatchInfo, or %NULL if you do not need it</doc>
             <type name="MatchInfo" c:type="GMatchInfo**"/>
           </parameter>
@@ -35017,19 +35017,19 @@ print_uppercase_words (const gchar *string)
       <method name="ref" c:identifier="g_regex_ref" version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1930">Increases reference count of @regex by 1.</doc>
+             line="1933">Increases reference count of @regex by 1.</doc>
         <source-position filename="glib/gregex.h" line="455"/>
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="1936">@regex</doc>
+               line="1939">@regex</doc>
           <type name="Regex" c:type="GRegex*"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1932">a #GRegex</doc>
+                 line="1935">a #GRegex</doc>
             <type name="Regex" c:type="GRegex*"/>
           </instance-parameter>
         </parameters>
@@ -35040,7 +35040,7 @@ print_uppercase_words (const gchar *string)
               throws="1">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="3527">Replaces all occurrences of the pattern in @regex with the
+             line="3530">Replaces all occurrences of the pattern in @regex with the
 replacement text. Backreferences of the form `\number` or
 `\g&lt;number&gt;` in the replacement text are interpolated by the
 number-th captured subexpression of the match, `\g&lt;name&gt;` refers
@@ -35070,20 +35070,20 @@ begins with any kind of lookbehind assertion, such as "\b".</doc>
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="3564">a newly allocated string containing the replacements</doc>
+               line="3567">a newly allocated string containing the replacements</doc>
           <type name="utf8" c:type="gchar*"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3529">a #GRegex structure</doc>
+                 line="3532">a #GRegex structure</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
           <parameter name="string" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3530">the string to perform matches against</doc>
+                 line="3533">the string to perform matches against</doc>
             <array length="1" zero-terminated="0" c:type="const gchar*">
               <type name="utf8" c:type="gchar"/>
             </array>
@@ -35091,25 +35091,25 @@ begins with any kind of lookbehind assertion, such as "\b".</doc>
           <parameter name="string_len" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3531">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
+                 line="3534">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
             <type name="gssize" c:type="gssize"/>
           </parameter>
           <parameter name="start_position" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3532">starting index of the string to match, in bytes</doc>
+                 line="3535">starting index of the string to match, in bytes</doc>
             <type name="gint" c:type="gint"/>
           </parameter>
           <parameter name="replacement" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3533">text to replace each match with</doc>
+                 line="3536">text to replace each match with</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="match_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3534">options for the match</doc>
+                 line="3537">options for the match</doc>
             <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
           </parameter>
         </parameters>
@@ -35120,7 +35120,7 @@ begins with any kind of lookbehind assertion, such as "\b".</doc>
               throws="1">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="3661">Replaces occurrences of the pattern in regex with the output of
+             line="3664">Replaces occurrences of the pattern in regex with the output of
 @eval for that occurrence.
 
 Setting @start_position differs from just passing over a shortened
@@ -35169,20 +35169,20 @@ g_hash_table_destroy (h);
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="3718">a newly allocated string containing the replacements</doc>
+               line="3721">a newly allocated string containing the replacements</doc>
           <type name="utf8" c:type="gchar*"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3663">a #GRegex structure from g_regex_new()</doc>
+                 line="3666">a #GRegex structure from g_regex_new()</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
           <parameter name="string" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3664">string to perform matches against</doc>
+                 line="3667">string to perform matches against</doc>
             <array length="1" zero-terminated="0" c:type="const gchar*">
               <type name="utf8" c:type="gchar"/>
             </array>
@@ -35190,19 +35190,19 @@ g_hash_table_destroy (h);
           <parameter name="string_len" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3665">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
+                 line="3668">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
             <type name="gssize" c:type="gssize"/>
           </parameter>
           <parameter name="start_position" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3666">starting index of the string to match, in bytes</doc>
+                 line="3669">starting index of the string to match, in bytes</doc>
             <type name="gint" c:type="gint"/>
           </parameter>
           <parameter name="match_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3667">options for the match</doc>
+                 line="3670">options for the match</doc>
             <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
           </parameter>
           <parameter name="eval"
@@ -35211,7 +35211,7 @@ g_hash_table_destroy (h);
                      closure="5">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3668">a function to call for each match</doc>
+                 line="3671">a function to call for each match</doc>
             <type name="RegexEvalCallback" c:type="GRegexEvalCallback"/>
           </parameter>
           <parameter name="user_data"
@@ -35220,7 +35220,7 @@ g_hash_table_destroy (h);
                      allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3669">user data to pass to the function</doc>
+                 line="3672">user data to pass to the function</doc>
             <type name="gpointer" c:type="gpointer"/>
           </parameter>
         </parameters>
@@ -35231,7 +35231,7 @@ g_hash_table_destroy (h);
               throws="1">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="3618">Replaces all occurrences of the pattern in @regex with the
+             line="3621">Replaces all occurrences of the pattern in @regex with the
 replacement text. @replacement is replaced literally, to
 include backreferences use g_regex_replace().
 
@@ -35243,20 +35243,20 @@ assertion, such as "\b".</doc>
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="3637">a newly allocated string containing the replacements</doc>
+               line="3640">a newly allocated string containing the replacements</doc>
           <type name="utf8" c:type="gchar*"/>
         </return-value>
         <parameters>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3620">a #GRegex structure</doc>
+                 line="3623">a #GRegex structure</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
           <parameter name="string" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3621">the string to perform matches against</doc>
+                 line="3624">the string to perform matches against</doc>
             <array length="1" zero-terminated="0" c:type="const gchar*">
               <type name="utf8" c:type="gchar"/>
             </array>
@@ -35264,25 +35264,25 @@ assertion, such as "\b".</doc>
           <parameter name="string_len" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3622">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
+                 line="3625">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
             <type name="gssize" c:type="gssize"/>
           </parameter>
           <parameter name="start_position" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3623">starting index of the string to match, in bytes</doc>
+                 line="3626">starting index of the string to match, in bytes</doc>
             <type name="gint" c:type="gint"/>
           </parameter>
           <parameter name="replacement" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3624">text to replace each match with</doc>
+                 line="3627">text to replace each match with</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="match_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3625">options for the match</doc>
+                 line="3628">options for the match</doc>
             <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
           </parameter>
         </parameters>
@@ -35290,7 +35290,7 @@ assertion, such as "\b".</doc>
       <method name="split" c:identifier="g_regex_split" version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2859">Breaks the string on the pattern, and returns an array of the tokens.
+             line="2862">Breaks the string on the pattern, and returns an array of the tokens.
 If the pattern contains capturing parentheses, then the text for each
 of the substrings will also be returned. If the pattern does not match
 anywhere in the string, then the whole string is returned as the first
@@ -35311,7 +35311,7 @@ For example splitting "ab c" using as a separator "\s*", you will get
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2883">a %NULL-terminated gchar ** array. Free
+               line="2886">a %NULL-terminated gchar ** array. Free
 it using g_strfreev()</doc>
           <array c:type="gchar**">
             <type name="utf8"/>
@@ -35321,19 +35321,19 @@ it using g_strfreev()</doc>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2861">a #GRegex structure</doc>
+                 line="2864">a #GRegex structure</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
           <parameter name="string" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2862">the string to split with the pattern</doc>
+                 line="2865">the string to split with the pattern</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="match_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2863">match time option flags</doc>
+                 line="2866">match time option flags</doc>
             <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
           </parameter>
         </parameters>
@@ -35344,7 +35344,7 @@ it using g_strfreev()</doc>
               throws="1">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2897">Breaks the string on the pattern, and returns an array of the tokens.
+             line="2900">Breaks the string on the pattern, and returns an array of the tokens.
 If the pattern contains capturing parentheses, then the text for each
 of the substrings will also be returned. If the pattern does not match
 anywhere in the string, then the whole string is returned as the first
@@ -35369,7 +35369,7 @@ that begins with any kind of lookbehind assertion, such as "\b".</doc>
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2930">a %NULL-terminated gchar ** array. Free
+               line="2933">a %NULL-terminated gchar ** array. Free
 it using g_strfreev()</doc>
           <array c:type="gchar**">
             <type name="utf8"/>
@@ -35379,13 +35379,13 @@ it using g_strfreev()</doc>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2899">a #GRegex structure</doc>
+                 line="2902">a #GRegex structure</doc>
             <type name="Regex" c:type="const GRegex*"/>
           </instance-parameter>
           <parameter name="string" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2900">the string to split with the pattern</doc>
+                 line="2903">the string to split with the pattern</doc>
             <array length="1" zero-terminated="0" c:type="const gchar*">
               <type name="utf8" c:type="gchar"/>
             </array>
@@ -35393,25 +35393,25 @@ it using g_strfreev()</doc>
           <parameter name="string_len" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2901">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
+                 line="2904">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
             <type name="gssize" c:type="gssize"/>
           </parameter>
           <parameter name="start_position" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2902">starting index of the string to match, in bytes</doc>
+                 line="2905">starting index of the string to match, in bytes</doc>
             <type name="gint" c:type="gint"/>
           </parameter>
           <parameter name="match_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2903">match time option flags</doc>
+                 line="2906">match time option flags</doc>
             <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
           </parameter>
           <parameter name="max_tokens" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2904">the maximum number of tokens to split @string into.
+                 line="2907">the maximum number of tokens to split @string into.
   If this is less than 1, the string is split completely</doc>
             <type name="gint" c:type="gint"/>
           </parameter>
@@ -35420,7 +35420,7 @@ it using g_strfreev()</doc>
       <method name="unref" c:identifier="g_regex_unref" version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="1948">Decreases reference count of @regex by 1. When reference count drops
+             line="1951">Decreases reference count of @regex by 1. When reference count drops
 to zero, it frees all the memory associated with the regex structure.</doc>
         <source-position filename="glib/gregex.h" line="457"/>
         <return-value transfer-ownership="none">
@@ -35430,7 +35430,7 @@ to zero, it frees all the memory associated with the regex structure.</doc>
           <instance-parameter name="regex" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="1950">a #GRegex</doc>
+                 line="1953">a #GRegex</doc>
             <type name="Regex" c:type="GRegex*"/>
           </instance-parameter>
         </parameters>
@@ -35441,7 +35441,7 @@ to zero, it frees all the memory associated with the regex structure.</doc>
                 throws="1">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="3773">Checks whether @replacement is a valid replacement string
+             line="3776">Checks whether @replacement is a valid replacement string
 (see g_regex_replace()), i.e. that all escape sequences in
 it are valid.
 
@@ -35454,14 +35454,14 @@ subpattern) requires valid #GMatchInfo object.</doc>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="3790">whether @replacement is a valid replacement string</doc>
+               line="3793">whether @replacement is a valid replacement string</doc>
           <type name="gboolean" c:type="gboolean"/>
         </return-value>
         <parameters>
           <parameter name="replacement" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3775">the replacement string</doc>
+                 line="3778">the replacement string</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="has_references"
@@ -35472,7 +35472,7 @@ subpattern) requires valid #GMatchInfo object.</doc>
                      allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3776">location to store information about
+                 line="3779">location to store information about
   references in @replacement or %NULL</doc>
             <type name="gboolean" c:type="gboolean*"/>
           </parameter>
@@ -35488,7 +35488,7 @@ subpattern) requires valid #GMatchInfo object.</doc>
                 version="2.30">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="3818">Escapes the nul characters in @string to "\x00".  It can be used
+             line="3821">Escapes the nul characters in @string to "\x00".  It can be used
 to compile a regex with embedded nul characters.
 
 For completeness, @length can be -1 for a nul-terminated string.
@@ -35497,20 +35497,20 @@ In this case the output string will be of course equal to @string.</doc>
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="3829">a newly-allocated escaped string</doc>
+               line="3832">a newly-allocated escaped string</doc>
           <type name="utf8" c:type="gchar*"/>
         </return-value>
         <parameters>
           <parameter name="string" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3820">the string to escape</doc>
+                 line="3823">the string to escape</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="length" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3821">the length of @string</doc>
+                 line="3824">the length of @string</doc>
             <type name="gint" c:type="gint"/>
           </parameter>
         </parameters>
@@ -35520,7 +35520,7 @@ In this case the output string will be of course equal to @string.</doc>
                 version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="3886">Escapes the special characters used for regular expressions
+             line="3889">Escapes the special characters used for regular expressions
 in @string, for instance "a.b*c" becomes "a\.b\*c". This
 function is useful to dynamically generate regular expressions.
 
@@ -35531,20 +35531,20 @@ in @length.</doc>
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="3899">a newly-allocated escaped string</doc>
+               line="3902">a newly-allocated escaped string</doc>
           <type name="utf8" c:type="gchar*"/>
         </return-value>
         <parameters>
           <parameter name="string" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3888">the string to escape</doc>
+                 line="3891">the string to escape</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="length" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="3889">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
+                 line="3892">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
             <type name="gint" c:type="gint"/>
           </parameter>
         </parameters>
@@ -35554,7 +35554,7 @@ in @length.</doc>
                 version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2375">Scans for a match in @string for @pattern.
+             line="2378">Scans for a match in @string for @pattern.
 
 This function is equivalent to g_regex_match() but it does not
 require to compile the pattern with g_regex_new(), avoiding some
@@ -35568,32 +35568,32 @@ g_regex_new() and then use g_regex_match().</doc>
         <return-value transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2393">%TRUE if the string matched, %FALSE otherwise</doc>
+               line="2396">%TRUE if the string matched, %FALSE otherwise</doc>
           <type name="gboolean" c:type="gboolean"/>
         </return-value>
         <parameters>
           <parameter name="pattern" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2377">the regular expression</doc>
+                 line="2380">the regular expression</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="string" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2378">the string to scan for matches</doc>
+                 line="2381">the string to scan for matches</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="compile_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2379">compile options for the regular expression, or 0</doc>
+                 line="2382">compile options for the regular expression, or 0</doc>
             <type name="RegexCompileFlags" c:type="GRegexCompileFlags"/>
           </parameter>
           <parameter name="match_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2380">match options, or 0</doc>
+                 line="2383">match options, or 0</doc>
             <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
           </parameter>
         </parameters>
@@ -35603,7 +35603,7 @@ g_regex_new() and then use g_regex_match().</doc>
                 version="2.14">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2801">Breaks the string on the pattern, and returns an array of
+             line="2804">Breaks the string on the pattern, and returns an array of
 the tokens. If the pattern contains capturing parentheses,
 then the text for each of the substrings will also be returned.
 If the pattern does not match anywhere in the string, then the
@@ -35634,7 +35634,7 @@ characters. For example splitting "ab c" using as a separator
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2836">a %NULL-terminated array of strings. Free
+               line="2839">a %NULL-terminated array of strings. Free
 it using g_strfreev()</doc>
           <array c:type="gchar**">
             <type name="utf8"/>
@@ -35644,25 +35644,25 @@ it using g_strfreev()</doc>
           <parameter name="pattern" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2803">the regular expression</doc>
+                 line="2806">the regular expression</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="string" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2804">the string to scan for matches</doc>
+                 line="2807">the string to scan for matches</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="compile_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2805">compile options for the regular expression, or 0</doc>
+                 line="2808">compile options for the regular expression, or 0</doc>
             <type name="RegexCompileFlags" c:type="GRegexCompileFlags"/>
           </parameter>
           <parameter name="match_options" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gregex.c"
-                 line="2806">match options, or 0</doc>
+                 line="2809">match options, or 0</doc>
             <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
           </parameter>
         </parameters>
@@ -53836,14 +53836,14 @@ in @flags.</doc>
                 version="2.6">
         <doc xml:space="preserve"
              filename="glib/gconvert.c"
-             line="1765">Splits an URI list conforming to the text/uri-list
+             line="1779">Splits an URI list conforming to the text/uri-list
 mime type defined in RFC 2483 into individual URIs,
 discarding any comments. The URIs are not validated.</doc>
         <source-position filename="glib/gconvert.h" line="175"/>
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gconvert.c"
-               line="1773">a newly allocated %NULL-terminated list
+               line="1787">a newly allocated %NULL-terminated list
   of strings holding the individual URIs. The array should be freed
   with g_strfreev().</doc>
           <array c:type="gchar**">
@@ -53854,7 +53854,7 @@ discarding any comments. The URIs are not validated.</doc>
           <parameter name="uri_list" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gconvert.c"
-                 line="1767">an URI list</doc>
+                 line="1781">an URI list</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
         </parameters>
@@ -56115,7 +56115,7 @@ If @length is -1 then @strv is %NULL-terminated.</doc>
                    introspectable="0">
         <doc xml:space="preserve"
              filename="glib/gvariant-parser.c"
-             line="2656">Parses @format and returns the result.
+             line="2672">Parses @format and returns the result.
 
 @format must be a text format #GVariant with one extension: at any
 point that a value may appear in the text, a '%' character followed
@@ -56151,20 +56151,20 @@ with "%@".</doc>
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gvariant-parser.c"
-               line="2694">a new floating #GVariant instance</doc>
+               line="2710">a new floating #GVariant instance</doc>
           <type name="Variant" c:type="GVariant*"/>
         </return-value>
         <parameters>
           <parameter name="format" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gvariant-parser.c"
-                 line="2658">a text format #GVariant</doc>
+                 line="2674">a text format #GVariant</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="..." transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gvariant-parser.c"
-                 line="2659">arguments as per @format</doc>
+                 line="2675">arguments as per @format</doc>
             <varargs/>
           </parameter>
         </parameters>
@@ -56174,7 +56174,7 @@ with "%@".</doc>
                    introspectable="0">
         <doc xml:space="preserve"
              filename="glib/gvariant-parser.c"
-             line="2594">Parses @format and returns the result.
+             line="2610">Parses @format and returns the result.
 
 This is the version of g_variant_new_parsed() intended to be used
 from libraries.
@@ -56199,20 +56199,20 @@ or by passing it to another g_variant_new() call.</doc>
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gvariant-parser.c"
-               line="2621">a new, usually floating, #GVariant</doc>
+               line="2637">a new, usually floating, #GVariant</doc>
           <type name="Variant" c:type="GVariant*"/>
         </return-value>
         <parameters>
           <parameter name="format" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gvariant-parser.c"
-                 line="2596">a text format #GVariant</doc>
+                 line="2612">a text format #GVariant</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="app" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gvariant-parser.c"
-                 line="2597">a pointer to a #va_list</doc>
+                 line="2613">a pointer to a #va_list</doc>
             <type name="va_list" c:type="va_list*"/>
           </parameter>
         </parameters>
@@ -58551,7 +58551,7 @@ strings in sequence.</doc>
       <function name="parse" c:identifier="g_variant_parse" throws="1">
         <doc xml:space="preserve"
              filename="glib/gvariant-parser.c"
-             line="2489">Parses a #GVariant from a text representation.
+             line="2505">Parses a #GVariant from a text representation.
 
 A single #GVariant is parsed from the content of @text.
 
@@ -58591,7 +58591,7 @@ guaranteed to handle nesting up to at least 64 levels.</doc>
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gvariant-parser.c"
-               line="2534">a non-floating reference to a #GVariant, or %NULL</doc>
+               line="2550">a non-floating reference to a #GVariant, or %NULL</doc>
           <type name="Variant" c:type="GVariant*"/>
         </return-value>
         <parameters>
@@ -58601,13 +58601,13 @@ guaranteed to handle nesting up to at least 64 levels.</doc>
                      allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gvariant-parser.c"
-                 line="2491">a #GVariantType, or %NULL</doc>
+                 line="2507">a #GVariantType, or %NULL</doc>
             <type name="VariantType" c:type="const GVariantType*"/>
           </parameter>
           <parameter name="text" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gvariant-parser.c"
-                 line="2492">a string containing a GVariant in text form</doc>
+                 line="2508">a string containing a GVariant in text form</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="limit"
@@ -58616,7 +58616,7 @@ guaranteed to handle nesting up to at least 64 levels.</doc>
                      allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gvariant-parser.c"
-                 line="2493">a pointer to the end of @text, or %NULL</doc>
+                 line="2509">a pointer to the end of @text, or %NULL</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="endptr"
@@ -58625,7 +58625,7 @@ guaranteed to handle nesting up to at least 64 levels.</doc>
                      allow-none="1">
             <doc xml:space="preserve"
                  filename="glib/gvariant-parser.c"
-                 line="2494">a location to store the end pointer, or %NULL</doc>
+                 line="2510">a location to store the end pointer, or %NULL</doc>
             <type name="utf8" c:type="const gchar**"/>
           </parameter>
         </parameters>
@@ -58635,7 +58635,7 @@ guaranteed to handle nesting up to at least 64 levels.</doc>
                 version="2.40">
         <doc xml:space="preserve"
              filename="glib/gvariant-parser.c"
-             line="2858">Pretty-prints a message showing the context of a #GVariant parse
+             line="2876">Pretty-prints a message showing the context of a #GVariant parse
 error within the string for which parsing was attempted.
 
 The resulting string is suitable for output to the console or other
@@ -58668,20 +58668,20 @@ function.</doc>
         <return-value transfer-ownership="full">
           <doc xml:space="preserve"
                filename="glib/gvariant-parser.c"
-               line="2893">the printed message</doc>
+               line="2911">the printed message</doc>
           <type name="utf8" c:type="gchar*"/>
         </return-value>
         <parameters>
           <parameter name="error" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gvariant-parser.c"
-                 line="2860">a #GError from the #GVariantParseError domain</doc>
+                 line="2878">a #GError from the #GVariantParseError domain</doc>
             <type name="Error" c:type="GError*"/>
           </parameter>
           <parameter name="source_str" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gvariant-parser.c"
-                 line="2861">the string that was given to the parser</doc>
+                 line="2879">the string that was given to the parser</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
         </parameters>
@@ -58838,7 +58838,7 @@ make_pointless_dictionary (void)
               introspectable="0">
         <doc xml:space="preserve"
              filename="glib/gvariant-parser.c"
-             line="2710">Adds to a #GVariantBuilder.
+             line="2726">Adds to a #GVariantBuilder.
 
 This call is a convenience wrapper that is exactly equivalent to
 calling g_variant_new_parsed() followed by
@@ -58872,19 +58872,19 @@ make_pointless_dictionary (void)
           <instance-parameter name="builder" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gvariant-parser.c"
-                 line="2712">a #GVariantBuilder</doc>
+                 line="2728">a #GVariantBuilder</doc>
             <type name="VariantBuilder" c:type="GVariantBuilder*"/>
           </instance-parameter>
           <parameter name="format" transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gvariant-parser.c"
-                 line="2713">a text format #GVariant</doc>
+                 line="2729">a text format #GVariant</doc>
             <type name="utf8" c:type="const gchar*"/>
           </parameter>
           <parameter name="..." transfer-ownership="none">
             <doc xml:space="preserve"
                  filename="glib/gvariant-parser.c"
-                 line="2714">arguments as per @format</doc>
+                 line="2730">arguments as per @format</doc>
             <varargs/>
           </parameter>
         </parameters>
@@ -70222,7 +70222,7 @@ extensions and those listed in the `PATHEXT` environment variable.</doc>
               version="2.6">
       <doc xml:space="preserve"
            filename="glib/gconvert.c"
-           line="1827">Returns the display basename for the particular filename, guaranteed
+           line="1841">Returns the display basename for the particular filename, guaranteed
 to be valid UTF-8. The display name might not be identical to the filename,
 for instance there might be problems converting it to UTF-8, and some files
 can be translated in the display.
@@ -70242,7 +70242,7 @@ whole path, as it allows translation.</doc>
       <return-value transfer-ownership="full">
         <doc xml:space="preserve"
              filename="glib/gconvert.c"
-             line="1849">a newly allocated string containing
+             line="1863">a newly allocated string containing
   a rendition of the basename of the filename in valid UTF-8</doc>
         <type name="utf8" c:type="gchar*"/>
       </return-value>
@@ -70250,7 +70250,7 @@ whole path, as it allows translation.</doc>
         <parameter name="filename" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gconvert.c"
-               line="1829">an absolute pathname in the
+               line="1843">an absolute pathname in the
     GLib file name encoding</doc>
           <type name="filename" c:type="const gchar*"/>
         </parameter>
@@ -70261,7 +70261,7 @@ whole path, as it allows translation.</doc>
               version="2.6">
       <doc xml:space="preserve"
            filename="glib/gconvert.c"
-           line="1868">Converts a filename into a valid UTF-8 string. The conversion is
+           line="1882">Converts a filename into a valid UTF-8 string. The conversion is
 not necessarily reversible, so you should keep the original around
 and use the return value of this function only for display purposes.
 Unlike g_filename_to_utf8(), the result is guaranteed to be non-%NULL
@@ -70280,7 +70280,7 @@ translation of filenames.</doc>
       <return-value transfer-ownership="full">
         <doc xml:space="preserve"
              filename="glib/gconvert.c"
-             line="1889">a newly allocated string containing
+             line="1903">a newly allocated string containing
   a rendition of the filename in valid UTF-8</doc>
         <type name="utf8" c:type="gchar*"/>
       </return-value>
@@ -70288,7 +70288,7 @@ translation of filenames.</doc>
         <parameter name="filename" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gconvert.c"
-               line="1870">a pathname hopefully in the
+               line="1884">a pathname hopefully in the
     GLib file name encoding</doc>
           <type name="filename" c:type="const gchar*"/>
         </parameter>
@@ -70299,7 +70299,7 @@ translation of filenames.</doc>
               throws="1">
       <doc xml:space="preserve"
            filename="glib/gconvert.c"
-           line="1563">Converts an escaped ASCII-encoded URI to a local filename in the
+           line="1577">Converts an escaped ASCII-encoded URI to a local filename in the
 encoding used for filenames.
 
 Since GLib 2.78, the query string and fragment can be present in the URI,
@@ -70310,7 +70310,7 @@ but we don't support the entire standard.</doc>
       <return-value transfer-ownership="full">
         <doc xml:space="preserve"
              filename="glib/gconvert.c"
-             line="1580">a newly-allocated string holding
+             line="1594">a newly-allocated string holding
               the resulting filename, or %NULL on an error.</doc>
         <type name="filename" c:type="gchar*"/>
       </return-value>
@@ -70318,7 +70318,7 @@ but we don't support the entire standard.</doc>
         <parameter name="uri" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gconvert.c"
-               line="1565">a uri describing a filename (escaped, encoded in ASCII).</doc>
+               line="1579">a uri describing a filename (escaped, encoded in ASCII).</doc>
           <type name="utf8" c:type="const gchar*"/>
         </parameter>
         <parameter name="hostname"
@@ -70330,7 +70330,7 @@ but we don't support the entire standard.</doc>
                    allow-none="1">
           <doc xml:space="preserve"
                filename="glib/gconvert.c"
-               line="1566">Location to store hostname for the URI.
+               line="1580">Location to store hostname for the URI.
            If there is no hostname in the URI, %NULL will be
            stored in this location.</doc>
           <type name="utf8" c:type="gchar**"/>
@@ -70411,13 +70411,13 @@ not UTF-8 and the conversion output contains a nul character, the error
               throws="1">
       <doc xml:space="preserve"
            filename="glib/gconvert.c"
-           line="1713">Converts an absolute filename to an escaped ASCII-encoded URI, with the path
+           line="1727">Converts an absolute filename to an escaped ASCII-encoded URI, with the path
 component following Section 3.3. of RFC 2396.</doc>
       <source-position filename="glib/gconvert.h" line="163"/>
       <return-value transfer-ownership="full">
         <doc xml:space="preserve"
              filename="glib/gconvert.c"
-             line="1725">a newly-allocated string holding the resulting
+             line="1739">a newly-allocated string holding the resulting
               URI, or %NULL on an error.</doc>
         <type name="utf8" c:type="gchar*"/>
       </return-value>
@@ -70425,7 +70425,7 @@ component following Section 3.3. of RFC 2396.</doc>
         <parameter name="filename" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gconvert.c"
-               line="1715">an absolute filename specified in the GLib file
+               line="1729">an absolute filename specified in the GLib file
     name encoding, which is the on-disk file name bytes on Unix, and UTF-8
     on Windows</doc>
           <type name="filename" c:type="const gchar*"/>
@@ -70436,7 +70436,7 @@ component following Section 3.3. of RFC 2396.</doc>
                    allow-none="1">
           <doc xml:space="preserve"
                filename="glib/gconvert.c"
-               line="1718">A UTF-8 encoded hostname, or %NULL for none.</doc>
+               line="1732">A UTF-8 encoded hostname, or %NULL for none.</doc>
           <type name="utf8" c:type="const gchar*"/>
         </parameter>
       </parameters>
@@ -79630,7 +79630,7 @@ resources allocated by the string are freed as well.</doc>
               throws="1">
       <doc xml:space="preserve"
            filename="glib/gregex.c"
-           line="3773">Checks whether @replacement is a valid replacement string
+           line="3776">Checks whether @replacement is a valid replacement string
 (see g_regex_replace()), i.e. that all escape sequences in
 it are valid.
 
@@ -79643,14 +79643,14 @@ subpattern) requires valid #GMatchInfo object.</doc>
       <return-value transfer-ownership="none">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="3790">whether @replacement is a valid replacement string</doc>
+             line="3793">whether @replacement is a valid replacement string</doc>
         <type name="gboolean" c:type="gboolean"/>
       </return-value>
       <parameters>
         <parameter name="replacement" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="3775">the replacement string</doc>
+               line="3778">the replacement string</doc>
           <type name="utf8" c:type="const gchar*"/>
         </parameter>
         <parameter name="has_references"
@@ -79661,7 +79661,7 @@ subpattern) requires valid #GMatchInfo object.</doc>
                    allow-none="1">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="3776">location to store information about
+               line="3779">location to store information about
   references in @replacement or %NULL</doc>
           <type name="gboolean" c:type="gboolean*"/>
         </parameter>
@@ -79680,7 +79680,7 @@ subpattern) requires valid #GMatchInfo object.</doc>
               version="2.30">
       <doc xml:space="preserve"
            filename="glib/gregex.c"
-           line="3818">Escapes the nul characters in @string to "\x00".  It can be used
+           line="3821">Escapes the nul characters in @string to "\x00".  It can be used
 to compile a regex with embedded nul characters.
 
 For completeness, @length can be -1 for a nul-terminated string.
@@ -79689,20 +79689,20 @@ In this case the output string will be of course equal to @string.</doc>
       <return-value transfer-ownership="full">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="3829">a newly-allocated escaped string</doc>
+             line="3832">a newly-allocated escaped string</doc>
         <type name="utf8" c:type="gchar*"/>
       </return-value>
       <parameters>
         <parameter name="string" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="3820">the string to escape</doc>
+               line="3823">the string to escape</doc>
           <type name="utf8" c:type="const gchar*"/>
         </parameter>
         <parameter name="length" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="3821">the length of @string</doc>
+               line="3824">the length of @string</doc>
           <type name="gint" c:type="gint"/>
         </parameter>
       </parameters>
@@ -79713,7 +79713,7 @@ In this case the output string will be of course equal to @string.</doc>
               version="2.14">
       <doc xml:space="preserve"
            filename="glib/gregex.c"
-           line="3886">Escapes the special characters used for regular expressions
+           line="3889">Escapes the special characters used for regular expressions
 in @string, for instance "a.b*c" becomes "a\.b\*c". This
 function is useful to dynamically generate regular expressions.
 
@@ -79724,20 +79724,20 @@ in @length.</doc>
       <return-value transfer-ownership="full">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="3899">a newly-allocated escaped string</doc>
+             line="3902">a newly-allocated escaped string</doc>
         <type name="utf8" c:type="gchar*"/>
       </return-value>
       <parameters>
         <parameter name="string" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="3888">the string to escape</doc>
+               line="3891">the string to escape</doc>
           <type name="utf8" c:type="const gchar*"/>
         </parameter>
         <parameter name="length" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="3889">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
+               line="3892">the length of @string, in bytes, or -1 if @string is nul-terminated</doc>
           <type name="gint" c:type="gint"/>
         </parameter>
       </parameters>
@@ -79748,7 +79748,7 @@ in @length.</doc>
               version="2.14">
       <doc xml:space="preserve"
            filename="glib/gregex.c"
-           line="2375">Scans for a match in @string for @pattern.
+           line="2378">Scans for a match in @string for @pattern.
 
 This function is equivalent to g_regex_match() but it does not
 require to compile the pattern with g_regex_new(), avoiding some
@@ -79762,32 +79762,32 @@ g_regex_new() and then use g_regex_match().</doc>
       <return-value transfer-ownership="none">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2393">%TRUE if the string matched, %FALSE otherwise</doc>
+             line="2396">%TRUE if the string matched, %FALSE otherwise</doc>
         <type name="gboolean" c:type="gboolean"/>
       </return-value>
       <parameters>
         <parameter name="pattern" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2377">the regular expression</doc>
+               line="2380">the regular expression</doc>
           <type name="utf8" c:type="const gchar*"/>
         </parameter>
         <parameter name="string" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2378">the string to scan for matches</doc>
+               line="2381">the string to scan for matches</doc>
           <type name="utf8" c:type="const gchar*"/>
         </parameter>
         <parameter name="compile_options" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2379">compile options for the regular expression, or 0</doc>
+               line="2382">compile options for the regular expression, or 0</doc>
           <type name="RegexCompileFlags" c:type="GRegexCompileFlags"/>
         </parameter>
         <parameter name="match_options" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2380">match options, or 0</doc>
+               line="2383">match options, or 0</doc>
           <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
         </parameter>
       </parameters>
@@ -79798,7 +79798,7 @@ g_regex_new() and then use g_regex_match().</doc>
               version="2.14">
       <doc xml:space="preserve"
            filename="glib/gregex.c"
-           line="2801">Breaks the string on the pattern, and returns an array of
+           line="2804">Breaks the string on the pattern, and returns an array of
 the tokens. If the pattern contains capturing parentheses,
 then the text for each of the substrings will also be returned.
 If the pattern does not match anywhere in the string, then the
@@ -79829,7 +79829,7 @@ characters. For example splitting "ab c" using as a separator
       <return-value transfer-ownership="full">
         <doc xml:space="preserve"
              filename="glib/gregex.c"
-             line="2836">a %NULL-terminated array of strings. Free
+             line="2839">a %NULL-terminated array of strings. Free
 it using g_strfreev()</doc>
         <array c:type="gchar**">
           <type name="utf8"/>
@@ -79839,25 +79839,25 @@ it using g_strfreev()</doc>
         <parameter name="pattern" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2803">the regular expression</doc>
+               line="2806">the regular expression</doc>
           <type name="utf8" c:type="const gchar*"/>
         </parameter>
         <parameter name="string" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2804">the string to scan for matches</doc>
+               line="2807">the string to scan for matches</doc>
           <type name="utf8" c:type="const gchar*"/>
         </parameter>
         <parameter name="compile_options" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2805">compile options for the regular expression, or 0</doc>
+               line="2808">compile options for the regular expression, or 0</doc>
           <type name="RegexCompileFlags" c:type="GRegexCompileFlags"/>
         </parameter>
         <parameter name="match_options" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gregex.c"
-               line="2806">match options, or 0</doc>
+               line="2809">match options, or 0</doc>
           <type name="RegexMatchFlags" c:type="GRegexMatchFlags"/>
         </parameter>
       </parameters>
@@ -90464,14 +90464,14 @@ in @flags.</doc>
               version="2.6">
       <doc xml:space="preserve"
            filename="glib/gconvert.c"
-           line="1765">Splits an URI list conforming to the text/uri-list
+           line="1779">Splits an URI list conforming to the text/uri-list
 mime type defined in RFC 2483 into individual URIs,
 discarding any comments. The URIs are not validated.</doc>
       <source-position filename="glib/gconvert.h" line="175"/>
       <return-value transfer-ownership="full">
         <doc xml:space="preserve"
              filename="glib/gconvert.c"
-             line="1773">a newly allocated %NULL-terminated list
+             line="1787">a newly allocated %NULL-terminated list
   of strings holding the individual URIs. The array should be freed
   with g_strfreev().</doc>
         <array c:type="gchar**">
@@ -90482,7 +90482,7 @@ discarding any comments. The URIs are not validated.</doc>
         <parameter name="uri_list" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gconvert.c"
-               line="1767">an URI list</doc>
+               line="1781">an URI list</doc>
           <type name="utf8" c:type="const gchar*"/>
         </parameter>
       </parameters>
@@ -92615,7 +92615,7 @@ strings in sequence.</doc>
               throws="1">
       <doc xml:space="preserve"
            filename="glib/gvariant-parser.c"
-           line="2489">Parses a #GVariant from a text representation.
+           line="2505">Parses a #GVariant from a text representation.
 
 A single #GVariant is parsed from the content of @text.
 
@@ -92655,7 +92655,7 @@ guaranteed to handle nesting up to at least 64 levels.</doc>
       <return-value transfer-ownership="full">
         <doc xml:space="preserve"
              filename="glib/gvariant-parser.c"
-             line="2534">a non-floating reference to a #GVariant, or %NULL</doc>
+             line="2550">a non-floating reference to a #GVariant, or %NULL</doc>
         <type name="Variant" c:type="GVariant*"/>
       </return-value>
       <parameters>
@@ -92665,13 +92665,13 @@ guaranteed to handle nesting up to at least 64 levels.</doc>
                    allow-none="1">
           <doc xml:space="preserve"
                filename="glib/gvariant-parser.c"
-               line="2491">a #GVariantType, or %NULL</doc>
+               line="2507">a #GVariantType, or %NULL</doc>
           <type name="VariantType" c:type="const GVariantType*"/>
         </parameter>
         <parameter name="text" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gvariant-parser.c"
-               line="2492">a string containing a GVariant in text form</doc>
+               line="2508">a string containing a GVariant in text form</doc>
           <type name="utf8" c:type="const gchar*"/>
         </parameter>
         <parameter name="limit"
@@ -92680,7 +92680,7 @@ guaranteed to handle nesting up to at least 64 levels.</doc>
                    allow-none="1">
           <doc xml:space="preserve"
                filename="glib/gvariant-parser.c"
-               line="2493">a pointer to the end of @text, or %NULL</doc>
+               line="2509">a pointer to the end of @text, or %NULL</doc>
           <type name="utf8" c:type="const gchar*"/>
         </parameter>
         <parameter name="endptr"
@@ -92689,7 +92689,7 @@ guaranteed to handle nesting up to at least 64 levels.</doc>
                    allow-none="1">
           <doc xml:space="preserve"
                filename="glib/gvariant-parser.c"
-               line="2494">a location to store the end pointer, or %NULL</doc>
+               line="2510">a location to store the end pointer, or %NULL</doc>
           <type name="utf8" c:type="const gchar**"/>
         </parameter>
       </parameters>
@@ -92700,7 +92700,7 @@ guaranteed to handle nesting up to at least 64 levels.</doc>
               version="2.40">
       <doc xml:space="preserve"
            filename="glib/gvariant-parser.c"
-           line="2858">Pretty-prints a message showing the context of a #GVariant parse
+           line="2876">Pretty-prints a message showing the context of a #GVariant parse
 error within the string for which parsing was attempted.
 
 The resulting string is suitable for output to the console or other
@@ -92733,20 +92733,20 @@ function.</doc>
       <return-value transfer-ownership="full">
         <doc xml:space="preserve"
              filename="glib/gvariant-parser.c"
-             line="2893">the printed message</doc>
+             line="2911">the printed message</doc>
         <type name="utf8" c:type="gchar*"/>
       </return-value>
       <parameters>
         <parameter name="error" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gvariant-parser.c"
-               line="2860">a #GError from the #GVariantParseError domain</doc>
+               line="2878">a #GError from the #GVariantParseError domain</doc>
           <type name="Error" c:type="GError*"/>
         </parameter>
         <parameter name="source_str" transfer-ownership="none">
           <doc xml:space="preserve"
                filename="glib/gvariant-parser.c"
-               line="2861">the string that was given to the parser</doc>
+               line="2879">the string that was given to the parser</doc>
           <type name="utf8" c:type="const gchar*"/>
         </parameter>
       </parameters>

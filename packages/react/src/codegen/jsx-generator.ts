@@ -1,4 +1,4 @@
-import type { GirClass, GirInterface, GirNamespace, GirSignal, TypeMapper } from "@gtkx/gir";
+import type { GirClass, GirInterface, GirNamespace, GirSignal, TypeMapper, TypeRegistry } from "@gtkx/gir";
 import { toCamelCase, toPascalCase } from "@gtkx/gir";
 import { format } from "prettier";
 
@@ -31,6 +31,11 @@ interface ContainerMetadata {
     namedChildSlots: WidgetChildInfo[];
 }
 
+interface WidgetInfo {
+    widget: GirClass;
+    namespace: string;
+}
+
 const LIST_WIDGETS = new Set(["ListView", "GridView"]);
 const COLUMN_VIEW_WIDGET = "ColumnView";
 const DROPDOWN_WIDGETS = new Set(["DropDown"]);
@@ -48,7 +53,7 @@ const isPrimitive = (tsType: string): boolean => {
     return primitives.has(tsType);
 };
 
-const toJsxPropertyType = (tsType: string): string => {
+const toJsxPropertyType = (tsType: string, namespace: string): string => {
     let result = tsType;
 
     if (result.startsWith("Ref<")) {
@@ -64,7 +69,7 @@ const toJsxPropertyType = (tsType: string): string => {
 
     if (result.includes(".") || result.includes("<") || result.includes("(")) return result;
 
-    return `Gtk.${result}`;
+    return `${namespace}.${result}`;
 };
 
 const isListWidget = (widgetName: string): boolean => LIST_WIDGETS.has(widgetName);
@@ -123,58 +128,75 @@ const isWidgetSubclass = (
  * Creates TypeScript interfaces for props and augments React's JSX namespace.
  */
 export class JsxGenerator {
-    private classMap: Map<string, GirClass> = new Map();
     private interfaceMap: Map<string, GirInterface> = new Map();
-    private namespace = "";
-    private usedExternalNamespaces: Set<string> = new Set();
+    private usedNamespaces: Set<string> = new Set();
     private widgetPropertyNames: Set<string> = new Set();
     private widgetSignalNames: Set<string> = new Set();
+    private currentNamespace = "";
+    private widgetNamespaceMap: Map<string, string> = new Map();
 
     /**
      * Creates a new JSX generator.
      * @param typeMapper - TypeMapper for converting GIR types to TypeScript
+     * @param typeRegistry - TypeRegistry for cross-namespace type resolution
+     * @param classMap - Combined class map with fully qualified names
      * @param options - Generator configuration options
      */
     constructor(
         private typeMapper: TypeMapper,
+        private typeRegistry: TypeRegistry,
+        private classMap: Map<string, GirClass>,
         private options: JsxGeneratorOptions = {},
     ) {}
 
     /**
-     * Generates JSX type definitions for all widgets in a namespace.
-     * @param namespace - The parsed GIR namespace
-     * @param classMap - Map of class names to class definitions
+     * Generates JSX type definitions for all widgets in the given namespaces.
+     * @param namespaces - The parsed GIR namespaces (GTK must be first)
      * @returns Generated TypeScript code as public jsx.ts and internal.ts files
      */
-    async generate(namespace: GirNamespace, classMap: Map<string, GirClass>): Promise<JsxGeneratorResult> {
-        this.classMap = classMap;
-        this.interfaceMap = new Map(namespace.interfaces.map((iface) => [iface.name, iface]));
-        this.namespace = namespace.name;
-        this.usedExternalNamespaces.clear();
+    async generate(namespaces: GirNamespace[]): Promise<JsxGeneratorResult> {
+        for (const ns of namespaces) {
+            for (const iface of ns.interfaces) {
+                this.interfaceMap.set(iface.name, iface);
+                this.interfaceMap.set(`${ns.name}.${iface.name}`, iface);
+            }
+        }
 
-        const widgets = this.findWidgets(namespace, classMap);
-        const containerMetadata = this.buildContainerMetadata(widgets, classMap);
-        const widgetClass = classMap.get("Widget");
+        this.usedNamespaces.clear();
+        this.widgetNamespaceMap.clear();
+
+        const allWidgets: WidgetInfo[] = [];
+        for (const ns of namespaces) {
+            const widgets = this.findWidgets(ns);
+            for (const widget of widgets) {
+                allWidgets.push({ widget, namespace: ns.name });
+                this.widgetNamespaceMap.set(widget.name, ns.name);
+                this.widgetNamespaceMap.set(`${ns.name}.${widget.name}`, ns.name);
+            }
+        }
+
+        const containerMetadata = this.buildContainerMetadata(allWidgets);
+        const widgetClass = this.classMap.get("Widget") ?? this.classMap.get("Gtk.Widget");
 
         this.widgetPropertyNames = new Set(widgetClass?.properties.map((p) => toCamelCase(p.name)) ?? []);
         this.widgetSignalNames = new Set(widgetClass?.signals.map((s) => toCamelCase(s.name)) ?? []);
 
-        const widgetPropsInterfaces = this.generateWidgetPropsInterfaces(widgets, containerMetadata);
+        const widgetPropsInterfaces = this.generateWidgetPropsInterfaces(allWidgets, containerMetadata);
 
         const jsxSections = [
             this.generateImports(),
             this.generateCommonTypes(widgetClass),
             widgetPropsInterfaces,
-            this.generateExports(widgets, containerMetadata),
-            this.generateJsxNamespace(widgets, containerMetadata),
+            this.generateExports(allWidgets, containerMetadata),
+            this.generateJsxNamespace(allWidgets, containerMetadata),
             "export {};",
         ];
 
         const internalSections = [
             this.generateInternalImports(),
-            this.generateConstructorArgsMetadata(widgets),
-            this.generatePropSettersMap(widgets),
-            this.generateSetterGetterMap(widgets),
+            this.generateConstructorArgsMetadata(allWidgets),
+            this.generatePropSettersMap(allWidgets),
+            this.generateSetterGetterMap(allWidgets),
         ];
 
         return {
@@ -184,7 +206,9 @@ export class JsxGenerator {
     }
 
     private generateImports(): string {
-        const externalImports = [...this.usedExternalNamespaces]
+        this.usedNamespaces.add("Gtk");
+
+        const namespaceImports = [...this.usedNamespaces]
             .sort()
             .map((ns) => `import type * as ${ns} from "@gtkx/ffi/${ns.toLowerCase()}";`);
 
@@ -192,8 +216,7 @@ export class JsxGenerator {
             `import "react";`,
             `import { createElement } from "react";`,
             `import type { ReactNode, Ref } from "react";`,
-            ...externalImports,
-            `import type * as Gtk from "@gtkx/ffi/gtk";`,
+            ...namespaceImports,
             `import type { ColumnViewColumnProps, ColumnViewRootProps, GridChildProps, ListItemProps, ListViewRenderProps, MenuItemProps, MenuRootProps, MenuSectionProps, MenuSubmenuProps, NotebookPageProps, SlotProps, StackPageProps, StackRootProps } from "../types.js";`,
             "",
         ].join("\n");
@@ -204,6 +227,8 @@ export class JsxGenerator {
     }
 
     private generateCommonTypes(widgetClass: GirClass | undefined): string {
+        this.currentNamespace = "Gtk";
+        this.typeMapper.setTypeRegistry(this.typeRegistry, "Gtk");
         const widgetPropsContent = this.generateWidgetPropsContent(widgetClass);
 
         return `
@@ -225,7 +250,7 @@ ${widgetPropsContent}
         if (widgetClass) {
             for (const prop of widgetClass.properties) {
                 const propName = toCamelCase(prop.name);
-                const tsType = toJsxPropertyType(this.typeMapper.mapType(prop.type).ts);
+                const tsType = toJsxPropertyType(this.typeMapper.mapType(prop.type).ts, "Gtk");
 
                 if (prop.doc) {
                     lines.push(formatDoc(prop.doc, "\t").trimEnd());
@@ -251,41 +276,45 @@ ${widgetPropsContent}
         return lines.join("\n");
     }
 
-    private buildContainerMetadata(
-        widgets: GirClass[],
-        classMap: Map<string, GirClass>,
-    ): Map<string, ContainerMetadata> {
+    private buildContainerMetadata(widgets: WidgetInfo[]): Map<string, ContainerMetadata> {
         const metadata = new Map<string, ContainerMetadata>();
-        for (const widget of widgets) {
-            metadata.set(widget.name, this.analyzeContainerCapabilities(widget, classMap));
+        for (const { widget, namespace } of widgets) {
+            const key = `${namespace}.${widget.name}`;
+            metadata.set(key, this.analyzeContainerCapabilities(widget));
         }
         return metadata;
     }
 
-    private findWidgets(namespace: GirNamespace, classMap: Map<string, GirClass>): GirClass[] {
+    private findWidgets(namespace: GirNamespace): GirClass[] {
         const widgetCache = new Map<string, boolean>();
 
-        const checkIsWidget = (className: string): boolean => {
-            const cached = widgetCache.get(className);
+        const checkIsWidget = (className: string, ns: string): boolean => {
+            const cacheKey = `${ns}.${className}`;
+            const cached = widgetCache.get(cacheKey);
             if (cached !== undefined) return cached;
 
-            const cls = classMap.get(className);
-            if (!cls) {
-                widgetCache.set(className, false);
-                return false;
-            }
+            widgetCache.set(cacheKey, false);
+
+            const cls = this.classMap.get(cacheKey) ?? this.classMap.get(className);
+            if (!cls) return false;
 
             if (cls.name === "Widget") {
-                widgetCache.set(className, true);
+                widgetCache.set(cacheKey, true);
                 return true;
             }
 
-            const result = cls.parent ? checkIsWidget(cls.parent) : false;
-            widgetCache.set(className, result);
-            return result;
+            if (cls.parent) {
+                const parentNs = cls.parent.includes(".") ? cls.parent.split(".")[0] : ns;
+                const parentName = cls.parent.includes(".") ? cls.parent.split(".")[1] : cls.parent;
+                const result = checkIsWidget(parentName ?? "", parentNs ?? ns);
+                widgetCache.set(cacheKey, result);
+                return result;
+            }
+
+            return false;
         };
 
-        const widgets = namespace.classes.filter((cls) => checkIsWidget(cls.name));
+        const widgets = namespace.classes.filter((cls) => checkIsWidget(cls.name, namespace.name));
 
         return widgets.sort((a, b) => {
             if (a.name === "Widget") return -1;
@@ -296,7 +325,7 @@ ${widgetPropsContent}
         });
     }
 
-    private analyzeContainerCapabilities(widget: GirClass, classMap: Map<string, GirClass>): ContainerMetadata {
+    private analyzeContainerCapabilities(widget: GirClass): ContainerMetadata {
         const hasAppend = widget.methods.some((m) => m.name === "append");
         const hasSetChild = widget.methods.some((m) => m.name === "set_child");
 
@@ -304,7 +333,7 @@ ${widgetPropsContent}
             .filter((prop) => {
                 if (!prop.writable) return false;
                 const typeName = prop.type.name;
-                return typeName === "Gtk.Widget" || typeName === "Widget" || isWidgetSubclass(typeName, classMap);
+                return typeName === "Gtk.Widget" || typeName === "Widget" || isWidgetSubclass(typeName, this.classMap);
             })
             .map((prop) => ({
                 propertyName: prop.name,
@@ -319,25 +348,35 @@ ${widgetPropsContent}
     }
 
     private generateWidgetPropsInterfaces(
-        widgets: GirClass[],
+        widgets: WidgetInfo[],
         containerMetadata: Map<string, ContainerMetadata>,
     ): string {
         const sections: string[] = [];
 
-        for (const widget of widgets) {
+        for (const { widget, namespace } of widgets) {
             if (widget.name === "Widget") continue;
 
-            const metadata = containerMetadata.get(widget.name);
-            if (!metadata) throw new Error(`Missing container metadata for widget: ${widget.name}`);
+            const metadataKey = `${namespace}.${widget.name}`;
+            const metadata = containerMetadata.get(metadataKey);
+            if (!metadata) throw new Error(`Missing container metadata for widget: ${metadataKey}`);
 
+            this.currentNamespace = namespace;
+            this.usedNamespaces.add(namespace);
+            this.typeMapper.setTypeRegistry(this.typeRegistry, namespace);
             sections.push(this.generateWidgetProps(widget, metadata));
         }
 
         return sections.join("\n");
     }
 
+    private getWidgetExportName(widget: GirClass): string {
+        const baseName = toPascalCase(widget.name);
+        if (this.currentNamespace === "Gtk") return baseName;
+        return `${this.currentNamespace}${baseName}`;
+    }
+
     private generateWidgetProps(widget: GirClass, metadata: ContainerMetadata): string {
-        const widgetName = toPascalCase(widget.name);
+        const widgetName = this.getWidgetExportName(widget);
         const parentPropsName = this.getParentPropsName(widget);
         const namedChildPropNames = new Set(metadata.namedChildSlots.map((s) => toCamelCase(s.propertyName)));
 
@@ -387,7 +426,7 @@ ${widgetPropsContent}
             const propName = toCamelCase(prop.name);
             emittedProps.add(prop.name);
             const typeMapping = this.typeMapper.mapType(prop.type);
-            const tsType = toJsxPropertyType(typeMapping.ts);
+            const tsType = toJsxPropertyType(typeMapping.ts, this.currentNamespace);
             const isRequiredByProperty = prop.constructOnly && !prop.hasDefault;
             const isRequiredByConstructor = requiredCtorParams.has(prop.name);
             const isRequired = isRequiredByProperty || isRequiredByConstructor;
@@ -403,7 +442,7 @@ ${widgetPropsContent}
             const inheritedProp = this.findInheritedProperty(widget, paramName);
             if (inheritedProp) {
                 const typeMapping = this.typeMapper.mapType(inheritedProp.type);
-                const tsType = toJsxPropertyType(typeMapping.ts);
+                const tsType = toJsxPropertyType(typeMapping.ts, this.currentNamespace);
                 lines.push(`\t${propName}: ${tsType};`);
             }
         }
@@ -419,7 +458,7 @@ ${widgetPropsContent}
                 if (signal.doc) {
                     lines.push(formatDoc(signal.doc, "\t").trimEnd());
                 }
-                lines.push(`\t${this.generateSignalHandler(signal, widgetName)}`);
+                lines.push(`\t${this.generateSignalHandler(signal, widget.name)}`);
             }
         }
 
@@ -441,7 +480,8 @@ ${widgetPropsContent}
         }
 
         lines.push("");
-        lines.push(`\tref?: Ref<Gtk.${widgetName}>;`);
+        const ffiTypeName = toPascalCase(widget.name);
+        lines.push(`\tref?: Ref<${this.currentNamespace}.${ffiTypeName}>;`);
         lines.push(`}`);
 
         return `${lines.join("\n")}\n`;
@@ -450,9 +490,21 @@ ${widgetPropsContent}
     private getParentPropsName(widget: GirClass): string {
         if (widget.name === "Window") return "WidgetProps";
         if (widget.name === "ApplicationWindow") return "WindowProps";
-        if (widget.parent === "Widget") return "WidgetProps";
-        if (widget.parent === "Window") return "WindowProps";
-        return widget.parent ? `${toPascalCase(widget.parent)}Props` : "WidgetProps";
+
+        if (!widget.parent) return "WidgetProps";
+
+        const parentNs = widget.parent.includes(".") ? widget.parent.split(".")[0] : this.currentNamespace;
+        const parentName = widget.parent.includes(".") ? widget.parent.split(".")[1] : widget.parent;
+
+        if (parentName === "Widget") return "WidgetProps";
+        if (parentName === "Window") return "WindowProps";
+
+        const baseName = toPascalCase(parentName ?? "");
+        if (parentNs === "Gtk") {
+            return `${baseName}Props`;
+        }
+
+        return `${parentNs}${baseName}Props`;
     }
 
     private getRequiredConstructorParams(widget: GirClass): Set<string> {
@@ -482,14 +534,15 @@ ${widgetPropsContent}
         }));
     }
 
-    private generateConstructorArgsMetadata(widgets: GirClass[]): string {
+    private generateConstructorArgsMetadata(widgets: WidgetInfo[]): string {
         const entries: string[] = [];
 
-        for (const widget of widgets) {
+        for (const { widget, namespace } of widgets) {
             const params = this.getConstructorParams(widget);
             if (params.length === 0) continue;
 
-            const widgetName = toPascalCase(widget.name);
+            this.currentNamespace = namespace;
+            const widgetName = this.getWidgetExportName(widget);
             const paramStrs = params.map((p) => `{ name: "${p.name}", hasDefault: ${p.hasDefault} }`);
             entries.push(`\t${widgetName}: [${paramStrs.join(", ")}]`);
         }
@@ -501,10 +554,10 @@ ${widgetPropsContent}
         return `export const CONSTRUCTOR_PARAMS: Record<string, { name: string; hasDefault: boolean }[]> = {\n${entries.join(",\n")},\n};\n`;
     }
 
-    private generatePropSettersMap(widgets: GirClass[]): string {
+    private generatePropSettersMap(widgets: WidgetInfo[]): string {
         const widgetEntries: string[] = [];
 
-        for (const widget of widgets) {
+        for (const { widget, namespace } of widgets) {
             const propSetterPairs: string[] = [];
             const allProps = this.collectAllProperties(widget);
 
@@ -517,7 +570,8 @@ ${widgetPropsContent}
             }
 
             if (propSetterPairs.length > 0) {
-                const widgetName = toPascalCase(widget.name);
+                this.currentNamespace = namespace;
+                const widgetName = this.getWidgetExportName(widget);
                 widgetEntries.push(`\t${widgetName}: { ${propSetterPairs.join(", ")} }`);
             }
         }
@@ -529,10 +583,10 @@ ${widgetPropsContent}
         return `export const PROP_SETTERS: Record<string, Record<string, string>> = {\n${widgetEntries.join(",\n")},\n};\n`;
     }
 
-    private generateSetterGetterMap(widgets: GirClass[]): string {
+    private generateSetterGetterMap(widgets: WidgetInfo[]): string {
         const widgetEntries: string[] = [];
 
-        for (const widget of widgets) {
+        for (const { widget, namespace } of widgets) {
             const setterGetterPairs: string[] = [];
             const allProps = this.collectAllProperties(widget);
 
@@ -545,7 +599,8 @@ ${widgetPropsContent}
             }
 
             if (setterGetterPairs.length > 0) {
-                const widgetName = toPascalCase(widget.name);
+                this.currentNamespace = namespace;
+                const widgetName = this.getWidgetExportName(widget);
                 widgetEntries.push(`\t${widgetName}: { ${setterGetterPairs.join(", ")} }`);
             }
         }
@@ -636,19 +691,20 @@ ${widgetPropsContent}
 
         if (typeName.includes(".")) {
             const [ns, className] = typeName.split(".", 2);
-            if (ns === this.namespace && className && this.classMap.has(className)) {
-                return `Gtk.${toPascalCase(className)}`;
-            }
-            if (ns) {
-                this.usedExternalNamespaces.add(ns);
-                return typeName;
+            if (ns && className) {
+                const qualifiedName = `${ns}.${className}`;
+                if (this.classMap.has(qualifiedName)) {
+                    this.usedNamespaces.add(ns);
+                    return `${ns}.${toPascalCase(className)}`;
+                }
             }
             return undefined;
         }
 
         const normalizedName = toPascalCase(typeName);
-        if (this.classMap.has(typeName) || this.classMap.has(normalizedName)) {
-            return `Gtk.${normalizedName}`;
+        const qualifiedName = `${this.currentNamespace}.${normalizedName}`;
+        if (this.classMap.has(qualifiedName) || this.classMap.has(typeName) || this.classMap.has(normalizedName)) {
+            return `${this.currentNamespace}.${normalizedName}`;
         }
 
         return undefined;
@@ -658,11 +714,11 @@ ${widgetPropsContent}
         const primitives = new Set(["boolean", "number", "string", "void", "unknown", "null", "undefined"]);
         if (primitives.has(tsType)) return tsType;
         if (tsType.includes(".") || tsType.includes("<") || tsType.includes("(")) return tsType;
-        return `Gtk.${tsType}`;
+        return `${this.currentNamespace}.${tsType}`;
     }
 
     private buildSignalHandlerType(signal: GirSignal, widgetName: string): string {
-        const selfParam = `self: Gtk.${toPascalCase(widgetName)}`;
+        const selfParam = `self: ${this.currentNamespace}.${toPascalCase(widgetName)}`;
         const otherParams =
             signal.parameters
                 ?.map((p) => {
@@ -686,13 +742,15 @@ ${widgetPropsContent}
         return `(${params}) => ${returnType}`;
     }
 
-    private generateExports(widgets: GirClass[], containerMetadata: Map<string, ContainerMetadata>): string {
+    private generateExports(widgets: WidgetInfo[], containerMetadata: Map<string, ContainerMetadata>): string {
         const lines: string[] = [];
 
-        for (const widget of widgets) {
-            const widgetName = toPascalCase(widget.name);
-            const metadata = containerMetadata.get(widget.name);
-            if (!metadata) throw new Error(`Missing container metadata for widget: ${widget.name}`);
+        for (const { widget, namespace } of widgets) {
+            this.currentNamespace = namespace;
+            const widgetName = this.getWidgetExportName(widget);
+            const metadataKey = `${namespace}.${widget.name}`;
+            const metadata = containerMetadata.get(metadataKey);
+            if (!metadata) throw new Error(`Missing container metadata for widget: ${metadataKey}`);
 
             const nonChildSlots = metadata.namedChildSlots.filter((slot) => slot.slotName !== "Child");
             const hasMeaningfulSlots =
@@ -715,8 +773,8 @@ ${widgetPropsContent}
                     isStackWidget(widget.name) ||
                     isPopoverMenuWidget(widget.name)
                 ) {
-                    const wrapperComponents = this.generateGenericWrapperComponents(widget.name, metadata);
-                    const exportMembers = this.getWrapperExportMembers(widget.name, metadata);
+                    const wrapperComponents = this.generateGenericWrapperComponents(widgetName, metadata);
+                    const exportMembers = this.getWrapperExportMembers(widgetName, metadata);
 
                     if (docComment) {
                         lines.push(
@@ -928,16 +986,18 @@ export const Menu = {
         return lines.join("\n");
     }
 
-    private generateJsxNamespace(widgets: GirClass[], containerMetadata: Map<string, ContainerMetadata>): string {
+    private generateJsxNamespace(widgets: WidgetInfo[], containerMetadata: Map<string, ContainerMetadata>): string {
         const elements: string[] = [];
 
-        for (const widget of widgets) {
+        for (const { widget, namespace } of widgets) {
             if (widget.name === "Widget") continue;
 
-            const widgetName = toPascalCase(widget.name);
+            this.currentNamespace = namespace;
+            const widgetName = this.getWidgetExportName(widget);
             const propsName = `${widgetName}Props`;
-            const metadata = containerMetadata.get(widget.name);
-            if (!metadata) throw new Error(`Missing container metadata for widget: ${widget.name}`);
+            const metadataKey = `${namespace}.${widget.name}`;
+            const metadata = containerMetadata.get(metadataKey);
+            if (!metadata) throw new Error(`Missing container metadata for widget: ${metadataKey}`);
 
             const nonChildSlots = metadata.namedChildSlots.filter((slot) => slot.slotName !== "Child");
             const hasMeaningfulSlots =

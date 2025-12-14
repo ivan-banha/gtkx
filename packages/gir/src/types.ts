@@ -503,15 +503,28 @@ export class TypeRegistry {
 
     /**
      * Resolves a type name within a namespace context.
+     * First tries the current namespace, then searches all namespaces.
      * @param name - The type name (may or may not be qualified)
-     * @param currentNamespace - The namespace to use if name is not qualified
+     * @param currentNamespace - The namespace to try first if name is not qualified
      * @returns The registered type or undefined if not found
      */
     resolveInNamespace(name: string, currentNamespace: string): RegisteredType | undefined {
         if (name.includes(".")) {
             return this.resolve(name);
         }
-        return this.resolve(`${currentNamespace}.${name}`);
+
+        const inCurrent = this.resolve(`${currentNamespace}.${name}`);
+        if (inCurrent) {
+            return inCurrent;
+        }
+
+        for (const type of this.types.values()) {
+            if (type.name === name || type.transformedName === name) {
+                return type;
+            }
+        }
+
+        return undefined;
     }
 
     /**
@@ -843,6 +856,57 @@ export class TypeMapper {
         const basicType = BASIC_TYPE_MAP.get(girType.name);
         if (basicType) {
             return basicType;
+        }
+
+        if (this.typeRegistry && this.currentNamespace && !girType.name.includes(".")) {
+            const registered = this.typeRegistry.resolveInNamespace(girType.name, this.currentNamespace);
+            if (registered) {
+                const isExternal = registered.namespace !== this.currentNamespace;
+                const qualifiedName = isExternal
+                    ? `${registered.namespace}.${registered.transformedName}`
+                    : registered.transformedName;
+                const externalType: ExternalTypeUsage | undefined = isExternal
+                    ? {
+                          namespace: registered.namespace,
+                          name: registered.name,
+                          transformedName: registered.transformedName,
+                          kind: registered.kind,
+                      }
+                    : undefined;
+                if (isExternal) {
+                    this.onExternalTypeUsed?.(externalType as ExternalTypeUsage);
+                } else if (registered.kind === "class" || registered.kind === "interface") {
+                    this.onSameNamespaceClassUsed?.(registered.transformedName, registered.name);
+                }
+                if (registered.kind === "enum") {
+                    return {
+                        ts: qualifiedName,
+                        ffi: { type: "int", size: 32, unsigned: false },
+                        externalType,
+                    };
+                }
+                if (registered.kind === "record") {
+                    return {
+                        ts: qualifiedName,
+                        ffi: {
+                            type: "boxed",
+                            borrowed: isReturn,
+                            innerType: registered.glibTypeName ?? registered.transformedName,
+                        },
+                        externalType,
+                        kind: registered.kind,
+                    };
+                }
+                if (registered.kind === "callback") {
+                    return POINTER_TYPE;
+                }
+                return {
+                    ts: qualifiedName,
+                    ffi: { type: "gobject", borrowed: isReturn },
+                    externalType,
+                    kind: registered.kind,
+                };
+            }
         }
 
         if (this.enumNames.has(girType.name)) {

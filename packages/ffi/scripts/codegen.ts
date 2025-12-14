@@ -12,6 +12,7 @@ const systemGirsDir = "/usr/share/gir-1.0";
 const outputDir = resolve(__dirname, "../src/generated");
 
 const IMPORTANT_GIRS = new Set([
+    "Adw-1.gir",
     "GLib-2.0.gir",
     "GModule-2.0.gir",
     "GObject-2.0.gir",

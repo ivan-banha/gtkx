@@ -3,10 +3,11 @@ import type { Node } from "./node.js";
 import { AboutDialogNode } from "./nodes/about-dialog.js";
 import { ActionBarNode } from "./nodes/action-bar.js";
 import { ColumnViewColumnNode, ColumnViewItemNode, ColumnViewNode } from "./nodes/column-view.js";
+import { ComboRowNode } from "./nodes/combo-row.js";
 import { DropDownItemNode, DropDownNode } from "./nodes/dropdown.js";
 import { FlowBoxNode } from "./nodes/flow-box.js";
 import { GridChildNode, GridNode } from "./nodes/grid.js";
-import { AdwHeaderBarNode, HeaderBarNode } from "./nodes/header-bar.js";
+import { AdwHeaderBarNode, HeaderBarNode, PackEndNode, PackStartNode } from "./nodes/header-bar.js";
 import { ListItemNode, ListViewNode } from "./nodes/list.js";
 import { ListBoxNode } from "./nodes/list-box.js";
 import {
@@ -25,6 +26,7 @@ import { StackNode, StackPageNode } from "./nodes/stack.js";
 import { TextViewNode } from "./nodes/text-view.js";
 import { ToggleButtonNode } from "./nodes/toggle-button.js";
 import { ToolbarViewSlotNode } from "./nodes/toolbar-view.js";
+import { ViewStackNode } from "./nodes/view-stack.js";
 import { WidgetNode } from "./nodes/widget.js";
 import { WindowNode } from "./nodes/window.js";
 
@@ -52,6 +54,8 @@ const VIRTUAL_NODES = [
     MenuSectionNode,
     MenuSubmenuNode,
     ToolbarViewSlotNode,
+    PackStartNode,
+    PackEndNode,
     SlotNode,
 ] as NodeClass[];
 
@@ -70,12 +74,14 @@ const CONTAINER_NODES = [
     FlowBoxNode,
     ListBoxNode,
     DropDownNode,
+    ComboRowNode,
     GridNode,
     OverlayNode,
     ColumnViewNode,
     ListViewNode,
     NotebookNode,
     StackNode,
+    ViewStackNode,
     AdwHeaderBarNode,
     HeaderBarNode,
 ] as NodeClass[];

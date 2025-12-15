@@ -23,6 +23,7 @@ export type PageContainer = {
 
 /**
  * Props for Stack pages.
+ * Used by Gtk.Stack and Adw.ViewStack.
  */
 export type StackPageProps = {
     name?: string;
@@ -31,6 +32,7 @@ export type StackPageProps = {
     needsAttention?: boolean;
     visible?: boolean;
     useUnderline?: boolean;
+    badgeNumber?: number;
 };
 
 /**
@@ -89,3 +91,16 @@ export const isItemContainer = <T>(node: Node): node is Node & ItemContainer<T> 
 
 export const isColumnContainer = (node: Node): node is Node & ColumnContainer =>
     "addColumn" in node && "removeColumn" in node && "getSortFn" in node;
+
+/**
+ * Type for containers that support packStart/packEnd semantics.
+ * Used by HeaderBar, ActionBar.
+ */
+export type PackContainer = {
+    packStart(child: Gtk.Widget): void;
+    packEnd(child: Gtk.Widget): void;
+    removeFromPack(child: Gtk.Widget): void;
+};
+
+export const isPackContainer = (node: Node): node is Node & PackContainer =>
+    "packStart" in node && "packEnd" in node && "removeFromPack" in node;

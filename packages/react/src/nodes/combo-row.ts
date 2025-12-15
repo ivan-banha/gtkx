@@ -1,18 +1,19 @@
 import { getInterface } from "@gtkx/ffi";
+import type * as Adw from "@gtkx/ffi/adw";
 import * as Gio from "@gtkx/ffi/gio";
 import * as Gtk from "@gtkx/ffi/gtk";
-import { type ItemContainer, isItemContainer } from "../container-interfaces.js";
+import type { ItemContainer } from "../container-interfaces.js";
 import type { Props } from "../factory.js";
 import { Node } from "../node.js";
 
 type ItemLabelFn = (item: unknown) => string;
 
-interface DropDownState {
-    store: DropDownStore;
+type ComboRowState = {
+    store: ComboRowStore;
     onSelectionChanged?: (item: unknown, index: number) => void;
-}
+};
 
-class DropDownStore {
+class ComboRowStore {
     private stringList: Gtk.StringList;
     private items: unknown[] = [];
     private labelFn: ItemLabelFn;
@@ -44,20 +45,16 @@ class DropDownStore {
     getItem(index: number): unknown {
         return this.items[index];
     }
-
-    get length(): number {
-        return this.items.length;
-    }
 }
 
-export class DropDownNode extends Node<Gtk.DropDown, DropDownState> implements ItemContainer<unknown> {
+export class ComboRowNode extends Node<Adw.ComboRow, ComboRowState> implements ItemContainer<unknown> {
     static matches(type: string): boolean {
-        return type === "DropDown.Root";
+        return type === "AdwComboRow.Root";
     }
 
     override initialize(props: Props): void {
         const labelFn = (props.itemLabel as ItemLabelFn) ?? ((item: unknown) => String(item));
-        const store = new DropDownStore(labelFn);
+        const store = new ComboRowStore(labelFn);
         const onSelectionChanged = props.onSelectionChanged as ((item: unknown, index: number) => void) | undefined;
 
         this.state = { store, onSelectionChanged };
@@ -104,36 +101,5 @@ export class DropDownNode extends Node<Gtk.DropDown, DropDownState> implements I
         }
 
         super.updateProps(oldProps, newProps);
-    }
-}
-
-export class DropDownItemNode extends Node<never> {
-    static matches(type: string): boolean {
-        return type === "DropDown.Item" || type === "AdwComboRow.Item";
-    }
-
-    protected override isVirtual(): boolean {
-        return true;
-    }
-
-    private item: unknown;
-
-    override initialize(props: Props): void {
-        super.initialize(props);
-        this.item = props.item;
-    }
-
-    getItem() {
-        return this.item;
-    }
-
-    override attachToParent(parent: Node): void {
-        if (!isItemContainer(parent)) return;
-        parent.addItem(this.item);
-    }
-
-    override detachFromParent(parent: Node): void {
-        if (!isItemContainer(parent)) return;
-        parent.removeItem(this.item);
     }
 }

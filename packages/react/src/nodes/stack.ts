@@ -115,7 +115,7 @@ export class StackNode extends Node<Gtk.Stack> implements StackPageContainer, Ch
 
 export class StackPageNode extends Node {
     static matches(type: string): boolean {
-        return type === "Stack.Page";
+        return type === "Stack.Page" || type === "AdwViewStack.Page";
     }
 
     protected override isVirtual(): boolean {
@@ -139,6 +139,7 @@ export class StackPageNode extends Node {
             needsAttention: typeof props.needsAttention === "boolean" ? props.needsAttention : undefined,
             visible: typeof props.visible === "boolean" ? props.visible : undefined,
             useUnderline: typeof props.useUnderline === "boolean" ? props.useUnderline : undefined,
+            badgeNumber: typeof props.badgeNumber === "number" ? props.badgeNumber : undefined,
         };
     }
 
@@ -188,6 +189,7 @@ export class StackPageNode extends Node {
         consumed.add("needsAttention");
         consumed.add("visible");
         consumed.add("useUnderline");
+        consumed.add("badgeNumber");
         return consumed;
     }
 
@@ -199,7 +201,8 @@ export class StackPageNode extends Node {
             oldProps.iconName !== newProps.iconName ||
             oldProps.needsAttention !== newProps.needsAttention ||
             oldProps.visible !== newProps.visible ||
-            oldProps.useUnderline !== newProps.useUnderline;
+            oldProps.useUnderline !== newProps.useUnderline ||
+            oldProps.badgeNumber !== newProps.badgeNumber;
 
         if (propsChanged) {
             this.pageProps = newPageProps;

@@ -4,6 +4,7 @@ import * as Gtk from "@gtkx/ffi/gtk";
 import * as GtkSource from "@gtkx/ffi/gtksource";
 import * as Vte from "@gtkx/ffi/vte";
 import * as WebKit from "@gtkx/ffi/webkit";
+import { isChildContainer } from "./container-interfaces.js";
 import type { Props, ROOT_NODE_CONTAINER } from "./factory.js";
 import { CONSTRUCTOR_PARAMS, PROP_SETTERS, SETTER_GETTERS } from "./generated/internal.js";
 import { isAddable, isAppendable, isRemovable, isSingleChild } from "./predicates.js";
@@ -113,6 +114,12 @@ export abstract class Node<
     }
 
     attachToParent(parent: Node): void {
+        if (isChildContainer(parent)) {
+            const widget = this.getWidget();
+            if (widget) parent.attachChild(widget);
+            return;
+        }
+
         const parentWidget = parent.getWidget();
         const widget = this.getWidget();
 
@@ -128,6 +135,12 @@ export abstract class Node<
     }
 
     detachFromParent(parent: Node): void {
+        if (isChildContainer(parent)) {
+            const widget = this.getWidget();
+            if (widget) parent.detachChild(widget);
+            return;
+        }
+
         const parentWidget = parent.getWidget();
         const widget = this.getWidget();
 
@@ -141,6 +154,21 @@ export abstract class Node<
     }
 
     attachToParentBefore(parent: Node, before: Node): void {
+        if (isChildContainer(parent)) {
+            const widget = this.getWidget();
+            const beforeWidget = before.getWidget();
+
+            if (widget) {
+                if (beforeWidget) {
+                    parent.insertChildBefore(widget, beforeWidget);
+                } else {
+                    parent.attachChild(widget);
+                }
+            }
+
+            return;
+        }
+
         const parentWidget = parent.getWidget();
         const widget = this.getWidget();
         const beforeWidget = before.getWidget();

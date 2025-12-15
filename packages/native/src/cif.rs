@@ -17,7 +17,7 @@ use neon::prelude::*;
 
 use crate::{
     arg::{self, Arg},
-    callback, ffi,
+    callback, gtk_dispatch, js_dispatch,
     types::*,
     value,
 };
@@ -113,7 +113,7 @@ where
         match rx.try_recv() {
             Ok(result) => return on_result(result),
             Err(std::sync::mpsc::TryRecvError::Empty) => {
-                ffi::dispatch_pending();
+                gtk_dispatch::dispatch_pending();
                 std::thread::yield_now();
             }
             Err(std::sync::mpsc::TryRecvError::Disconnected) => {
@@ -134,11 +134,13 @@ fn invoke_and_wait_for_js_result<T, F>(
 where
     F: FnOnce(Result<value::Value, ()>) -> T,
 {
-    ffi::set_in_signal_handler(true);
-    let rx = invoke_js_callback(channel, callback, args_values, capture_result);
-    let result = wait_for_js_result(rx, error_message, on_result);
-    ffi::set_in_signal_handler(false);
-    result
+    let rx = if gtk_dispatch::is_js_waiting() {
+        js_dispatch::queue(callback.clone(), args_values, capture_result)
+    } else {
+        js_dispatch::send_via_channel(channel, callback.clone(), args_values, capture_result)
+    };
+
+    wait_for_js_result(rx, error_message, on_result)
 }
 
 /// Transfers ownership of a closure to C, returning a raw pointer.
@@ -158,8 +160,7 @@ fn closure_to_glib_full(closure: &glib::Closure) -> *mut c_void {
 /// The closure's existing reference becomes GTK's responsibility to unref.
 fn closure_to_glib_none(closure: &glib::Closure) -> *mut c_void {
     use glib::translate::ToGlibPtr;
-    let stash: glib::translate::Stash<*mut glib::gobject_ffi::GClosure, _> =
-        closure.to_glib_none();
+    let stash: glib::translate::Stash<*mut glib::gobject_ffi::GClosure, _> = closure.to_glib_none();
     stash.0 as *mut c_void
 }
 
@@ -172,41 +173,6 @@ fn convert_glib_args(args: &[glib::Value], arg_types: &Option<Vec<Type>>) -> Vec
             .collect(),
         None => args.iter().map(Into::into).collect(),
     }
-}
-
-fn invoke_js_callback(
-    channel: &Channel,
-    callback: &Arc<Root<JsFunction>>,
-    args_values: Vec<value::Value>,
-    capture_result: bool,
-) -> std::sync::mpsc::Receiver<Result<value::Value, ()>> {
-    let (tx, rx) = std::sync::mpsc::channel();
-    let callback = callback.clone();
-
-    channel.send(move |mut cx| {
-        let result = (|| {
-            let js_args: Vec<Handle<JsValue>> = args_values
-                .into_iter()
-                .map(|v| v.to_js_value(&mut cx))
-                .collect::<NeonResult<Vec<Handle<JsValue>>>>()?;
-
-            let js_this = cx.undefined();
-            let js_callback = callback.to_inner(&mut cx);
-
-            if capture_result {
-                let js_result = js_callback.call(&mut cx, js_this, js_args)?;
-                value::Value::from_js_value(&mut cx, js_result)
-            } else {
-                js_callback.call(&mut cx, js_this, js_args)?;
-                Ok(value::Value::Undefined)
-            }
-        })();
-
-        let _ = tx.send(result.map_err(|_| ()));
-        Ok(())
-    });
-
-    rx
 }
 
 impl TryFrom<arg::Arg> for Value {
@@ -510,7 +476,7 @@ impl Value {
     }
 
     fn try_from_callback(arg: &arg::Arg, type_: &CallbackType) -> anyhow::Result<Value> {
-        let callback = match &arg.value {
+        let cb = match &arg.value {
             value::Value::Callback(callback) => callback,
             value::Value::Null | value::Value::Undefined if arg.optional => {
                 return Ok(Value::Ptr(std::ptr::null_mut()));
@@ -518,8 +484,8 @@ impl Value {
             _ => bail!("Expected a Callback for callback type, got {:?}", arg.value),
         };
 
-        let channel = callback.channel.clone();
-        let callback = callback.js_func.clone();
+        let channel = cb.channel.clone();
+        let callback = cb.js_func.clone();
 
         match type_.trampoline {
             CallbackTrampoline::Closure => {

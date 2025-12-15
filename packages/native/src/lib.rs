@@ -8,12 +8,12 @@ mod arg;
 mod boxed;
 mod callback;
 mod cif;
-mod ffi;
+mod gtk_dispatch;
+mod js_dispatch;
 mod module;
 mod object;
 mod state;
 mod types;
-mod uv;
 mod value;
 
 use neon::prelude::*;

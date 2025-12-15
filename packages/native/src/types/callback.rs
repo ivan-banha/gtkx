@@ -6,12 +6,12 @@ use std::sync::Arc;
 /// A JavaScript function that can be called from native code.
 ///
 /// Holds a rooted reference to the JavaScript function and a channel for
-/// dispatching calls back to the JavaScript thread.
+/// dispatching calls back to the JavaScript thread when not in a re-entrant call.
 #[derive(Debug, Clone)]
 pub struct Callback {
     /// Rooted reference to the JavaScript function.
     pub js_func: Arc<Root<JsFunction>>,
-    /// Channel for sending calls to the JavaScript thread.
+    /// Channel for sending calls to the JavaScript thread (used in normal path).
     pub channel: Channel,
 }
 

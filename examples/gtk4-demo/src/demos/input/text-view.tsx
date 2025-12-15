@@ -1,3 +1,4 @@
+import { beginBatch, endBatch } from "@gtkx/ffi";
 import * as GObject from "@gtkx/ffi/gobject";
 import * as Gtk from "@gtkx/ffi/gtk";
 import { Box, Frame, Label, ScrolledWindow, TextView } from "@gtkx/react";
@@ -6,11 +7,14 @@ import { getSourcePath } from "../source-path.js";
 import type { Demo } from "../types.js";
 
 const getBufferText = (buffer: Gtk.TextBuffer): string => {
+    beginBatch();
     const startIter = new Gtk.TextIter();
     const endIter = new Gtk.TextIter();
     buffer.getStartIter(startIter);
     buffer.getEndIter(endIter);
-    return buffer.getText(startIter, endIter, true);
+    endBatch();
+    const text = buffer.getText(startIter, endIter, true);
+    return text;
 };
 
 const TextViewDemo = () => {

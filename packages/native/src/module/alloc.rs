@@ -7,7 +7,7 @@ use neon::prelude::*;
 
 use crate::{
     boxed::Boxed,
-    ffi,
+    gtk_dispatch,
     object::{Object, ObjectId},
     types::BoxedType,
 };
@@ -27,7 +27,7 @@ pub fn alloc(mut cx: FunctionContext) -> JsResult<JsValue> {
 
     let (tx, rx) = mpsc::channel::<anyhow::Result<ObjectId>>();
 
-    ffi::schedule(move || {
+    gtk_dispatch::schedule(move || {
         let _ = tx.send(handle_alloc(size, &type_name, lib_name.as_deref()));
     });
 

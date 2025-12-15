@@ -1,13 +1,14 @@
 import { type Arg, batchCall, type CallDescriptor, call as nativeCall, type Type } from "@gtkx/native";
 
-let batchQueue: CallDescriptor[] | null = null;
+const batchStack: CallDescriptor[][] = [];
 
 /**
  * Begins batching mode for FFI calls.
+ * Batching is nestable - each beginBatch pushes a new queue onto the stack.
  * While in batch mode, void calls are queued instead of executed immediately.
  */
 export const beginBatch = (): void => {
-    batchQueue = [];
+    batchStack.push([]);
 };
 
 /**
@@ -15,20 +16,17 @@ export const beginBatch = (): void => {
  * @returns true if batching is active, false otherwise
  */
 export const isBatching = (): boolean => {
-    return batchQueue !== null;
+    return batchStack.length > 0;
 };
 
 /**
- * Executes all queued FFI calls in a single native dispatch and ends batching mode.
- * The queue is cleared before execution so that any calls made during
- * signal handlers (which fire during batch processing) execute immediately
- * rather than being queued and lost.
+ * Ends the current batch level and executes its queued FFI calls.
+ * If nested inside another batch, the calls are executed immediately
+ * rather than being merged into the parent batch.
  */
 export const endBatch = (): void => {
-    if (!batchQueue) return;
-
-    const queue = batchQueue;
-    batchQueue = null;
+    const queue = batchStack.pop();
+    if (!queue) return;
 
     if (queue.length > 0) {
         batchCall(queue);
@@ -46,8 +44,10 @@ export const endBatch = (): void => {
  * @returns The return value from the native function
  */
 export const call = (library: string, symbol: string, args: Arg[], returnType: Type): unknown => {
-    if (batchQueue !== null && returnType.type === "undefined") {
-        batchQueue.push({ library, symbol, args });
+    const currentQueue = batchStack[batchStack.length - 1];
+
+    if (currentQueue && returnType.type === "undefined") {
+        currentQueue.push({ library, symbol, args });
         return undefined;
     }
 

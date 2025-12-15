@@ -12,10 +12,9 @@ use neon::prelude::*;
 
 use crate::{
     arg::Arg,
-    cif, ffi,
+    cif, gtk_dispatch, js_dispatch,
     state::GtkThreadState,
     types::{CallbackTrampoline, FloatSize, IntegerSign, IntegerSize, Type},
-    uv,
     value::Value,
 };
 
@@ -25,6 +24,39 @@ struct BatchCallDescriptor {
     library_name: String,
     symbol_name: String,
     args: Vec<Arg>,
+}
+
+/// Waits for a result from the GTK thread while processing JS dispatches.
+///
+/// This spins on the receiver, processing any pending JS dispatches using the
+/// provided context. This enables synchronous callback invocation from GTK
+/// signal handlers during re-entrant calls.
+///
+/// Increments the wait depth counter so that signal handlers know to use the
+/// synchronous queue path instead of the Neon channel. Supports nested calls.
+fn wait_for_result<'a, T, C: Context<'a>>(
+    cx: &mut C,
+    rx: &mpsc::Receiver<T>,
+    error_message: &str,
+) -> T {
+    gtk_dispatch::enter_js_wait();
+
+    let result = loop {
+        js_dispatch::process_pending(cx);
+
+        match rx.try_recv() {
+            Ok(result) => break result,
+            Err(mpsc::TryRecvError::Empty) => {
+                std::thread::yield_now();
+            }
+            Err(mpsc::TryRecvError::Disconnected) => {
+                panic!("Channel disconnected: {}", error_message);
+            }
+        }
+    };
+
+    gtk_dispatch::exit_js_wait();
+    result
 }
 
 /// Calls a native function via FFI.
@@ -43,12 +75,12 @@ pub fn call(mut cx: FunctionContext) -> JsResult<JsValue> {
 
     let (tx, rx) = mpsc::channel::<anyhow::Result<(Value, Vec<RefUpdate>)>>();
 
-    ffi::schedule(move || {
+    gtk_dispatch::schedule(move || {
         let _ = tx.send(handle_call(library_name, symbol_name, args, result_type));
     });
 
-    let (value, ref_updates) = uv::wait_for_result(
-        uv::get_event_loop(&cx),
+    let (value, ref_updates) = wait_for_result(
+        &mut cx,
         &rx,
         "GTK thread disconnected while waiting for call result",
     )
@@ -248,13 +280,13 @@ pub fn batch_call(mut cx: FunctionContext) -> JsResult<JsUndefined> {
 
     let (tx, rx) = mpsc::channel::<anyhow::Result<()>>();
 
-    ffi::schedule(move || {
+    gtk_dispatch::schedule(move || {
         let result = handle_batch_calls(descriptors);
         let _ = tx.send(result);
     });
 
-    uv::wait_for_result(
-        uv::get_event_loop(&cx),
+    wait_for_result(
+        &mut cx,
         &rx,
         "GTK thread disconnected while waiting for batch call result",
     )

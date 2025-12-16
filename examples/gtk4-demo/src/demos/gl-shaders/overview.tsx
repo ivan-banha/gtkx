@@ -20,7 +20,10 @@ const GlShadersOverviewDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Available Components" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="• GtkGLArea - OpenGL rendering widget with render signal\n• GskGLShader - GLSL fragment shader compilation\n• GskShaderNode - Shader-based render nodes\n• GdkGLContext - OpenGL context management"
+                    label={`• GtkGLArea - OpenGL rendering widget with render signal
+• GskGLShader - GLSL fragment shader compilation
+• GskShaderNode - Shader-based render nodes
+• GdkGLContext - OpenGL context management`}
                     wrap
                     cssClasses={["dim-label"]}
                 />
@@ -29,7 +32,11 @@ const GlShadersOverviewDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Shader Capabilities" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="• Custom GLSL fragment shaders\n• Up to 4 texture inputs\n• Uniform variable support\n• Automatic GPU acceleration\n• Integration with GTK's render pipeline"
+                    label={`• Custom GLSL fragment shaders
+• Up to 4 texture inputs
+• Uniform variable support
+• Automatic GPU acceleration
+• Integration with GTK's render pipeline`}
                     wrap
                     cssClasses={["dim-label"]}
                 />
@@ -38,7 +45,11 @@ const GlShadersOverviewDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Use Cases" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="• Custom visual effects (blur, glow, distortion)\n• Real-time graphics applications\n• 3D rendering and visualization\n• Game graphics\n• Image processing filters"
+                    label={`• Custom visual effects (blur, glow, distortion)
+• Real-time graphics applications
+• 3D rendering and visualization
+• Game graphics
+• Image processing filters`}
                     wrap
                     cssClasses={["dim-label"]}
                 />

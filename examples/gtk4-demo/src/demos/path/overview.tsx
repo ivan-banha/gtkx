@@ -20,7 +20,13 @@ const PathOverviewDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Path Building" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="GskPathBuilder provides methods for constructing paths:\n• moveTo(x, y) - Start a new contour\n• lineTo(x, y) - Draw straight lines\n• curveTo() - Cubic Bezier curves\n• quadTo() - Quadratic Bezier curves\n• arcTo() - Circular and elliptical arcs\n• close() - Close the current contour"
+                    label={`GskPathBuilder provides methods for constructing paths:
+• moveTo(x, y) - Start a new contour
+• lineTo(x, y) - Draw straight lines
+• curveTo() - Cubic Bezier curves
+• quadTo() - Quadratic Bezier curves
+• arcTo() - Circular and elliptical arcs
+• close() - Close the current contour`}
                     wrap
                     cssClasses={["dim-label"]}
                 />
@@ -29,7 +35,11 @@ const PathOverviewDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Predefined Shapes" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="• addRect() - Rectangles\n• addCircle() - Circles\n• addRoundedRect() - Rounded rectangles\n• addPath() - Combine paths\n• addLayout() - Text paths from Pango"
+                    label={`• addRect() - Rectangles
+• addCircle() - Circles
+• addRoundedRect() - Rounded rectangles
+• addPath() - Combine paths
+• addLayout() - Text paths from Pango`}
                     wrap
                     cssClasses={["dim-label"]}
                 />
@@ -38,7 +48,10 @@ const PathOverviewDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Path Operations" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="• GskPathMeasure - Path length and sampling\n• GskPathPoint - Points on paths\n• Path parsing from SVG path strings\n• Stroke and fill operations via GskStroke"
+                    label={`• GskPathMeasure - Path length and sampling
+• GskPathPoint - Points on paths
+• Path parsing from SVG path strings
+• Stroke and fill operations via GskStroke`}
                     wrap
                     cssClasses={["dim-label"]}
                 />

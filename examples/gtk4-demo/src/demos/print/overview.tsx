@@ -20,7 +20,10 @@ const PrintOverviewDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Print Components" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="• GtkPrintOperation - Main print job controller\n• GtkPrintContext - Provides Cairo context for page rendering\n• GtkPageSetup - Page size, margins, and orientation\n• GtkPrintSettings - Printer preferences and options"
+                    label={`• GtkPrintOperation - Main print job controller
+• GtkPrintContext - Provides Cairo context for page rendering
+• GtkPageSetup - Page size, margins, and orientation
+• GtkPrintSettings - Printer preferences and options`}
                     wrap
                     cssClasses={["dim-label"]}
                 />
@@ -29,7 +32,10 @@ const PrintOverviewDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Print Signals" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="• begin-print - Called before printing starts\n• draw-page - Render each page with Cairo\n• end-print - Called after all pages are printed\n• done - Print job completion status"
+                    label={`• begin-print - Called before printing starts
+• draw-page - Render each page with Cairo
+• end-print - Called after all pages are printed
+• done - Print job completion status`}
                     wrap
                     cssClasses={["dim-label"]}
                 />
@@ -38,7 +44,12 @@ const PrintOverviewDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Features" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="• Native system print dialog\n• Print to file (PDF export)\n• Page setup dialog\n• Print preview support\n• Asynchronous printing\n• Progress indication"
+                    label={`• Native system print dialog
+• Print to file (PDF export)
+• Page setup dialog
+• Print preview support
+• Asynchronous printing
+• Progress indication`}
                     wrap
                     cssClasses={["dim-label"]}
                 />

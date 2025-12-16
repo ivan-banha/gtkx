@@ -129,7 +129,12 @@ const PrintDialogDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Features" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="- Native print dialog integration\n- Page setup configuration\n- Print preview support\n- PDF export capability\n- Multiple pages support\n- Print settings persistence"
+                    label={`- Native print dialog integration
+- Page setup configuration
+- Print preview support
+- PDF export capability
+- Multiple pages support
+- Print settings persistence`}
                     wrap
                     cssClasses={["dim-label"]}
                 />

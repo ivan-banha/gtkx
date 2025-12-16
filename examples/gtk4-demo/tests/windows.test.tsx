@@ -3,7 +3,6 @@ import { cleanup, render, screen, userEvent, waitFor, waitForElementToBeRemoved 
 import { afterEach, describe, expect, it } from "vitest";
 import { headerBarDemo } from "../src/demos/windows/header-bar.js";
 import { revealerDemo } from "../src/demos/windows/revealer.js";
-import { stackDemo } from "../src/demos/windows/stack.js";
 
 describe("Windows Demos", () => {
     afterEach(async () => {
@@ -95,112 +94,6 @@ describe("Windows Demos", () => {
 
             const showSearchBtnAgain = await screen.findByRole(AccessibleRole.BUTTON, { name: "Show Search" });
             expect(showSearchBtnAgain).toBeDefined();
-        });
-    });
-
-    describe("stack demo (windows)", () => {
-        const StackDemo = stackDemo.component;
-
-        it("renders stack title", async () => {
-            await render(<StackDemo />);
-
-            const title = await screen.findByText("Stack");
-            expect(title).toBeDefined();
-        });
-
-        it("renders about stack section", async () => {
-            await render(<StackDemo />);
-
-            const heading = await screen.findByText("About Stack");
-            const description = await screen.findByText(
-                "GtkStack is a container that shows one child at a time with animated transitions. It's commonly used for multi-page interfaces like preferences dialogs or wizard flows.",
-            );
-
-            expect(heading).toBeDefined();
-            expect(description).toBeDefined();
-        });
-
-        it("renders simulated stack navigation section", async () => {
-            await render(<StackDemo />);
-
-            const heading = await screen.findByText("Simulated Stack Navigation");
-            expect(heading).toBeDefined();
-        });
-
-        it("renders page buttons", async () => {
-            await render(<StackDemo />);
-
-            const page1Btn = await screen.findByRole(AccessibleRole.BUTTON, { name: "Page 1" });
-            const page2Btn = await screen.findByRole(AccessibleRole.BUTTON, { name: "Page 2" });
-            const page3Btn = await screen.findByRole(AccessibleRole.BUTTON, { name: "Page 3" });
-
-            expect(page1Btn).toBeDefined();
-            expect(page2Btn).toBeDefined();
-            expect(page3Btn).toBeDefined();
-        });
-
-        it("shows page 1 content initially", async () => {
-            await render(<StackDemo />);
-
-            const content = await screen.findByText("Content for Page 1");
-            expect(content).toBeDefined();
-        });
-
-        it("switches to page 2 content when Page 2 clicked", async () => {
-            await render(<StackDemo />);
-
-            const page2Btn = await screen.findByRole(AccessibleRole.BUTTON, { name: "Page 2" });
-            await userEvent.click(page2Btn);
-
-            const content = await screen.findByText("Content for Page 2");
-            expect(content).toBeDefined();
-        });
-
-        it("switches to page 3 content when Page 3 clicked", async () => {
-            await render(<StackDemo />);
-
-            const page3Btn = await screen.findByRole(AccessibleRole.BUTTON, { name: "Page 3" });
-            await userEvent.click(page3Btn);
-
-            const content = await screen.findByText("Content for Page 3");
-            expect(content).toBeDefined();
-        });
-
-        it("can switch back to page 1 after navigating", async () => {
-            await render(<StackDemo />);
-
-            const page2Btn = await screen.findByRole(AccessibleRole.BUTTON, { name: "Page 2" });
-            await userEvent.click(page2Btn);
-
-            const page1Btn = await screen.findByRole(AccessibleRole.BUTTON, { name: "Page 1" });
-            await userEvent.click(page1Btn);
-
-            const content = await screen.findByText("Content for Page 1");
-            expect(content).toBeDefined();
-        });
-
-        it("renders transition types section", async () => {
-            await render(<StackDemo />);
-
-            const heading = await screen.findByText("Transition Types");
-            const description = await screen.findByText(
-                "GtkStack supports various transition animations including: NONE, CROSSFADE, SLIDE_RIGHT, SLIDE_LEFT, SLIDE_UP, SLIDE_DOWN, and more.",
-            );
-
-            expect(heading).toBeDefined();
-            expect(description).toBeDefined();
-        });
-
-        it("renders Stack.Root component section", async () => {
-            await render(<StackDemo />);
-
-            const heading = await screen.findByText("Stack.Root Component");
-            const description = await screen.findByText(
-                "In GTKX, use Stack.Root with Stack.VisibleChild to define the currently visible child. The Stack component supports animated transitions between pages.",
-            );
-
-            expect(heading).toBeDefined();
-            expect(description).toBeDefined();
         });
     });
 

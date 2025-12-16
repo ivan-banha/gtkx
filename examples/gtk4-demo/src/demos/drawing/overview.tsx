@@ -20,7 +20,10 @@ const DrawingOverviewDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Drawing APIs" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="• Cairo - 2D vector graphics (lines, curves, text, images)\n• GtkSnapshot - Modern GPU-accelerated rendering\n• GtkDrawingArea - Canvas widget with setDrawFunc callback\n• GskPath - Vector path construction and rendering"
+                    label={`• Cairo - 2D vector graphics (lines, curves, text, images)
+• GtkSnapshot - Modern GPU-accelerated rendering
+• GtkDrawingArea - Canvas widget with setDrawFunc callback
+• GskPath - Vector path construction and rendering`}
                     wrap
                     cssClasses={["dim-label"]}
                 />
@@ -29,7 +32,11 @@ const DrawingOverviewDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Cairo Operations" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="• Path construction (moveTo, lineTo, curveTo, arc)\n• Stroke and fill with colors/patterns\n• Text rendering with Pango integration\n• Transformations (translate, scale, rotate)\n• Clipping and masking"
+                    label={`• Path construction (moveTo, lineTo, curveTo, arc)
+• Stroke and fill with colors/patterns
+• Text rendering with Pango integration
+• Transformations (translate, scale, rotate)
+• Clipping and masking`}
                     wrap
                     cssClasses={["dim-label"]}
                 />
@@ -47,7 +54,11 @@ const DrawingOverviewDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Alternative Approaches" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="For many use cases, you can achieve great visuals using:\n• CSS-in-JS with @gtkx/css for gradients and shadows\n• Image widgets for static graphics\n• Combining standard widgets creatively\n• Games can use Grid layouts with styled Buttons"
+                    label={`For many use cases, you can achieve great visuals using:
+• CSS-in-JS with @gtkx/css for gradients and shadows
+• Image widgets for static graphics
+• Combining standard widgets creatively
+• Games can use Grid layouts with styled Buttons`}
                     wrap
                     cssClasses={["dim-label"]}
                 />

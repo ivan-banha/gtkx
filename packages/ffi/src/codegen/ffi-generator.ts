@@ -864,19 +864,30 @@ ${args ? `${args},` : ""}
         const ctorDoc = formatMethodDoc(ctor.doc, ctor.parameters);
         const borrowed = ctor.returnType.transferOwnership !== "full";
 
+        const errorArg = ctor.throws ? this.generateErrorArgument() : "";
+        const allArgs = errorArg ? args + (args ? ",\n" : "") + errorArg : args;
+
         this.usesGetObject = true;
-        return `${ctorDoc}  static ${methodName}(${params}): ${className} {
-    const ptr = call(
+
+        const lines: string[] = [];
+        lines.push(`${ctorDoc}  static ${methodName}(${params}): ${className} {`);
+        if (ctor.throws) {
+            lines.push(`    const error = { value: null as unknown };`);
+        }
+        lines.push(`    const ptr = call(
       "${sharedLibrary}",
       "${ctor.cIdentifier}",
       [
-${args}
+${allArgs}
       ],
       { type: "gobject", borrowed: ${borrowed} }
-    );
-    return getObject(ptr) as ${className};
-  }
-`;
+    );`);
+        if (ctor.throws) {
+            lines.push(this.generateErrorCheck());
+        }
+        lines.push(`    return getObject(ptr) as ${className};`);
+        lines.push(`  }`);
+        return `${lines.join("\n")}\n`;
     }
 
     private generateStaticFunctions(functions: GirFunction[], sharedLibrary: string, className: string): string {

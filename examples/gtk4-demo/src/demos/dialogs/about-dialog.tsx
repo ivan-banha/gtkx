@@ -1,11 +1,15 @@
+import * as Gdk from "@gtkx/ffi/gdk";
 import * as Gtk from "@gtkx/ffi/gtk";
 import { AboutDialog, Box, Button, createPortal, Label } from "@gtkx/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { getSourcePath } from "../source-path.js";
 import type { Demo } from "../types.js";
 
+const LOGO_PATH = new URL("../../../../../logo.svg", import.meta.url).pathname;
+
 const AboutDialogDemo = () => {
     const [showDialog, setShowDialog] = useState(false);
+    const logo = useMemo(() => Gdk.Texture.newFromFilename(LOGO_PATH), []);
 
     return (
         <Box orientation={Gtk.Orientation.VERTICAL} spacing={20} marginStart={20} marginEnd={20} marginTop={20}>
@@ -28,7 +32,12 @@ const AboutDialogDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Features" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="- Program name and version\n- Application description\n- Website link\n- Copyright notice\n- License type\n- Credits (authors, artists, documenters)"
+                    label={`- Program name and version
+- Application description
+- Website link
+- Copyright notice
+- License type
+- Credits (authors, artists, documenters)`}
                     wrap
                     cssClasses={["dim-label"]}
                 />
@@ -47,6 +56,7 @@ const AboutDialogDemo = () => {
                         authors={["Developer One", "Developer Two"]}
                         artists={["Artist One"]}
                         documenters={["Documenter One"]}
+                        logo={logo}
                         modal
                         onCloseRequest={() => {
                             setShowDialog(false);

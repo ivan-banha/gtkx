@@ -20,7 +20,8 @@ const GamesPlaceholderDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Available Demos" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="• 15 Puzzle - Classic sliding tile puzzle game\n• Memory Game - Card matching memory challenge"
+                    label={`• 15 Puzzle - Classic sliding tile puzzle game
+• Memory Game - Card matching memory challenge`}
                     wrap
                     cssClasses={["dim-label"]}
                 />
@@ -29,7 +30,11 @@ const GamesPlaceholderDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Key Techniques" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="- React useState for game state management\n- Box layout with homogeneous prop for tile grids\n- CSS-in-JS for dynamic styling\n- useCallback for optimized event handlers\n- useEffect for game logic side effects"
+                    label={`- React useState for game state management
+- Box layout with homogeneous prop for tile grids
+- CSS-in-JS for dynamic styling
+- useCallback for optimized event handlers
+- useEffect for game logic side effects`}
                     wrap
                     cssClasses={["dim-label"]}
                 />

@@ -810,12 +810,22 @@ impl Value {
                 Ok(Value::Boolean(boolean))
             }
             Type::GObject(_) => {
-                let obj = gvalue
-                    .get::<Option<glib::Object>>()
-                    .map_err(|e| anyhow::anyhow!("Failed to get GObject from GValue: {}", e))?;
-                Ok(obj.map_or(Value::Null, |obj| {
-                    Value::Object(ObjectId::new(Object::GObject(obj)))
-                }))
+                let obj_ptr = unsafe {
+                    glib::gobject_ffi::g_value_get_object(gvalue.to_glib_none().0 as *const _)
+                };
+
+                if obj_ptr.is_null() {
+                    return Ok(Value::Null);
+                }
+
+                let type_class = unsafe { (*obj_ptr).g_type_instance.g_class };
+                if type_class.is_null() {
+                    bail!("GObject has invalid type class (object may have been freed)");
+                }
+
+                let obj = unsafe { glib::Object::from_glib_none(obj_ptr) };
+
+                Ok(Value::Object(ObjectId::new(Object::GObject(obj))))
             }
             Type::Boxed(boxed_type) => {
                 let gvalue_type = gvalue.type_();
@@ -898,7 +908,21 @@ impl TryFrom<&glib::Value> for Value {
         } else if value.is_type(glib::types::Type::BOOL) {
             Ok(Value::Boolean(value.get::<bool>()?))
         } else if value.is_type(glib::types::Type::OBJECT) {
-            let obj = value.get::<glib::Object>()?;
+            let obj_ptr = unsafe {
+                glib::gobject_ffi::g_value_get_object(value.to_glib_none().0 as *const _)
+            };
+
+            if obj_ptr.is_null() {
+                return Ok(Value::Null);
+            }
+
+            let type_class = unsafe { (*obj_ptr).g_type_instance.g_class };
+            if type_class.is_null() {
+                bail!("GObject has invalid type class (object may have been freed)");
+            }
+
+            let obj = unsafe { glib::Object::from_glib_none(obj_ptr) };
+
             Ok(Value::Object(ObjectId::new(Object::GObject(obj))))
         } else if value.is_type(glib::types::Type::BOXED) {
             let boxed_ptr = value.as_ptr();
@@ -927,10 +951,22 @@ impl TryFrom<&glib::Value> for Value {
             };
             Ok(Value::Number(flags_value as f64))
         } else if value.type_().is_a(glib::types::Type::OBJECT) {
-            match value.get::<Option<glib::Object>>()? {
-                Some(obj) => Ok(Value::Object(ObjectId::new(Object::GObject(obj)))),
-                None => Ok(Value::Null),
+            let obj_ptr = unsafe {
+                glib::gobject_ffi::g_value_get_object(value.to_glib_none().0 as *const _)
+            };
+
+            if obj_ptr.is_null() {
+                return Ok(Value::Null);
             }
+
+            let type_class = unsafe { (*obj_ptr).g_type_instance.g_class };
+            if type_class.is_null() {
+                bail!("GObject has invalid type class (object may have been freed)");
+            }
+
+            let obj = unsafe { glib::Object::from_glib_none(obj_ptr) };
+
+            Ok(Value::Object(ObjectId::new(Object::GObject(obj))))
         } else {
             bail!("Unsupported glib::Value type: {:?}", value.type_())
         }

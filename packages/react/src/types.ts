@@ -41,15 +41,6 @@ export type ListViewRenderProps<T = unknown> = {
 };
 
 /**
- * Comparison function for sorting items by column.
- * Returns negative if a < b, 0 if a === b, positive if a > b.
- * @param a - First item to compare
- * @param b - Second item to compare
- * @param columnId - The ID of the column being sorted
- */
-export type ColumnSortFn<T, C extends string = string> = (a: T, b: T, columnId: C) => number;
-
-/**
  * Props for individual columns in a ColumnView.
  * @typeParam T - The type of the data items displayed in the column
  */
@@ -74,18 +65,17 @@ export type ColumnViewColumnProps<T = unknown> = {
 
 /**
  * Props for the ColumnView root component.
- * @typeParam T - The type of the data items in the view
+ * Sorting is handled by the parent component - sort your items before rendering
+ * and pass them as ColumnView.Item children in the desired order.
  * @typeParam C - The union type of column IDs
  */
-export type ColumnViewRootProps<T = unknown, C extends string = string> = {
-    /** The ID of the currently sorted column, or null if unsorted. */
+export type ColumnViewRootProps<C extends string = string> = {
+    /** The ID of the currently sorted column, or null if unsorted. Controls the sort indicator UI. */
     sortColumn?: C | null;
-    /** The current sort direction. */
+    /** The current sort direction. Controls the sort indicator UI. */
     sortOrder?: SortType;
-    /** Callback fired when the user changes the sort column or order. */
+    /** Callback fired when the user clicks a column header to change sort. */
     onSortChange?: (column: C | null, order: SortType) => void;
-    /** Custom comparison function for sorting items. */
-    sortFn?: ColumnSortFn<T, C>;
 };
 
 export type NotebookPageProps = SlotProps & {

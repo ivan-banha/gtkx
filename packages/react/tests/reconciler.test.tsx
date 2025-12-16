@@ -585,6 +585,47 @@ describe("React Reconciler", () => {
             const model = listWidget.getModel();
             expect(model).not.toBeNull();
         });
+
+        it("reorders items correctly when removed and reinserted", () => {
+            const list = createNode("ListView.Root", {
+                renderItem,
+            }) as import("../src/nodes/list-view.js").ListViewNode;
+            const itemA = createNode("ListView.Item", { item: { id: 1, name: "A" } });
+            const itemB = createNode("ListView.Item", { item: { id: 2, name: "B" } });
+            const itemC = createNode("ListView.Item", { item: { id: 3, name: "C" } });
+
+            list.appendChild(itemA);
+            list.appendChild(itemB);
+            list.appendChild(itemC);
+
+            const getNames = () => (list.getItems() as { name: string }[]).map((i) => i.name);
+
+            expect(getNames()).toEqual(["A", "B", "C"]);
+
+            list.removeChild(itemB);
+            list.insertBefore(itemB, itemA);
+
+            expect(getNames()).toEqual(["B", "A", "C"]);
+        });
+
+        it("preserves item count when reordering", () => {
+            const list = createNode("ListView.Root", {
+                renderItem,
+            }) as import("../src/nodes/list-view.js").ListViewNode;
+            const itemA = createNode("ListView.Item", { item: { id: 1, name: "A" } });
+            const itemB = createNode("ListView.Item", { item: { id: 2, name: "B" } });
+
+            list.appendChild(itemA);
+            list.appendChild(itemB);
+
+            const initialCount = list.getItems().length;
+
+            list.removeChild(itemA);
+            list.insertBefore(itemA, itemB);
+
+            expect(list.getItems().length).toBe(initialCount);
+            expect((list.getItems() as { name: string }[]).map((i) => i.name)).toEqual(["A", "B"]);
+        });
     });
 
     describe("child management - ColumnView", () => {
@@ -712,6 +753,49 @@ describe("React Reconciler", () => {
             const primaryColumn = sorter?.getPrimarySortColumn();
             expect(primaryColumn?.getId()).toBe("age-column");
             expect(sorter?.getPrimarySortOrder()).toBe(Gtk.SortType.DESCENDING);
+        });
+
+        it("reorders items correctly when removed and reinserted", () => {
+            const columnView = createNode(
+                "ColumnView.Root",
+                {},
+            ) as import("../src/nodes/column-view.js").ColumnViewNode;
+            const itemA = createNode("ColumnView.Item", { item: { name: "A" } });
+            const itemB = createNode("ColumnView.Item", { item: { name: "B" } });
+            const itemC = createNode("ColumnView.Item", { item: { name: "C" } });
+
+            columnView.appendChild(itemA);
+            columnView.appendChild(itemB);
+            columnView.appendChild(itemC);
+
+            const getNames = () => (columnView.getItems() as { name: string }[]).map((i) => i.name);
+
+            expect(getNames()).toEqual(["A", "B", "C"]);
+
+            columnView.removeChild(itemB);
+            columnView.insertBefore(itemB, itemA);
+
+            expect(getNames()).toEqual(["B", "A", "C"]);
+        });
+
+        it("preserves item count when reordering", () => {
+            const columnView = createNode(
+                "ColumnView.Root",
+                {},
+            ) as import("../src/nodes/column-view.js").ColumnViewNode;
+            const itemA = createNode("ColumnView.Item", { item: { name: "A" } });
+            const itemB = createNode("ColumnView.Item", { item: { name: "B" } });
+
+            columnView.appendChild(itemA);
+            columnView.appendChild(itemB);
+
+            const initialCount = columnView.getItems().length;
+
+            columnView.removeChild(itemA);
+            columnView.insertBefore(itemA, itemB);
+
+            expect(columnView.getItems().length).toBe(initialCount);
+            expect((columnView.getItems() as { name: string }[]).map((i) => i.name)).toEqual(["A", "B"]);
         });
     });
 

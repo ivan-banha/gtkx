@@ -1,6 +1,6 @@
 import * as Gtk from "@gtkx/ffi/gtk";
 import { Box, ColumnView, Label, ScrolledWindow } from "@gtkx/react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 interface Employee {
     id: string;
@@ -92,20 +92,30 @@ export const ColumnViewDemo = () => {
         setSortOrder(order);
     }, []);
 
-    const sortFn = useCallback((a: Employee, b: Employee, columnId: string): number => {
-        switch (columnId) {
-            case "name":
-                return a.name.localeCompare(b.name);
-            case "department":
-                return a.department.localeCompare(b.department);
-            case "salary":
-                return a.salary - b.salary;
-            case "startDate":
-                return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-            default:
-                return 0;
-        }
-    }, []);
+    const sortedEmployees = useMemo(() => {
+        if (!sortColumn) return employees;
+
+        const sorted = [...employees].sort((a, b) => {
+            let comparison = 0;
+            switch (sortColumn) {
+                case "name":
+                    comparison = a.name.localeCompare(b.name);
+                    break;
+                case "department":
+                    comparison = a.department.localeCompare(b.department);
+                    break;
+                case "salary":
+                    comparison = a.salary - b.salary;
+                    break;
+                case "startDate":
+                    comparison = new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+                    break;
+            }
+            return sortOrder === Gtk.SortType.ASCENDING ? comparison : -comparison;
+        });
+
+        return sorted;
+    }, [sortColumn, sortOrder]);
 
     const formatSalary = (salary: number) => `$${salary.toLocaleString()}`;
     const formatDate = (date: string) => new Date(date).toLocaleDateString();
@@ -145,7 +155,6 @@ export const ColumnViewDemo = () => {
                     <ColumnView.Root
                         sortColumn={sortColumn}
                         sortOrder={sortOrder}
-                        sortFn={sortFn}
                         onSortChange={handleSortChange}
                         vexpand
                         hexpand
@@ -225,7 +234,7 @@ export const ColumnViewDemo = () => {
                                 />
                             )}
                         />
-                        {employees.map((emp) => (
+                        {sortedEmployees.map((emp) => (
                             <ColumnView.Item key={emp.id} item={emp} />
                         ))}
                     </ColumnView.Root>

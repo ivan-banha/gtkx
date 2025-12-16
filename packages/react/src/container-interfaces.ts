@@ -72,7 +72,6 @@ export type ColumnContainer = {
     insertColumnBefore(column: unknown, beforeColumn: unknown): void;
     removeColumn(column: unknown): void;
     getItems(): unknown[];
-    getSortFn(): ((a: unknown, b: unknown, columnId: string) => number) | null;
 };
 
 export const isChildContainer = (node: Node): node is Node & ChildContainer =>
@@ -91,7 +90,7 @@ export const isItemContainer = <T>(node: Node): node is Node & ItemContainer<T> 
     "addItem" in node && "insertItemBefore" in node && "removeItem" in node && "updateItem" in node;
 
 export const isColumnContainer = (node: Node): node is Node & ColumnContainer =>
-    "addColumn" in node && "removeColumn" in node && "getSortFn" in node;
+    "addColumn" in node && "removeColumn" in node && "getItems" in node;
 
 /**
  * Type for containers that support packStart/packEnd semantics.

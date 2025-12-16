@@ -18,6 +18,7 @@ type ListViewState = {
     listItemCache: Map<number, ListItemInfo>;
     items: unknown[];
     committedLength: number;
+    modelDirty: boolean;
 };
 
 export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewState> implements ItemContainer<unknown> {
@@ -44,6 +45,7 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewStat
             listItemCache: new Map(),
             items: [],
             committedLength: 0,
+            modelDirty: false,
         };
     }
 
@@ -74,11 +76,15 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewStat
 
     private syncStringList = (): void => {
         const newLength = this.state.items.length;
-        if (newLength === this.state.committedLength) return;
+        const lengthChanged = newLength !== this.state.committedLength;
+        const needsSync = lengthChanged || this.state.modelDirty;
+
+        if (!needsSync) return;
 
         const placeholders = Array.from({ length: newLength }, () => "");
         this.state.stringList.splice(0, this.state.committedLength, placeholders);
         this.state.committedLength = newLength;
+        this.state.modelDirty = false;
     };
 
     addItem(item: unknown): void {
@@ -95,6 +101,7 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewStat
             this.state.items.splice(beforeIndex, 0, item);
         }
 
+        this.state.modelDirty = true;
         scheduleFlush(this.syncStringList);
     }
 
@@ -103,6 +110,7 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewStat
 
         if (index !== -1) {
             this.state.items.splice(index, 1);
+            this.state.modelDirty = true;
             scheduleFlush(this.syncStringList);
         }
     }
@@ -113,6 +121,10 @@ export class ListViewNode extends Node<Gtk.ListView | Gtk.GridView, ListViewStat
         if (index !== -1) {
             this.state.items[index] = newItem;
         }
+    }
+
+    getItems(): unknown[] {
+        return this.state.items;
     }
 
     protected override consumedProps(): Set<string> {

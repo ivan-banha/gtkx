@@ -981,16 +981,15 @@ export const Menu = {
             lines.push(`}`);
         } else if (isColumnViewWidget(widgetName)) {
             lines.push(`/**`);
-            lines.push(` * Props for the ${name}.Root component with type-safe item and column rendering.`);
-            lines.push(` * @typeParam T - The type of items in the column view.`);
-            lines.push(` * @typeParam C - The union type of column IDs for type-safe sorting.`);
+            lines.push(` * Props for the ${name}.Root component with column sorting UI indicators.`);
+            lines.push(` * @typeParam C - The union type of column IDs for type-safe sorting indicators.`);
             lines.push(` */`);
             lines.push(
-                `interface ${name}RootPropsExtended<T = unknown, C extends string = string> extends ${name}Props, ColumnViewRootProps<T, C> {}`,
+                `interface ${name}RootPropsExtended<C extends string = string> extends ${name}Props, ColumnViewRootProps<C> {}`,
             );
             lines.push(``);
             lines.push(
-                `function ${name}Root<T = unknown, C extends string = string>(props: ${name}RootPropsExtended<T, C>): import("react").ReactElement {`,
+                `function ${name}Root<C extends string = string>(props: ${name}RootPropsExtended<C>): import("react").ReactElement {`,
             );
             lines.push(`\treturn createElement("${name}.Root", props);`);
             lines.push(`}`);

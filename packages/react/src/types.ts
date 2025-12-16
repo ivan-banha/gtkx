@@ -10,12 +10,25 @@ export type SlotProps = {
 };
 
 /**
- * Props passed to list item components.
+ * Props passed to list item components (ListView, GridView, ColumnView).
  * @typeParam I - The type of the data item
  */
 export type ListItemProps<I = unknown> = {
+    /** Unique identifier for this item. Used for selection. */
+    id: string;
     /** The data item to render. */
     item: I;
+};
+
+/**
+ * Props for string list items (DropDown, ComboRow).
+ * Similar to HTML select option elements.
+ */
+export type StringListItemProps = {
+    /** Unique identifier for this item. Used for selection. */
+    id: string;
+    /** Display text shown in the dropdown. */
+    label: string;
 };
 
 export type GridChildProps = SlotProps & {

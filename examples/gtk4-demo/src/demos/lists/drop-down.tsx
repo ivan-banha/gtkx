@@ -22,7 +22,8 @@ const countries: Country[] = [
 ];
 
 const DropDownDemo = () => {
-    const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const selectedCountry = selectedId ? countries.find((c) => c.id === selectedId) ?? null : null;
 
     return (
         <Box orientation={Gtk.Orientation.VERTICAL} spacing={20} marginStart={20} marginEnd={20} marginTop={20}>
@@ -39,12 +40,9 @@ const DropDownDemo = () => {
 
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                 <Label label="Country Selector" cssClasses={["heading"]} halign={Gtk.Align.START} />
-                <DropDown.Root
-                    itemLabel={(item: Country) => item.name}
-                    onSelectionChanged={(item: Country | null) => setSelectedCountry(item)}
-                >
+                <DropDown.Root onSelectionChanged={(id) => setSelectedId(id)}>
                     {countries.map((country) => (
-                        <DropDown.Item key={country.id} item={country} />
+                        <DropDown.Item key={country.id} id={country.id} label={country.name} />
                     ))}
                 </DropDown.Root>
                 {selectedCountry && (

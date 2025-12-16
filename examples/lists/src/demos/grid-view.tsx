@@ -97,7 +97,7 @@ export const GridViewDemo = () => {
                         )}
                     >
                         {photos.map((photo) => (
-                            <GridView.Item key={photo.id} item={photo} />
+                            <GridView.Item key={photo.id} id={photo.id} item={photo} />
                         ))}
                     </GridView.Root>
                 </ScrolledWindow>

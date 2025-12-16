@@ -14,6 +14,13 @@
         "indentStyle": "space",
         "lineWidth": 120
     },
+    "linter": {
+        "rules": {
+            "suspicious": {
+                "noRedeclare": "off"
+            }
+        }
+    },
     "vcs": {
         "enabled": true,
         "clientKind": "git",

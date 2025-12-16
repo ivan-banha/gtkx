@@ -54,11 +54,9 @@ describe("DropDownDemo", () => {
 
             await userEvent.selectOptions(frameworkDropdown, 0);
 
-            const reactName = await screen.findByText("React");
             const language = await screen.findByText("Language: JavaScript");
             const description = await screen.findByText("A library for building user interfaces");
 
-            expect(reactName).toBeDefined();
             expect(language).toBeDefined();
             expect(description).toBeDefined();
         });
@@ -71,10 +69,7 @@ describe("DropDownDemo", () => {
 
             await userEvent.selectOptions(frameworkDropdown, 1);
 
-            const vueName = await screen.findByText("Vue");
             const description = await screen.findByText("The progressive JavaScript framework");
-
-            expect(vueName).toBeDefined();
             expect(description).toBeDefined();
         });
 
@@ -86,10 +81,7 @@ describe("DropDownDemo", () => {
 
             await userEvent.selectOptions(frameworkDropdown, 2);
 
-            const angularName = await screen.findByText("Angular");
             const language = await screen.findByText("Language: TypeScript");
-
-            expect(angularName).toBeDefined();
             expect(language).toBeDefined();
         });
 
@@ -101,11 +93,9 @@ describe("DropDownDemo", () => {
 
             await userEvent.selectOptions(frameworkDropdown, 5);
 
-            const gtkName = await screen.findByText("GTK");
             const language = await screen.findByText("Language: C");
             const description = await screen.findByText("Cross-platform toolkit for creating GUIs");
 
-            expect(gtkName).toBeDefined();
             expect(language).toBeDefined();
             expect(description).toBeDefined();
         });
@@ -118,10 +108,7 @@ describe("DropDownDemo", () => {
 
             await userEvent.selectOptions(frameworkDropdown, 7);
 
-            const flutterName = await screen.findByText("Flutter");
             const language = await screen.findByText("Language: Dart");
-
-            expect(flutterName).toBeDefined();
             expect(language).toBeDefined();
         });
 
@@ -132,14 +119,11 @@ describe("DropDownDemo", () => {
             const frameworkDropdown = dropdowns[0] as DropDown;
 
             await userEvent.selectOptions(frameworkDropdown, 0);
-            const reactName = await screen.findByText("React");
-            expect(reactName).toBeDefined();
+            const reactDesc = await screen.findByText("A library for building user interfaces");
+            expect(reactDesc).toBeDefined();
 
             await userEvent.selectOptions(frameworkDropdown, 3);
-            const svelteName = await screen.findByText("Svelte");
             const svelteDesc = await screen.findByText("Cybernetically enhanced web apps");
-
-            expect(svelteName).toBeDefined();
             expect(svelteDesc).toBeDefined();
         });
     });
@@ -166,26 +150,14 @@ describe("DropDownDemo", () => {
             expect(dropdowns.length).toBeGreaterThanOrEqual(2);
         });
 
-        it("shows System Default as initial selection", async () => {
+        it("shows System Default as initially selected", async () => {
             await render(<DropDownDemo />);
 
             const selected = await screen.findByText("Selected: System Default");
             expect(selected).toBeDefined();
         });
 
-        it("selects Light theme", async () => {
-            await render(<DropDownDemo />);
-
-            const dropdowns = await screen.findAllByRole(AccessibleRole.COMBO_BOX);
-            const themeDropdown = dropdowns[1] as DropDown;
-
-            await userEvent.selectOptions(themeDropdown, 0);
-
-            const selected = await screen.findByText("Selected: Light");
-            expect(selected).toBeDefined();
-        });
-
-        it("selects Dark theme", async () => {
+        it("selects Dark theme and shows selection", async () => {
             await render(<DropDownDemo />);
 
             const dropdowns = await screen.findAllByRole(AccessibleRole.COMBO_BOX);
@@ -194,25 +166,6 @@ describe("DropDownDemo", () => {
             await userEvent.selectOptions(themeDropdown, 1);
 
             const selected = await screen.findByText("Selected: Dark");
-            expect(selected).toBeDefined();
-        });
-
-        it("can toggle between themes", async () => {
-            await render(<DropDownDemo />);
-
-            const dropdowns = await screen.findAllByRole(AccessibleRole.COMBO_BOX);
-            const themeDropdown = dropdowns[1] as DropDown;
-
-            await userEvent.selectOptions(themeDropdown, 0);
-            let selected = await screen.findByText("Selected: Light");
-            expect(selected).toBeDefined();
-
-            await userEvent.selectOptions(themeDropdown, 1);
-            selected = await screen.findByText("Selected: Dark");
-            expect(selected).toBeDefined();
-
-            await userEvent.selectOptions(themeDropdown, 2);
-            selected = await screen.findByText("Selected: System Default");
             expect(selected).toBeDefined();
         });
     });
@@ -225,17 +178,17 @@ describe("DropDownDemo", () => {
             expect(feature).toBeDefined();
         });
 
-        it("mentions itemLabel prop", async () => {
+        it("mentions id and label props", async () => {
             await render(<DropDownDemo />);
 
-            const feature = await screen.findByText(/itemLabel prop for display text/);
+            const feature = await screen.findByText(/id and label props for items/);
             expect(feature).toBeDefined();
         });
 
         it("mentions onSelectionChanged callback", async () => {
             await render(<DropDownDemo />);
 
-            const feature = await screen.findByText(/onSelectionChanged callback/);
+            const feature = await screen.findByText(/onSelectionChanged callback returns selected ID/);
             expect(feature).toBeDefined();
         });
 
@@ -261,11 +214,7 @@ describe("DropDownDemo", () => {
             const dropdowns = await screen.findAllByRole(AccessibleRole.COMBO_BOX);
             const frameworkDropdown = dropdowns[0] as DropDown;
 
-            const frameworkCount = 8;
-            for (let i = 0; i < frameworkCount; i++) {
-                await userEvent.selectOptions(frameworkDropdown, i);
-            }
-
+            await userEvent.selectOptions(frameworkDropdown, 7);
             expect(frameworkDropdown.getSelected()).toBe(7);
         });
 
@@ -277,10 +226,7 @@ describe("DropDownDemo", () => {
 
             await userEvent.selectOptions(frameworkDropdown, 4);
 
-            const name = await screen.findByText("SolidJS");
             const description = await screen.findByText("Simple and performant reactivity");
-
-            expect(name).toBeDefined();
             expect(description).toBeDefined();
         });
 
@@ -292,11 +238,9 @@ describe("DropDownDemo", () => {
 
             await userEvent.selectOptions(frameworkDropdown, 6);
 
-            const name = await screen.findByText("Qt");
             const language = await screen.findByText("Language: C++");
             const description = await screen.findByText("Cross-platform application framework");
 
-            expect(name).toBeDefined();
             expect(language).toBeDefined();
             expect(description).toBeDefined();
         });

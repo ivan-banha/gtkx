@@ -8,18 +8,18 @@ describe("App Integration", () => {
     });
 
     describe("main layout", () => {
-        it("renders the application window with title", async () => {
+        it("renders the application window with ListBox content", async () => {
             await render(<App />);
 
-            const listBoxTitle = await screen.findByText("ListBox");
-            expect(listBoxTitle).toBeDefined();
+            const listBoxTitles = await screen.findAllByText("ListBox");
+            expect(listBoxTitles.length).toBeGreaterThan(0);
         });
 
         it("renders the first demo (ListBox) by default", async () => {
             await render(<App />);
 
-            const listBoxDescription = await screen.findByText(/GtkListBox is a vertical container for rows/);
-            expect(listBoxDescription).toBeDefined();
+            const descriptions = await screen.findAllByText(/GtkListBox is a vertical container for rows/);
+            expect(descriptions.length).toBeGreaterThan(0);
         });
     });
 
@@ -27,8 +27,8 @@ describe("App Integration", () => {
         it("has ListBox demo content", async () => {
             await render(<App />);
 
-            const taskList = await screen.findByText("Task List");
-            expect(taskList).toBeDefined();
+            const taskLists = await screen.findAllByText("Task List");
+            expect(taskLists.length).toBeGreaterThan(0);
         });
 
         it("has all task items from ListBox demo", async () => {
@@ -44,8 +44,8 @@ describe("App Integration", () => {
             ];
 
             for (const task of tasks) {
-                const taskLabel = await screen.findByText(task);
-                expect(taskLabel).toBeDefined();
+                const taskLabels = await screen.findAllByText(task);
+                expect(taskLabels.length).toBeGreaterThan(0);
             }
         });
     });
@@ -54,8 +54,8 @@ describe("App Integration", () => {
         it("renders the ListBox page", async () => {
             await render(<App />);
 
-            const listBoxTitle = await screen.findByText("ListBox");
-            expect(listBoxTitle).toBeDefined();
+            const listBoxTitles = await screen.findAllByText("ListBox");
+            expect(listBoxTitles.length).toBeGreaterThan(0);
         });
     });
 
@@ -63,15 +63,15 @@ describe("App Integration", () => {
         it("shows remaining task count", async () => {
             await render(<App />);
 
-            const remaining = await screen.findByText("4 remaining");
-            expect(remaining).toBeDefined();
+            const remainings = await screen.findAllByText("4 remaining");
+            expect(remainings.length).toBeGreaterThan(0);
         });
 
         it("shows key features section", async () => {
             await render(<App />);
 
-            const keyFeatures = await screen.findByText("Key Features");
-            expect(keyFeatures).toBeDefined();
+            const keyFeatures = await screen.findAllByText("Key Features");
+            expect(keyFeatures.length).toBeGreaterThan(0);
         });
     });
 

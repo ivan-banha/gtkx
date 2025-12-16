@@ -220,7 +220,7 @@ export class JsxGenerator {
             `import { createElement } from "react";`,
             `import type { ReactNode, Ref } from "react";`,
             ...namespaceImports,
-            `import type { ColumnViewColumnProps, ColumnViewRootProps, GridChildProps, ListItemProps, ListViewRenderProps, MenuItemProps, MenuRootProps, MenuSectionProps, MenuSubmenuProps, NotebookPageProps, SlotProps, StackPageProps, StackRootProps } from "../types.js";`,
+            `import type { ColumnViewColumnProps, ColumnViewRootProps, GridChildProps, ListItemProps, ListViewRenderProps, MenuItemProps, MenuRootProps, MenuSectionProps, MenuSubmenuProps, NotebookPageProps, SlotProps, StackPageProps, StackRootProps, StringListItemProps } from "../types.js";`,
             "",
         ].join("\n");
     }
@@ -235,7 +235,7 @@ export class JsxGenerator {
         const widgetPropsContent = this.generateWidgetPropsContent(widgetClass);
 
         return `
-export { ColumnViewColumnProps, ColumnViewRootProps, GridChildProps, ListItemProps, ListViewRenderProps, MenuItemProps, MenuRootProps, MenuSectionProps, MenuSubmenuProps, NotebookPageProps, SlotProps, StackPageProps, StackRootProps };
+export { ColumnViewColumnProps, ColumnViewRootProps, GridChildProps, ListItemProps, ListViewRenderProps, MenuItemProps, MenuRootProps, MenuSectionProps, MenuSubmenuProps, NotebookPageProps, SlotProps, StackPageProps, StackRootProps, StringListItemProps };
 
 ${widgetPropsContent}
 `;
@@ -470,6 +470,16 @@ ${widgetPropsContent}
             }
         }
 
+        if (isListWidget(widget.name) || isColumnViewWidget(widget.name)) {
+            lines.push("");
+            lines.push(`\t/** Array of selected item IDs */`);
+            lines.push(`\tselected?: string[];`);
+            lines.push(`\t/** Called when selection changes with array of selected item IDs */`);
+            lines.push(`\tonSelectionChanged?: (ids: string[]) => void;`);
+            lines.push(`\t/** Selection mode: SINGLE (default) or MULTIPLE */`);
+            lines.push(`\tselectionMode?: import("@gtkx/ffi/gtk").SelectionMode;`);
+        }
+
         if (isListWidget(widget.name)) {
             lines.push("");
             lines.push(`\t/**`);
@@ -481,10 +491,10 @@ ${widgetPropsContent}
 
         if (isDropDownWidget(widget.name)) {
             lines.push("");
-            lines.push(`\t/** Function to convert item to display label */`);
-            lines.push(`\titemLabel?: (item: unknown) => string;`);
-            lines.push(`\t/** Called when selection changes */`);
-            lines.push(`\tonSelectionChanged?: (item: unknown, index: number) => void;`);
+            lines.push(`\t/** ID of the initially selected item */`);
+            lines.push(`\tselectedId?: string;`);
+            lines.push(`\t/** Called when selection changes with the selected item's ID */`);
+            lines.push(`\tonSelectionChanged?: (id: string) => void;`);
         }
 
         lines.push("");
@@ -1013,24 +1023,11 @@ export const Menu = {
             lines.push(`\treturn createElement("${name}.Item", props);`);
             lines.push(`}`);
         } else if (isDropDownWidget(widgetName)) {
-            lines.push(`/**`);
-            lines.push(` * Props for the ${name}.Root component with type-safe item handling.`);
-            lines.push(` * @typeParam T - The type of items in the dropdown.`);
-            lines.push(` */`);
-            lines.push(
-                `interface ${name}RootProps<T> extends Omit<${name}Props, "itemLabel" | "onSelectionChanged"> {`,
-            );
-            lines.push(`\t/** Function to convert an item to its display label. */`);
-            lines.push(`\titemLabel?: (item: T) => string;`);
-            lines.push(`\t/** Called when the selected item changes. */`);
-            lines.push(`\tonSelectionChanged?: (item: T | null, index: number) => void;`);
-            lines.push(`}`);
-            lines.push(``);
-            lines.push(`function ${name}Root<T>(props: ${name}RootProps<T>): import("react").ReactElement {`);
+            lines.push(`function ${name}Root(props: ${name}Props): import("react").ReactElement {`);
             lines.push(`\treturn createElement("${name}.Root", props);`);
             lines.push(`}`);
             lines.push(``);
-            lines.push(`function ${name}Item<T>(props: ListItemProps<T>): import("react").ReactElement {`);
+            lines.push(`function ${name}Item(props: StringListItemProps): import("react").ReactElement {`);
             lines.push(`\treturn createElement("${name}.Item", props);`);
             lines.push(`}`);
         } else if (isStackWidget(widgetName)) {
@@ -1113,7 +1110,7 @@ export const Menu = {
             }
 
             if (isDropDownWidget(widget.name)) {
-                elements.push(`"${widgetName}.Item": ListItemProps;`);
+                elements.push(`"${widgetName}.Item": StringListItemProps;`);
             }
 
             if (isGridWidget(widget.name)) {

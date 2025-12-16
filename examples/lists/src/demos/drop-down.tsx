@@ -25,6 +25,8 @@ const frameworks: Framework[] = [
     { id: "flutter", name: "Flutter", language: "Dart", description: "Build apps for any screen" },
 ];
 
+const frameworksById = new Map(frameworks.map((fw) => [fw.id, fw]));
+
 interface Theme {
     id: string;
     name: string;
@@ -36,9 +38,14 @@ const themes: Theme[] = [
     { id: "system", name: "System Default" },
 ];
 
+const themesById = new Map(themes.map((theme) => [theme.id, theme]));
+
 export const DropDownDemo = () => {
-    const [selectedFramework, setSelectedFramework] = useState<Framework | null>(null);
-    const [selectedTheme, setSelectedTheme] = useState<Theme | null>(themes[2] ?? null);
+    const [selectedFrameworkId, setSelectedFrameworkId] = useState<string | null>(null);
+    const [selectedThemeId, setSelectedThemeId] = useState<string | null>("system");
+
+    const selectedFramework = selectedFrameworkId ? frameworksById.get(selectedFrameworkId) : null;
+    const selectedTheme = selectedThemeId ? themesById.get(selectedThemeId) : null;
 
     return (
         <Box
@@ -65,13 +72,9 @@ export const DropDownDemo = () => {
                 <Box orientation={Gtk.Orientation.VERTICAL} spacing={12}>
                     <Label label="Framework Selector" cssClasses={["heading"]} halign={Gtk.Align.START} />
                     <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={12}>
-                        <DropDown.Root
-                            itemLabel={(item: Framework) => item.name}
-                            onSelectionChanged={(item: Framework | null) => setSelectedFramework(item)}
-                            hexpand={false}
-                        >
+                        <DropDown.Root onSelectionChanged={setSelectedFrameworkId} hexpand={false}>
                             {frameworks.map((fw) => (
-                                <DropDown.Item key={fw.id} item={fw} />
+                                <DropDown.Item key={fw.id} id={fw.id} label={fw.name} />
                             ))}
                         </DropDown.Root>
                     </Box>
@@ -107,13 +110,9 @@ export const DropDownDemo = () => {
                     <Label label="Theme Preference" cssClasses={["heading"]} halign={Gtk.Align.START} />
                     <Box orientation={Gtk.Orientation.HORIZONTAL} spacing={12} valign={Gtk.Align.CENTER}>
                         <Label label="Select theme:" />
-                        <DropDown.Root
-                            itemLabel={(item: Theme) => item.name}
-                            onSelectionChanged={(item: Theme | null) => setSelectedTheme(item)}
-                            hexpand={false}
-                        >
+                        <DropDown.Root selectedId="system" onSelectionChanged={setSelectedThemeId} hexpand={false}>
                             {themes.map((theme) => (
-                                <DropDown.Item key={theme.id} item={theme} />
+                                <DropDown.Item key={theme.id} id={theme.id} label={theme.name} />
                             ))}
                         </DropDown.Root>
                         {selectedTheme && (
@@ -126,7 +125,7 @@ export const DropDownDemo = () => {
             <Box orientation={Gtk.Orientation.VERTICAL} spacing={8}>
                 <Label label="Key Features" cssClasses={["heading"]} halign={Gtk.Align.START} />
                 <Label
-                    label="• Modern replacement for GtkComboBox\n• itemLabel prop for display text\n• onSelectionChanged callback\n• Built-in keyboard navigation\n• Search filtering support"
+                    label="• Modern replacement for GtkComboBox\n• id and label props for items\n• onSelectionChanged callback returns selected ID\n• Built-in keyboard navigation\n• Search filtering support"
                     wrap
                     halign={Gtk.Align.START}
                     cssClasses={["dim-label"]}

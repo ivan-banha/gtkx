@@ -235,7 +235,7 @@ export const ColumnViewDemo = () => {
                             )}
                         />
                         {sortedEmployees.map((emp) => (
-                            <ColumnView.Item key={emp.id} item={emp} />
+                            <ColumnView.Item key={emp.id} id={emp.id} item={emp} />
                         ))}
                     </ColumnView.Root>
                 </ScrolledWindow>

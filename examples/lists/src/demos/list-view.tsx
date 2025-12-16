@@ -91,7 +91,7 @@ export const ListViewDemo = () => {
                         )}
                     >
                         {contacts.map((contact) => (
-                            <ListView.Item key={contact.id} item={contact} />
+                            <ListView.Item key={contact.id} id={contact.id} item={contact} />
                         ))}
                     </ListView.Root>
                 </ScrolledWindow>

@@ -51,7 +51,7 @@ const ListViewDemo = () => {
                         )}
                     >
                         {tasks.map((task) => (
-                            <ListView.Item key={task.id} item={task} />
+                            <ListView.Item key={task.id} id={task.id} item={task} />
                         ))}
                     </ListView.Root>
                 </Box>

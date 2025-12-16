@@ -2,6 +2,7 @@ import { XMLParser } from "fast-xml-parser";
 import type {
     GirCallback,
     GirClass,
+    GirConstant,
     GirConstructor,
     GirEnumeration,
     GirEnumerationMember,
@@ -25,6 +26,7 @@ const ARRAY_ELEMENT_PATHS = new Set<string>([
     "namespace.bitfield",
     "namespace.record",
     "namespace.callback",
+    "namespace.constant",
     "namespace.class.method",
     "namespace.class.constructor",
     "namespace.class.function",
@@ -113,6 +115,7 @@ export class GirParser {
             bitfields: this.parseEnumerations(namespace.bitfield ?? []),
             records: this.parseRecords(namespace.record ?? []),
             callbacks: this.parseCallbacks(namespace.callback ?? []),
+            constants: this.parseConstants(namespace.constant ?? []),
         };
     }
 
@@ -423,6 +426,19 @@ export class GirParser {
             value: String(member["@_value"] ?? ""),
             cIdentifier: String(member["@_c:identifier"] ?? ""),
             doc: extractDoc(member),
+        }));
+    }
+
+    private parseConstants(constants: Record<string, unknown>[]): GirConstant[] {
+        if (!constants || !Array.isArray(constants)) {
+            return [];
+        }
+        return constants.map((constant) => ({
+            name: String(constant["@_name"] ?? ""),
+            cType: String(constant["@_c:type"] ?? ""),
+            value: String(constant["@_value"] ?? ""),
+            type: this.parseType((constant.type ?? constant.array) as Record<string, unknown> | undefined),
+            doc: extractDoc(constant),
         }));
     }
 }

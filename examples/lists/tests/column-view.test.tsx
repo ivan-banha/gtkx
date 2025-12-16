@@ -344,8 +344,8 @@ describe("ColumnViewDemo", () => {
         it("renders formatted start dates", async () => {
             await render(<ColumnViewDemo />);
 
-            const firstDate = await screen.findByText(/2021/);
-            expect(firstDate).toBeDefined();
+            const dates = await screen.findAllByText(/2021/);
+            expect(dates.length).toBeGreaterThan(0);
         });
     });
 

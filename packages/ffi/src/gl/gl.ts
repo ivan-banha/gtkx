@@ -4,6 +4,7 @@
  */
 
 import { call, createRef } from "@gtkx/native";
+import { GL_INFO_LOG_LENGTH } from "./constants.js";
 
 const LIB = "libGL.so.1";
 
@@ -139,7 +140,7 @@ export function glGetShaderiv(shader: number, pname: number): number {
  * Returns the information log for a shader object.
  */
 export function glGetShaderInfoLog(shader: number, _maxLength: number): string {
-    const logLength = glGetShaderiv(shader, 0x8b84);
+    const logLength = glGetShaderiv(shader, GL_INFO_LOG_LENGTH);
     if (logLength <= 0) {
         return "";
     }
@@ -218,7 +219,7 @@ export function glGetProgramiv(program: number, pname: number): number {
  * Returns the information log for a program object.
  */
 export function glGetProgramInfoLog(program: number, _maxLength: number): string {
-    const logLength = glGetProgramiv(program, 0x8b84);
+    const logLength = glGetProgramiv(program, GL_INFO_LOG_LENGTH);
     if (logLength <= 0) {
         return "";
     }

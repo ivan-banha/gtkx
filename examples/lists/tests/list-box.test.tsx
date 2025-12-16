@@ -159,13 +159,11 @@ describe("ListBoxDemo", () => {
         it("can complete all tasks", async () => {
             await render(<ListBoxDemo />);
 
-            let uncheckedBoxes = await screen.findAllByRole(AccessibleRole.CHECKBOX, { checked: false });
+            const uncheckedBoxes = await screen.findAllByRole(AccessibleRole.CHECKBOX, { checked: false });
+            expect(uncheckedBoxes.length).toBe(4);
 
-            while (uncheckedBoxes.length > 0) {
-                await userEvent.click(uncheckedBoxes[0] as CheckButton);
-                const newUnchecked = await screen.findAllByRole(AccessibleRole.CHECKBOX, { checked: false });
-                if (newUnchecked.length === uncheckedBoxes.length) break;
-                uncheckedBoxes = newUnchecked;
+            for (const checkbox of uncheckedBoxes) {
+                await userEvent.click(checkbox as CheckButton);
             }
 
             const finalRemaining = await screen.findByText("0 remaining");

@@ -204,8 +204,8 @@ describe("ListViewDemo", () => {
         it("mentions virtual scrolling in description", async () => {
             await render(<ListViewDemo />);
 
-            const description = await screen.findByText(/virtual scrolling/i);
-            expect(description).toBeDefined();
+            const descriptions = await screen.findAllByText(/virtual scrolling/i);
+            expect(descriptions.length).toBeGreaterThan(0);
         });
 
         it("mentions widget recycling feature", async () => {

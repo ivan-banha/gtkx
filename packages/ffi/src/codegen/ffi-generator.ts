@@ -2,6 +2,7 @@ import type {
     ExternalTypeUsage,
     FfiTypeDescriptor,
     GirClass,
+    GirConstant,
     GirConstructor,
     GirEnumeration,
     GirField,
@@ -335,6 +336,10 @@ export class CodeGenerator {
         const standaloneFunctions = this.getStandaloneFunctions(namespace);
         if (standaloneFunctions.length > 0) {
             files.set("functions.ts", await this.generateFunctions(standaloneFunctions, namespace.sharedLibrary));
+        }
+
+        if (namespace.constants.length > 0) {
+            files.set("constants.ts", await this.generateConstants(namespace.constants));
         }
 
         files.set("index.ts", await this.generateIndex(files.keys()));
@@ -2155,6 +2160,26 @@ ${allArgs ? `${allArgs},` : ""}
             const enumDoc = enumeration.doc ? formatDoc(enumeration.doc) : "";
             return `${enumDoc}export enum ${enumName} {\n${members.join("\n")}\n}`;
         });
+
+        return this.formatCode(`${sections.join("\n\n")}\n`);
+    }
+
+    private async generateConstants(constants: GirConstant[]): Promise<string> {
+        const seen = new Set<string>();
+        const sections: string[] = [];
+
+        for (const constant of constants) {
+            const constName = constant.name;
+            if (seen.has(constName)) {
+                continue;
+            }
+            seen.add(constName);
+
+            const isStringType = constant.type.name === "utf8" || constant.type.name === "filename";
+            const constValue = isStringType ? `"${constant.value}"` : constant.value;
+            const constDoc = constant.doc ? formatDoc(constant.doc) : "";
+            sections.push(`${constDoc}export const ${constName} = ${constValue};`);
+        }
 
         return this.formatCode(`${sections.join("\n\n")}\n`);
     }

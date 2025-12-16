@@ -24,7 +24,25 @@ export type GirNamespace = {
     records: GirRecord[];
     /** All callback types defined in this namespace. */
     callbacks: GirCallback[];
+    /** All constants defined in this namespace. */
+    constants: GirConstant[];
     /** Documentation for the namespace. */
+    doc?: string;
+};
+
+/**
+ * Represents a GIR constant definition.
+ */
+export type GirConstant = {
+    /** The constant name. */
+    name: string;
+    /** The C type name. */
+    cType: string;
+    /** The constant value (as a string, may be numeric or string literal). */
+    value: string;
+    /** The type of the constant value. */
+    type: GirType;
+    /** Documentation for the constant. */
     doc?: string;
 };
 

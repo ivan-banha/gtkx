@@ -1,101 +1,148 @@
 import { getInterface } from "@gtkx/ffi";
 import * as Gio from "@gtkx/ffi/gio";
 import type * as Gtk from "@gtkx/ffi/gtk";
-import type { ItemContainer } from "../container-interfaces.js";
 import type { Props } from "../factory.js";
-import { Node } from "../node.js";
-import { type ItemLabelFn, StringListStore } from "./string-list-store.js";
+import type { Node } from "../node.js";
+import { Node as NodeClass } from "../node.js";
+import { StringListStore } from "./string-list-store.js";
+
+export type StringListItem = {
+    id: string;
+    label: string;
+};
+
+export type StringListContainer = {
+    addStringListItem(id: string, label: string): void;
+    insertStringListItemBefore(id: string, label: string, beforeId: string): void;
+    removeStringListItem(id: string): void;
+    updateStringListItem(oldId: string, newId: string, newLabel: string): void;
+};
+
+export const isStringListContainer = (node: Node): node is Node & StringListContainer =>
+    "addStringListItem" in node &&
+    "insertStringListItemBefore" in node &&
+    "removeStringListItem" in node &&
+    "updateStringListItem" in node;
 
 type StringListContainerState = {
     store: StringListStore;
-    onSelectionChanged?: (item: unknown, index: number) => void;
+    onSelectionChanged?: (id: string) => void;
+    initialSelection?: string;
+    hasAppliedInitialSelection: boolean;
 };
 
 type StringListWidget = Gtk.Widget & {
-    setModel(model: Gio.ListModel): void;
+    setModel(model: Gio.ListModel | null): void;
     getSelected(): number;
+    setSelected(position: number): void;
 };
 
 const SELECTION_SIGNAL = "notify::selected";
 
-/**
- * Base class for widgets that use StringListStore for item management (DropDown, ComboRow).
- * Handles proper signal lifecycle management to prevent memory leaks.
- */
 export abstract class StringListContainerNode<T extends StringListWidget>
-    extends Node<T, StringListContainerState>
-    implements ItemContainer<unknown>
+    extends NodeClass<T, StringListContainerState>
+    implements StringListContainer
 {
     override initialize(props: Props): void {
-        const labelFn = (props.itemLabel as ItemLabelFn) ?? ((item: unknown) => String(item));
-        const store = new StringListStore(labelFn);
-        const onSelectionChanged = props.onSelectionChanged as ((item: unknown, index: number) => void) | undefined;
+        const store = new StringListStore();
+        const onSelectionChanged = props.onSelectionChanged as ((id: string) => void) | undefined;
+        const initialSelection = props.selectedId as string | undefined;
 
-        this.state = { store, onSelectionChanged };
+        this.state = { store, onSelectionChanged, initialSelection, hasAppliedInitialSelection: false };
 
         super.initialize(props);
 
-        this.widget.setModel(getInterface(store.getModel(), Gio.ListModel)!);
-
-        if (onSelectionChanged) {
-            this.connectSelectionHandler();
-        }
+        this.widget.setModel(getInterface(store.getModel(), Gio.ListModel));
     }
 
     private connectSelectionHandler(): void {
         const handler = () => {
             const index = this.widget.getSelected();
-            const item = this.state.store.getItem(index);
-            this.state.onSelectionChanged?.(item, index);
+            const id = this.state.store.getIdAtIndex(index);
+            if (id !== undefined) {
+                this.state.onSelectionChanged?.(id);
+            }
         };
 
         this.connectSignal(this.widget, SELECTION_SIGNAL, handler);
     }
 
-    addItem(item: unknown): void {
-        this.state.store.append(item);
+    addStringListItem(id: string, label: string): void {
+        this.state.store.append(id, label);
+        this.scheduleInitialSelectionIfNeeded();
     }
 
-    insertItemBefore(item: unknown, beforeItem: unknown): void {
-        this.state.store.insertBefore(item, beforeItem);
+    private scheduleInitialSelectionIfNeeded(): void {
+        if (!this.state.hasAppliedInitialSelection) {
+            this.state.hasAppliedInitialSelection = true;
+            queueMicrotask(() => this.applyInitialSelection());
+        }
     }
 
-    removeItem(item: unknown): void {
-        this.state.store.remove(item);
+    private applyInitialSelection(): void {
+        if (this.state.initialSelection !== undefined) {
+            const index = this.state.store.getIndexForId(this.state.initialSelection);
+            if (index !== -1) {
+                this.widget.setSelected(index);
+            }
+        }
+
+        if (this.state.onSelectionChanged) {
+            this.connectSelectionHandler();
+
+            const currentIndex = this.widget.getSelected();
+            const id = this.state.store.getIdAtIndex(currentIndex);
+            if (id !== undefined) {
+                this.state.onSelectionChanged(id);
+            }
+        }
     }
 
-    updateItem(oldItem: unknown, newItem: unknown): void {
-        this.state.store.update(oldItem, newItem);
+    insertStringListItemBefore(id: string, label: string, beforeId: string): void {
+        this.state.store.insertBefore(id, label, beforeId);
+    }
+
+    removeStringListItem(id: string): void {
+        this.state.store.remove(id);
+    }
+
+    updateStringListItem(oldId: string, newId: string, newLabel: string): void {
+        this.state.store.update(oldId, newId, newLabel);
     }
 
     protected override consumedProps(): Set<string> {
         const consumed = super.consumedProps();
-        consumed.add("itemLabel");
         consumed.add("onSelectionChanged");
+        consumed.add("selectedId");
         return consumed;
     }
 
     override updateProps(oldProps: Props, newProps: Props): void {
-        const oldCallback = oldProps.onSelectionChanged as ((item: unknown, index: number) => void) | undefined;
-        const newCallback = newProps.onSelectionChanged as ((item: unknown, index: number) => void) | undefined;
+        const oldCallback = oldProps.onSelectionChanged as ((id: string) => void) | undefined;
+        const newCallback = newProps.onSelectionChanged as ((id: string) => void) | undefined;
 
         if (oldCallback !== newCallback) {
-            // Update state first
             this.state.onSelectionChanged = newCallback;
 
-            // Handle signal connection/disconnection based on callback presence change
             const hadCallback = oldCallback !== undefined;
             const hasCallback = newCallback !== undefined;
 
             if (hadCallback && !hasCallback) {
-                // Callback was removed - disconnect the signal
                 this.disconnectSignal(SELECTION_SIGNAL);
             } else if (!hadCallback && hasCallback) {
-                // Callback was added - connect the signal
                 this.connectSelectionHandler();
             }
-            // If both had and have callback, no signal management needed
-            // The handler uses this.state.onSelectionChanged which is already updated
+        }
+
+        const oldSelected = oldProps.selectedId as string | undefined;
+        const newSelected = newProps.selectedId as string | undefined;
+
+        if (oldSelected !== newSelected && newSelected !== undefined) {
+            this.state.initialSelection = newSelected;
+            const index = this.state.store.getIndexForId(newSelected);
+            if (index !== -1) {
+                this.widget.setSelected(index);
+            }
         }
 
         super.updateProps(oldProps, newProps);

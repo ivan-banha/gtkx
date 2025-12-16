@@ -10,10 +10,14 @@ import type { RenderItemFn } from "../types.js";
 import { connectListItemFactorySignals, type ListItemFactoryHandlers, type ListItemInfo } from "./list-item-factory.js";
 import { VirtualItemNode } from "./virtual-item.js";
 
+type SelectionCallback = (ids: string[]) => void;
+
 type ColumnViewState = {
+    selectionHandlerId: number | null;
     stringList: Gtk.StringList;
-    selectionModel: Gtk.SingleSelection;
-    items: unknown[];
+    selectionModel: Gtk.SingleSelection | Gtk.MultiSelection;
+    ids: string[];
+    items: Map<string, unknown>;
     columns: ColumnViewColumnNode[];
     committedLength: number;
     modelDirty: boolean;
@@ -23,7 +27,13 @@ type ColumnViewState = {
     sorterChangedHandlerId: number | null;
     lastNotifiedColumn: string | null;
     lastNotifiedOrder: Gtk.SortType;
+    onSelectionChanged?: SelectionCallback;
+    selected: string[];
+    hasAppliedInitialSelection: boolean;
+    selectionMode: Gtk.SelectionMode;
 };
+
+const SELECTION_SIGNAL = "selection-changed";
 
 export class ColumnViewNode
     extends Node<Gtk.ColumnView, ColumnViewState>
@@ -41,10 +51,15 @@ export class ColumnViewNode
     }
 
     private initializeStateWithPlaceholders(props: Props): void {
+        const selectionMode = (props.selectionMode as Gtk.SelectionMode | undefined) ?? Gtk.SelectionMode.SINGLE;
+        const selected = (props.selected as string[] | undefined) ?? [];
+        const onSelectionChanged = props.onSelectionChanged as SelectionCallback | undefined;
+
         this.state = {
             stringList: null as unknown as Gtk.StringList,
             selectionModel: null as unknown as Gtk.SingleSelection,
-            items: [],
+            ids: [],
+            items: new Map(),
             columns: [],
             committedLength: 0,
             modelDirty: false,
@@ -54,16 +69,66 @@ export class ColumnViewNode
             sorterChangedHandlerId: null,
             lastNotifiedColumn: null,
             lastNotifiedOrder: Gtk.SortType.ASCENDING,
+            onSelectionChanged,
+            selected,
+            hasAppliedInitialSelection: false,
+            selectionMode,
+            selectionHandlerId: null,
         };
     }
 
     private createGtkModels(): void {
         const stringList = new Gtk.StringList([]);
-        const selectionModel = new Gtk.SingleSelection(getInterface(stringList, Gio.ListModel));
+        const listModel = getInterface(stringList, Gio.ListModel);
+
+        const selectionModel =
+            this.state.selectionMode === Gtk.SelectionMode.MULTIPLE
+                ? new Gtk.MultiSelection(listModel)
+                : new Gtk.SingleSelection(listModel);
+
+        if (selectionModel instanceof Gtk.SingleSelection) {
+            selectionModel.setAutoselect(false);
+            selectionModel.setCanUnselect(true);
+        }
+
         this.widget.setModel(selectionModel);
 
         this.state.stringList = stringList;
         this.state.selectionModel = selectionModel;
+    }
+
+    private connectSelectionHandler(): void {
+        if (this.state.selectionHandlerId !== null) return;
+
+        const handler = () => {
+            const selectedIds = this.getSelectedIds();
+            this.state.onSelectionChanged?.(selectedIds);
+        };
+
+        this.state.selectionHandlerId = this.state.selectionModel.connect(SELECTION_SIGNAL, handler);
+    }
+
+    private disconnectSelectionHandler(): void {
+        if (this.state.selectionHandlerId !== null) {
+            GObject.signalHandlerDisconnect(this.state.selectionModel, this.state.selectionHandlerId);
+            this.state.selectionHandlerId = null;
+        }
+    }
+
+    private getSelectedIds(): string[] {
+        const selection = this.state.selectionModel.getSelection();
+        const count = Number(selection.getSize());
+        const selectedIds: string[] = [];
+
+        for (let i = 0; i < count; i++) {
+            const position = selection.getNth(i);
+            const id = this.state.ids[position];
+            if (id !== undefined) {
+                selectedIds.push(id);
+            }
+        }
+
+        return selectedIds;
     }
 
     private connectSorterChangedSignal(): void {
@@ -106,7 +171,11 @@ export class ColumnViewNode
     }
 
     getItems(): unknown[] {
-        return this.state.items;
+        return this.state.ids.map((id) => this.state.items.get(id));
+    }
+
+    getItemById(id: string): unknown {
+        return this.state.items.get(id);
     }
 
     addColumn(columnNode: ColumnViewColumnNode): void {
@@ -158,7 +227,7 @@ export class ColumnViewNode
     }
 
     private syncStringList = (): void => {
-        const newLength = this.state.items.length;
+        const newLength = this.state.ids.length;
         const lengthChanged = newLength !== this.state.committedLength;
         const needsSync = lengthChanged || this.state.modelDirty;
 
@@ -170,39 +239,82 @@ export class ColumnViewNode
         this.state.modelDirty = false;
     };
 
-    addItem(item: unknown): void {
-        this.state.items.push(item);
+    addItem(id: string, item: unknown): void {
+        this.state.ids.push(id);
+        this.state.items.set(id, item);
         scheduleFlush(this.syncStringList);
+        this.scheduleInitialSelectionIfNeeded();
     }
 
-    insertItemBefore(item: unknown, beforeItem: unknown): void {
-        const beforeIndex = this.state.items.indexOf(beforeItem);
+    private scheduleInitialSelectionIfNeeded(): void {
+        if (!this.state.hasAppliedInitialSelection) {
+            this.state.hasAppliedInitialSelection = true;
+            queueMicrotask(() => this.applyInitialSelection());
+        }
+    }
+
+    private applyInitialSelection(): void {
+        this.applySelection(this.state.selected);
+
+        if (this.state.onSelectionChanged) {
+            this.connectSelectionHandler();
+            const selectedIds = this.getSelectedIds();
+            this.state.onSelectionChanged(selectedIds);
+        }
+    }
+
+    private applySelection(ids: string[]): void {
+        if (this.state.selectionMode === Gtk.SelectionMode.MULTIPLE) {
+            const multiSelection = this.state.selectionModel as Gtk.MultiSelection;
+            multiSelection.unselectAll();
+            for (const id of ids) {
+                const index = this.state.ids.indexOf(id);
+                if (index !== -1) {
+                    multiSelection.selectItem(index, false);
+                }
+            }
+        } else {
+            const singleSelection = this.state.selectionModel as Gtk.SingleSelection;
+            const firstId = ids[0];
+            if (firstId !== undefined) {
+                const index = this.state.ids.indexOf(firstId);
+                if (index !== -1) {
+                    singleSelection.setSelected(index);
+                }
+            } else {
+                singleSelection.setSelected(Gtk.INVALID_LIST_POSITION);
+            }
+        }
+    }
+
+    insertItemBefore(id: string, item: unknown, beforeId: string): void {
+        const beforeIndex = this.state.ids.indexOf(beforeId);
 
         if (beforeIndex === -1) {
-            this.state.items.push(item);
+            this.state.ids.push(id);
         } else {
-            this.state.items.splice(beforeIndex, 0, item);
+            this.state.ids.splice(beforeIndex, 0, id);
         }
 
+        this.state.items.set(id, item);
         this.state.modelDirty = true;
         scheduleFlush(this.syncStringList);
     }
 
-    removeItem(item: unknown): void {
-        const index = this.state.items.indexOf(item);
+    removeItem(id: string): void {
+        const index = this.state.ids.indexOf(id);
 
         if (index !== -1) {
-            this.state.items.splice(index, 1);
+            this.state.ids.splice(index, 1);
+            this.state.items.delete(id);
             this.state.modelDirty = true;
             scheduleFlush(this.syncStringList);
         }
     }
 
-    updateItem(oldItem: unknown, newItem: unknown): void {
-        const index = this.state.items.indexOf(oldItem);
-
-        if (index !== -1) {
-            this.state.items[index] = newItem;
+    updateItem(id: string, item: unknown): void {
+        if (this.state.items.has(id)) {
+            this.state.items.set(id, item);
         }
     }
 
@@ -211,6 +323,9 @@ export class ColumnViewNode
         consumed.add("sortColumn");
         consumed.add("sortOrder");
         consumed.add("onSortChange");
+        consumed.add("selected");
+        consumed.add("onSelectionChanged");
+        consumed.add("selectionMode");
         return consumed;
     }
 
@@ -240,6 +355,30 @@ export class ColumnViewNode
             this.state.sortColumn = newSortColumn;
             this.state.sortOrder = newSortOrder;
             this.applySortIndicator();
+        }
+
+        const oldSelectionCallback = oldProps.onSelectionChanged as SelectionCallback | undefined;
+        const newSelectionCallback = newProps.onSelectionChanged as SelectionCallback | undefined;
+
+        if (oldSelectionCallback !== newSelectionCallback) {
+            this.state.onSelectionChanged = newSelectionCallback;
+
+            const hadCallback = oldSelectionCallback !== undefined;
+            const hasCallback = newSelectionCallback !== undefined;
+
+            if (hadCallback && !hasCallback) {
+                this.disconnectSelectionHandler();
+            } else if (!hadCallback && hasCallback) {
+                this.connectSelectionHandler();
+            }
+        }
+
+        const oldSelected = oldProps.selected as string[] | undefined;
+        const newSelected = newProps.selected as string[] | undefined;
+
+        if (oldSelected !== newSelected && newSelected !== undefined) {
+            this.state.selected = newSelected;
+            this.applySelection(newSelected);
         }
     }
 }

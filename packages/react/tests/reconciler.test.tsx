@@ -544,9 +544,9 @@ describe("React Reconciler", () => {
 
         it("adds items to list view", () => {
             const list = createNode("ListView.Root", { renderItem });
-            const item1 = createNode("ListView.Item", { item: { id: 1 } });
-            const item2 = createNode("ListView.Item", { item: { id: 2 } });
-            const item3 = createNode("ListView.Item", { item: { id: 3 } });
+            const item1 = createNode("ListView.Item", { id: "1", item: { id: 1 } });
+            const item2 = createNode("ListView.Item", { id: "2", item: { id: 2 } });
+            const item3 = createNode("ListView.Item", { id: "3", item: { id: 3 } });
 
             list.appendChild(item1);
             list.appendChild(item2);
@@ -559,8 +559,8 @@ describe("React Reconciler", () => {
 
         it("removes items from list view", () => {
             const list = createNode("ListView.Root", { renderItem });
-            const item1 = createNode("ListView.Item", { item: { id: 1 } });
-            const item2 = createNode("ListView.Item", { item: { id: 2 } });
+            const item1 = createNode("ListView.Item", { id: "1", item: { id: 1 } });
+            const item2 = createNode("ListView.Item", { id: "2", item: { id: 2 } });
 
             list.appendChild(item1);
             list.appendChild(item2);
@@ -573,9 +573,9 @@ describe("React Reconciler", () => {
 
         it("inserts item before another", () => {
             const list = createNode("ListView.Root", { renderItem });
-            const item1 = createNode("ListView.Item", { item: { id: 1, name: "First" } });
-            const item2 = createNode("ListView.Item", { item: { id: 2, name: "Second" } });
-            const middle = createNode("ListView.Item", { item: { id: 3, name: "Middle" } });
+            const item1 = createNode("ListView.Item", { id: "1", item: { id: 1, name: "First" } });
+            const item2 = createNode("ListView.Item", { id: "2", item: { id: 2, name: "Second" } });
+            const middle = createNode("ListView.Item", { id: "3", item: { id: 3, name: "Middle" } });
 
             list.appendChild(item1);
             list.appendChild(item2);
@@ -590,9 +590,9 @@ describe("React Reconciler", () => {
             const list = createNode("ListView.Root", {
                 renderItem,
             }) as import("../src/nodes/list-view.js").ListViewNode;
-            const itemA = createNode("ListView.Item", { item: { id: 1, name: "A" } });
-            const itemB = createNode("ListView.Item", { item: { id: 2, name: "B" } });
-            const itemC = createNode("ListView.Item", { item: { id: 3, name: "C" } });
+            const itemA = createNode("ListView.Item", { id: "1", item: { id: 1, name: "A" } });
+            const itemB = createNode("ListView.Item", { id: "2", item: { id: 2, name: "B" } });
+            const itemC = createNode("ListView.Item", { id: "3", item: { id: 3, name: "C" } });
 
             list.appendChild(itemA);
             list.appendChild(itemB);
@@ -612,8 +612,8 @@ describe("React Reconciler", () => {
             const list = createNode("ListView.Root", {
                 renderItem,
             }) as import("../src/nodes/list-view.js").ListViewNode;
-            const itemA = createNode("ListView.Item", { item: { id: 1, name: "A" } });
-            const itemB = createNode("ListView.Item", { item: { id: 2, name: "B" } });
+            const itemA = createNode("ListView.Item", { id: "1", item: { id: 1, name: "A" } });
+            const itemB = createNode("ListView.Item", { id: "2", item: { id: 2, name: "B" } });
 
             list.appendChild(itemA);
             list.appendChild(itemB);
@@ -649,8 +649,8 @@ describe("React Reconciler", () => {
         it("adds items to column view", () => {
             const columnView = createNode("ColumnView.Root", {});
             const column = createNode("ColumnView.Column", { title: "Name", renderCell });
-            const item1 = createNode("ColumnView.Item", { item: { name: "John" } });
-            const item2 = createNode("ColumnView.Item", { item: { name: "Jane" } });
+            const item1 = createNode("ColumnView.Item", { id: "1", item: { name: "John" } });
+            const item2 = createNode("ColumnView.Item", { id: "2", item: { name: "Jane" } });
 
             columnView.appendChild(column);
             columnView.appendChild(item1);
@@ -677,8 +677,8 @@ describe("React Reconciler", () => {
 
         it("removes items from column view", () => {
             const columnView = createNode("ColumnView.Root", {});
-            const item1 = createNode("ColumnView.Item", { item: { name: "John" } });
-            const item2 = createNode("ColumnView.Item", { item: { name: "Jane" } });
+            const item1 = createNode("ColumnView.Item", { id: "1", item: { name: "John" } });
+            const item2 = createNode("ColumnView.Item", { id: "2", item: { name: "Jane" } });
 
             columnView.appendChild(item1);
             columnView.appendChild(item2);
@@ -760,9 +760,9 @@ describe("React Reconciler", () => {
                 "ColumnView.Root",
                 {},
             ) as import("../src/nodes/column-view.js").ColumnViewNode;
-            const itemA = createNode("ColumnView.Item", { item: { name: "A" } });
-            const itemB = createNode("ColumnView.Item", { item: { name: "B" } });
-            const itemC = createNode("ColumnView.Item", { item: { name: "C" } });
+            const itemA = createNode("ColumnView.Item", { id: "a", item: { name: "A" } });
+            const itemB = createNode("ColumnView.Item", { id: "b", item: { name: "B" } });
+            const itemC = createNode("ColumnView.Item", { id: "c", item: { name: "C" } });
 
             columnView.appendChild(itemA);
             columnView.appendChild(itemB);
@@ -783,8 +783,8 @@ describe("React Reconciler", () => {
                 "ColumnView.Root",
                 {},
             ) as import("../src/nodes/column-view.js").ColumnViewNode;
-            const itemA = createNode("ColumnView.Item", { item: { name: "A" } });
-            const itemB = createNode("ColumnView.Item", { item: { name: "B" } });
+            const itemA = createNode("ColumnView.Item", { id: "a", item: { name: "A" } });
+            const itemB = createNode("ColumnView.Item", { id: "b", item: { name: "B" } });
 
             columnView.appendChild(itemA);
             columnView.appendChild(itemB);

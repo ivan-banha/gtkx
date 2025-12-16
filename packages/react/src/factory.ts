@@ -8,8 +8,8 @@ import { DropDownItemNode, DropDownNode } from "./nodes/drop-down.js";
 import { FlowBoxNode } from "./nodes/flow-box.js";
 import { GridChildNode, GridNode } from "./nodes/grid.js";
 import { AdwHeaderBarNode, HeaderBarNode, PackEndNode, PackStartNode } from "./nodes/header-bar.js";
-import { ListItemNode, ListViewNode } from "./nodes/list-view.js";
 import { ListBoxNode } from "./nodes/list-box.js";
+import { ListItemNode, ListViewNode } from "./nodes/list-view.js";
 import {
     ApplicationMenuNode,
     MenuItemNode,

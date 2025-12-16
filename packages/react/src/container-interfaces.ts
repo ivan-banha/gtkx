@@ -54,13 +54,14 @@ export type GridContainer = {
 };
 
 /**
- * Type for item-based containers like ListView, ColumnView, DropDown.
+ * Type for item-based containers like ListView, GridView, ColumnView.
+ * Items are identified by string IDs for selection support.
  */
 export type ItemContainer<T> = {
-    addItem(item: T): void;
-    insertItemBefore(item: T, beforeItem: T): void;
-    removeItem(item: T): void;
-    updateItem(oldItem: T, newItem: T): void;
+    addItem(id: string, item: T): void;
+    insertItemBefore(id: string, item: T, beforeId: string): void;
+    removeItem(id: string): void;
+    updateItem(id: string, item: T): void;
 };
 
 /**

@@ -894,17 +894,17 @@ export default {
 
 export const getAddCommand = (pm: PackageManager, deps: string[], dev: boolean): string => {
     const devFlag = dev ? (pm === "npm" ? "--save-dev" : "-D") : "";
-    const packages = deps.join(" ");
+    const parts = [devFlag, ...deps].filter(Boolean).join(" ");
 
     switch (pm) {
         case "npm":
-            return `npm install ${devFlag} ${packages}`.trim();
+            return `npm install ${parts}`;
         case "yarn":
-            return `yarn add ${devFlag} ${packages}`.trim();
+            return `yarn add ${parts}`;
         case "pnpm":
-            return `pnpm add ${devFlag} ${packages}`.trim();
+            return `pnpm add ${parts}`;
         case "bun":
-            return `bun add ${devFlag} ${packages}`.trim();
+            return `bun add ${parts}`;
     }
 };
 

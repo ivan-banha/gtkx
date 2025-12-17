@@ -80,6 +80,10 @@ const create = defineCommand({
             type: "string",
             description: "Testing framework (vitest, jest, node, none)",
         },
+        "claude-skills": {
+            type: "boolean",
+            description: "Include Claude Code skills for AI assistance",
+        },
     },
     async run({ args }) {
         await createApp({
@@ -87,6 +91,7 @@ const create = defineCommand({
             appId: args["app-id"],
             packageManager: args.pm as "pnpm" | "npm" | "yarn" | "bun" | undefined,
             testing: args.testing as "vitest" | "jest" | "node" | "none" | undefined,
+            claudeSkills: args["claude-skills"],
         });
     },
 });

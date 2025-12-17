@@ -41,7 +41,7 @@
     },
     "dependencies": {
         "@gtkx/ffi": "workspace:*",
-        "react-reconciler": "0.33.0"
+        "react-reconciler": "^0.33.0"
     },
     "devDependencies": {
         "@gtkx/gir": "workspace:*"

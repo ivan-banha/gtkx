@@ -1,0 +1,651 @@
+import { vol } from "memfs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+    generatePackageJson,
+    generateTsConfig,
+    getAddCommand,
+    getRunCommand,
+    getTestScript,
+    isValidAppId,
+    isValidProjectName,
+} from "../src/create.js";
+
+vi.mock("node:fs", async () => {
+    const memfs = await import("memfs");
+    return memfs.fs;
+});
+
+vi.mock("node:fs/promises", async () => {
+    const memfs = await import("memfs");
+    return memfs.fs.promises;
+});
+
+vi.mock("@clack/prompts", () => ({
+    intro: vi.fn(),
+    spinner: vi.fn(() => ({
+        start: vi.fn(),
+        stop: vi.fn(),
+        message: vi.fn(),
+    })),
+    note: vi.fn(),
+    log: {
+        info: vi.fn(),
+        error: vi.fn(),
+        warn: vi.fn(),
+        success: vi.fn(),
+        message: vi.fn(),
+        step: vi.fn(),
+    },
+    text: vi.fn(),
+    select: vi.fn(),
+    confirm: vi.fn(),
+    isCancel: vi.fn(() => false),
+    cancel: vi.fn(),
+}));
+
+vi.mock("node:child_process", () => ({
+    spawn: vi.fn(() => {
+        const mockProcess = {
+            on: vi.fn((event: string, callback: (code: number | null) => void) => {
+                if (event === "close") {
+                    setTimeout(() => callback(0), 0);
+                }
+                return mockProcess;
+            }),
+            stdout: { on: vi.fn() },
+            stderr: { on: vi.fn() },
+        };
+        return mockProcess;
+    }),
+}));
+
+describe("isValidProjectName", () => {
+    it("accepts lowercase letters", () => {
+        expect(isValidProjectName("myapp")).toBe(true);
+    });
+
+    it("accepts numbers", () => {
+        expect(isValidProjectName("app123")).toBe(true);
+    });
+
+    it("accepts hyphens", () => {
+        expect(isValidProjectName("my-app")).toBe(true);
+    });
+
+    it("accepts combination of valid characters", () => {
+        expect(isValidProjectName("my-cool-app-123")).toBe(true);
+    });
+
+    it("accepts single character", () => {
+        expect(isValidProjectName("a")).toBe(true);
+    });
+
+    describe("edge cases", () => {
+        it("accepts name starting with number", () => {
+            expect(isValidProjectName("123app")).toBe(true);
+        });
+
+        it("accepts name with consecutive hyphens", () => {
+            expect(isValidProjectName("my--app")).toBe(true);
+        });
+
+        it("accepts name ending with hyphen", () => {
+            expect(isValidProjectName("app-")).toBe(true);
+        });
+
+        it("accepts name starting with hyphen", () => {
+            expect(isValidProjectName("-app")).toBe(true);
+        });
+    });
+
+    describe("error handling", () => {
+        it("rejects uppercase letters", () => {
+            expect(isValidProjectName("MyApp")).toBe(false);
+        });
+
+        it("rejects underscores", () => {
+            expect(isValidProjectName("my_app")).toBe(false);
+        });
+
+        it("rejects dots", () => {
+            expect(isValidProjectName("my.app")).toBe(false);
+        });
+
+        it("rejects spaces", () => {
+            expect(isValidProjectName("my app")).toBe(false);
+        });
+
+        it("rejects special characters", () => {
+            expect(isValidProjectName("my@app")).toBe(false);
+        });
+
+        it("rejects empty string", () => {
+            expect(isValidProjectName("")).toBe(false);
+        });
+    });
+});
+
+describe("isValidAppId", () => {
+    it("accepts two-part ID", () => {
+        expect(isValidAppId("org.app")).toBe(true);
+    });
+
+    it("accepts three-part ID", () => {
+        expect(isValidAppId("com.example.app")).toBe(true);
+    });
+
+    it("accepts ID with uppercase", () => {
+        expect(isValidAppId("com.Example.MyApp")).toBe(true);
+    });
+
+    it("accepts ID with numbers", () => {
+        expect(isValidAppId("org.gtkx123.app456")).toBe(true);
+    });
+
+    describe("edge cases", () => {
+        it("accepts deeply nested ID", () => {
+            expect(isValidAppId("com.example.sub.category.app")).toBe(true);
+        });
+
+        it("accepts single character segments", () => {
+            expect(isValidAppId("a.b")).toBe(true);
+        });
+    });
+
+    describe("error handling", () => {
+        it("rejects single segment without dot", () => {
+            expect(isValidAppId("myapp")).toBe(false);
+        });
+
+        it("rejects ID starting with number", () => {
+            expect(isValidAppId("1com.app")).toBe(false);
+        });
+
+        it("rejects segment starting with number", () => {
+            expect(isValidAppId("com.1example.app")).toBe(false);
+        });
+
+        it("rejects ID ending with dot", () => {
+            expect(isValidAppId("com.app.")).toBe(false);
+        });
+
+        it("rejects ID with consecutive dots", () => {
+            expect(isValidAppId("com..app")).toBe(false);
+        });
+
+        it("rejects ID with hyphens", () => {
+            expect(isValidAppId("com.my-app.test")).toBe(false);
+        });
+
+        it("rejects ID with underscores", () => {
+            expect(isValidAppId("com.my_app.test")).toBe(false);
+        });
+
+        it("rejects empty string", () => {
+            expect(isValidAppId("")).toBe(false);
+        });
+    });
+});
+
+describe("getTestScript", () => {
+    it("returns vitest script", () => {
+        expect(getTestScript("vitest")).toBe("GDK_BACKEND=x11 xvfb-run -a vitest");
+    });
+
+    it("returns jest script", () => {
+        expect(getTestScript("jest")).toBe("GDK_BACKEND=x11 xvfb-run -a jest");
+    });
+
+    it("returns node test runner script", () => {
+        expect(getTestScript("node")).toBe("GDK_BACKEND=x11 xvfb-run -a node --import tsx --test tests/**/*.test.ts");
+    });
+
+    it("returns undefined for none", () => {
+        expect(getTestScript("none")).toBeUndefined();
+    });
+});
+
+describe("getAddCommand", () => {
+    const testDeps = ["react", "typescript"];
+
+    it("generates pnpm add command", () => {
+        expect(getAddCommand("pnpm", testDeps, false)).toBe("pnpm add react typescript");
+    });
+
+    it("generates pnpm add -D command for dev deps", () => {
+        expect(getAddCommand("pnpm", testDeps, true)).toBe("pnpm add -D react typescript");
+    });
+
+    it("generates npm install command", () => {
+        expect(getAddCommand("npm", testDeps, false)).toBe("npm install react typescript");
+    });
+
+    it("generates npm install --save-dev command", () => {
+        expect(getAddCommand("npm", testDeps, true)).toBe("npm install --save-dev react typescript");
+    });
+
+    it("generates yarn add command", () => {
+        expect(getAddCommand("yarn", testDeps, false)).toBe("yarn add react typescript");
+    });
+
+    it("generates yarn add -D command", () => {
+        expect(getAddCommand("yarn", testDeps, true)).toBe("yarn add -D react typescript");
+    });
+
+    it("generates bun add command", () => {
+        expect(getAddCommand("bun", testDeps, false)).toBe("bun add react typescript");
+    });
+
+    it("generates bun add -D command", () => {
+        expect(getAddCommand("bun", testDeps, true)).toBe("bun add -D react typescript");
+    });
+
+    describe("edge cases", () => {
+        it("handles single dependency", () => {
+            expect(getAddCommand("pnpm", ["react"], false)).toBe("pnpm add react");
+        });
+
+        it("handles empty dependency array", () => {
+            expect(getAddCommand("pnpm", [], false)).toBe("pnpm add ");
+        });
+    });
+});
+
+describe("getRunCommand", () => {
+    it("returns pnpm dev", () => {
+        expect(getRunCommand("pnpm")).toBe("pnpm dev");
+    });
+
+    it("returns npm run dev", () => {
+        expect(getRunCommand("npm")).toBe("npm run dev");
+    });
+
+    it("returns yarn dev", () => {
+        expect(getRunCommand("yarn")).toBe("yarn dev");
+    });
+
+    it("returns bun dev", () => {
+        expect(getRunCommand("bun")).toBe("bun dev");
+    });
+});
+
+describe("generatePackageJson", () => {
+    it("generates valid JSON structure", () => {
+        const result = generatePackageJson("my-app", "com.example.app", "vitest");
+        const parsed = JSON.parse(result);
+
+        expect(parsed.name).toBe("my-app");
+        expect(parsed.version).toBe("0.0.1");
+        expect(parsed.private).toBe(true);
+        expect(parsed.type).toBe("module");
+        expect(parsed.gtkx.appId).toBe("com.example.app");
+    });
+
+    it("includes test script for vitest", () => {
+        const result = generatePackageJson("app", "org.app", "vitest");
+        const parsed = JSON.parse(result);
+
+        expect(parsed.scripts.test).toBe("GDK_BACKEND=x11 xvfb-run -a vitest");
+    });
+
+    it("includes test script for jest", () => {
+        const result = generatePackageJson("app", "org.app", "jest");
+        const parsed = JSON.parse(result);
+
+        expect(parsed.scripts.test).toBe("GDK_BACKEND=x11 xvfb-run -a jest");
+    });
+
+    it("includes test script for node runner", () => {
+        const result = generatePackageJson("app", "org.app", "node");
+        const parsed = JSON.parse(result);
+
+        expect(parsed.scripts.test).toBe("GDK_BACKEND=x11 xvfb-run -a node --import tsx --test tests/**/*.test.ts");
+    });
+
+    it("excludes test script for none", () => {
+        const result = generatePackageJson("app", "org.app", "none");
+        const parsed = JSON.parse(result);
+
+        expect(parsed.scripts.test).toBeUndefined();
+    });
+
+    it("always includes dev, build, start scripts", () => {
+        const result = generatePackageJson("app", "org.app", "none");
+        const parsed = JSON.parse(result);
+
+        expect(parsed.scripts.dev).toBe("gtkx dev src/app.tsx");
+        expect(parsed.scripts.build).toBe("tsc -b");
+        expect(parsed.scripts.start).toBe("node dist/index.js");
+    });
+});
+
+describe("generateTsConfig", () => {
+    it("generates valid JSON structure", () => {
+        const result = generateTsConfig();
+        const parsed = JSON.parse(result);
+
+        expect(parsed.compilerOptions).toBeDefined();
+        expect(parsed.include).toEqual(["src/**/*"]);
+    });
+
+    it("configures jsx for react-jsx", () => {
+        const result = generateTsConfig();
+        const parsed = JSON.parse(result);
+
+        expect(parsed.compilerOptions.jsx).toBe("react-jsx");
+    });
+
+    it("enables strict mode", () => {
+        const result = generateTsConfig();
+        const parsed = JSON.parse(result);
+
+        expect(parsed.compilerOptions.strict).toBe(true);
+    });
+
+    it("configures ESNext module settings", () => {
+        const result = generateTsConfig();
+        const parsed = JSON.parse(result);
+
+        expect(parsed.compilerOptions.target).toBe("ESNext");
+        expect(parsed.compilerOptions.module).toBe("NodeNext");
+        expect(parsed.compilerOptions.moduleResolution).toBe("NodeNext");
+    });
+
+    it("sets output directory to dist", () => {
+        const result = generateTsConfig();
+        const parsed = JSON.parse(result);
+
+        expect(parsed.compilerOptions.outDir).toBe("dist");
+        expect(parsed.compilerOptions.rootDir).toBe("src");
+    });
+});
+
+describe("createApp", () => {
+    const testDir = "/test-workspace";
+
+    beforeEach(() => {
+        vol.reset();
+        vol.mkdirSync(testDir, { recursive: true });
+        vi.spyOn(process, "cwd").mockReturnValue(testDir);
+    });
+
+    afterEach(() => {
+        vol.reset();
+        vi.restoreAllMocks();
+    });
+
+    it("creates project directory structure", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app",
+            appId: "org.test.app",
+            packageManager: "pnpm",
+            testing: "vitest",
+            claudeSkills: false,
+        });
+
+        expect(vol.existsSync(`${testDir}/test-app`)).toBe(true);
+        expect(vol.existsSync(`${testDir}/test-app/src`)).toBe(true);
+        expect(vol.existsSync(`${testDir}/test-app/tests`)).toBe(true);
+    });
+
+    it("creates package.json with correct content", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app",
+            appId: "com.example.test",
+            packageManager: "npm",
+            testing: "vitest",
+            claudeSkills: false,
+        });
+
+        const content = JSON.parse(vol.readFileSync(`${testDir}/test-app/package.json`, "utf-8") as string);
+
+        expect(content.name).toBe("test-app");
+        expect(content.gtkx.appId).toBe("com.example.test");
+        expect(content.scripts.test).toContain("vitest");
+    });
+
+    it("creates tsconfig.json", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app",
+            appId: "org.test.app",
+            packageManager: "pnpm",
+            testing: "none",
+            claudeSkills: false,
+        });
+
+        expect(vol.existsSync(`${testDir}/test-app/tsconfig.json`)).toBe(true);
+
+        const content = JSON.parse(vol.readFileSync(`${testDir}/test-app/tsconfig.json`, "utf-8") as string);
+        expect(content.compilerOptions.jsx).toBe("react-jsx");
+    });
+
+    it("creates app.tsx with correct title", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "my-cool-app",
+            appId: "org.test.app",
+            packageManager: "pnpm",
+            testing: "none",
+            claudeSkills: false,
+        });
+
+        const content = vol.readFileSync(`${testDir}/my-cool-app/src/app.tsx`, "utf-8") as string;
+
+        expect(content).toContain('title="My Cool App"');
+        expect(content).toContain('appId = "org.test.app"');
+    });
+
+    it("creates index.tsx entry point", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app",
+            appId: "org.test.app",
+            packageManager: "pnpm",
+            testing: "none",
+            claudeSkills: false,
+        });
+
+        const content = vol.readFileSync(`${testDir}/test-app/src/index.tsx`, "utf-8") as string;
+
+        expect(content).toContain("import { render }");
+        expect(content).toContain("render(<App />, appId)");
+    });
+
+    it("creates .gitignore", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app",
+            appId: "org.test.app",
+            packageManager: "pnpm",
+            testing: "none",
+            claudeSkills: false,
+        });
+
+        const content = vol.readFileSync(`${testDir}/test-app/.gitignore`, "utf-8") as string;
+
+        expect(content).toContain("node_modules/");
+        expect(content).toContain("dist/");
+    });
+
+    it("creates vitest.config.ts for vitest", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app",
+            appId: "org.test.app",
+            packageManager: "pnpm",
+            testing: "vitest",
+            claudeSkills: false,
+        });
+
+        expect(vol.existsSync(`${testDir}/test-app/vitest.config.ts`)).toBe(true);
+
+        const content = vol.readFileSync(`${testDir}/test-app/vitest.config.ts`, "utf-8") as string;
+        expect(content).toContain("defineConfig");
+    });
+
+    it("creates jest.config.js for jest", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app",
+            appId: "org.test.app",
+            packageManager: "pnpm",
+            testing: "jest",
+            claudeSkills: false,
+        });
+
+        expect(vol.existsSync(`${testDir}/test-app/jest.config.js`)).toBe(true);
+
+        const content = vol.readFileSync(`${testDir}/test-app/jest.config.js`, "utf-8") as string;
+        expect(content).toContain("ts-jest");
+    });
+
+    it("creates test file for node runner without config", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app",
+            appId: "org.test.app",
+            packageManager: "pnpm",
+            testing: "node",
+            claudeSkills: false,
+        });
+
+        expect(vol.existsSync(`${testDir}/test-app/tests`)).toBe(true);
+        expect(vol.existsSync(`${testDir}/test-app/tests/app.test.tsx`)).toBe(true);
+
+        const content = vol.readFileSync(`${testDir}/test-app/tests/app.test.tsx`, "utf-8") as string;
+        expect(content).toContain('import { describe, it, after } from "node:test"');
+    });
+
+    it("does not create tests directory for none", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app",
+            appId: "org.test.app",
+            packageManager: "pnpm",
+            testing: "none",
+            claudeSkills: false,
+        });
+
+        expect(vol.existsSync(`${testDir}/test-app/tests`)).toBe(false);
+    });
+
+    it("creates claude skills directory when enabled", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app",
+            appId: "org.test.app",
+            packageManager: "pnpm",
+            testing: "none",
+            claudeSkills: true,
+        });
+
+        const skillsDir = `${testDir}/test-app/.claude/skills/developing-gtkx-apps`;
+        expect(vol.existsSync(skillsDir)).toBe(true);
+        expect(vol.existsSync(`${skillsDir}/SKILL.md`)).toBe(true);
+        expect(vol.existsSync(`${skillsDir}/WIDGETS.md`)).toBe(true);
+        expect(vol.existsSync(`${skillsDir}/EXAMPLES.md`)).toBe(true);
+    });
+
+    it("does not create claude directory when disabled", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app",
+            appId: "org.test.app",
+            packageManager: "pnpm",
+            testing: "none",
+            claudeSkills: false,
+        });
+
+        expect(vol.existsSync(`${testDir}/test-app/.claude`)).toBe(false);
+    });
+
+    it("scaffolds project with pnpm", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app-pnpm",
+            appId: "org.test.app",
+            packageManager: "pnpm",
+            testing: "vitest",
+            claudeSkills: false,
+        });
+
+        expect(vol.existsSync(`${testDir}/test-app-pnpm`)).toBe(true);
+        expect(vol.existsSync(`${testDir}/test-app-pnpm/package.json`)).toBe(true);
+    });
+
+    it("scaffolds project with npm", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app-npm",
+            appId: "org.test.app",
+            packageManager: "npm",
+            testing: "vitest",
+            claudeSkills: false,
+        });
+
+        expect(vol.existsSync(`${testDir}/test-app-npm`)).toBe(true);
+        expect(vol.existsSync(`${testDir}/test-app-npm/package.json`)).toBe(true);
+    });
+
+    it("scaffolds project with yarn", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app-yarn",
+            appId: "org.test.app",
+            packageManager: "yarn",
+            testing: "vitest",
+            claudeSkills: false,
+        });
+
+        expect(vol.existsSync(`${testDir}/test-app-yarn`)).toBe(true);
+        expect(vol.existsSync(`${testDir}/test-app-yarn/package.json`)).toBe(true);
+    });
+
+    it("scaffolds project with bun", async () => {
+        const { createApp } = await import("../src/create.js");
+        await createApp({
+            name: "test-app-bun",
+            appId: "org.test.app",
+            packageManager: "bun",
+            testing: "vitest",
+            claudeSkills: false,
+        });
+
+        expect(vol.existsSync(`${testDir}/test-app-bun`)).toBe(true);
+        expect(vol.existsSync(`${testDir}/test-app-bun/package.json`)).toBe(true);
+    });
+
+    describe("error handling", () => {
+        it("handles dependency installation failure gracefully", async () => {
+            const childProcess = await import("node:child_process");
+            vi.mocked(childProcess.spawn).mockImplementation(() => {
+                const mockProcess = {
+                    on: vi.fn((event: string, callback: (arg: unknown) => void) => {
+                        if (event === "close") {
+                            setTimeout(() => callback(1), 0);
+                        }
+                        return mockProcess;
+                    }),
+                    stdout: { on: vi.fn() },
+                    stderr: { on: vi.fn() },
+                } as unknown as ReturnType<typeof childProcess.spawn>;
+                return mockProcess;
+            });
+
+            const { createApp } = await import("../src/create.js");
+            await createApp({
+                name: "test-app",
+                appId: "org.test.app",
+                packageManager: "pnpm",
+                testing: "none",
+                claudeSkills: false,
+            });
+
+            expect(vol.existsSync(`${testDir}/test-app`)).toBe(true);
+            expect(vol.existsSync(`${testDir}/test-app/package.json`)).toBe(true);
+        });
+    });
+});

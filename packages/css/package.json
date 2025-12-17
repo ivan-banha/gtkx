@@ -37,8 +37,8 @@
         "test": "if [ -n \"$CI\" ]; then vitest run; else GDK_BACKEND=x11 xvfb-run -a vitest run; fi"
     },
     "dependencies": {
-        "@emotion/cache": "11.14.0",
-        "@emotion/serialize": "1.3.3",
+        "@emotion/cache": "^11.14.0",
+        "@emotion/serialize": "^1.3.3",
         "@gtkx/ffi": "workspace:*"
     }
 }

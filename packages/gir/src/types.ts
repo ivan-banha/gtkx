@@ -1260,6 +1260,10 @@ export class TypeMapper {
             "DrawingAreaDrawFunc",
             "GLib.CompareDataFunc",
             "CompareDataFunc",
+            "GLib.SourceFunc",
+            "SourceFunc",
+            "Gtk.TickCallback",
+            "TickCallback",
         ];
         return allParams.some(
             (p) => trampolineCallbacks.includes(p.type.name) && (p.closure === paramIndex || p.destroy === paramIndex),

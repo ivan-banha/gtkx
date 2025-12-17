@@ -1,14 +1,12 @@
 //! Dispatching callbacks to the JS thread.
 //!
-//! This module provides two paths for invoking JavaScript callbacks from GTK signal handlers:
+//! This module provides a mechanism for invoking JavaScript callbacks from GTK signal handlers.
 //!
-//! - **Normal path**: When JS is idle, use `send_via_channel()` which schedules the callback
-//!   through a Neon channel. The UV event loop processes it asynchronously.
-//!
-//! - **Re-entrant path**: When JS is waiting for a GTK dispatch result (in `call.rs::wait_for_result`),
-//!   use `queue()` to add to a queue that's processed synchronously by the wait loop.
-//!
-//! The choice between paths is made by checking `gtk_dispatch::is_js_waiting()`.
+//! Callbacks are always queued and can be processed in two ways:
+//! - **Synchronous**: When JS is in a wait loop (e.g., waiting for FFI results), `process_pending()`
+//!   is called repeatedly and processes the queue.
+//! - **Asynchronous**: When JS is idle, a wake-up message is sent via a Neon channel, which
+//!   triggers `process_pending()` on the UV event loop.
 
 use std::sync::{Arc, mpsc};
 
@@ -30,11 +28,11 @@ pub struct PendingCallback {
 
 static QUEUE: Queue<PendingCallback> = Queue::new();
 
-/// Queues a callback for synchronous execution on the JS thread.
+/// Queues a callback for execution on the JS thread.
 ///
-/// Use this when `gtk_dispatch::is_js_waiting()` is true (re-entrant case).
-/// The callback will be executed by the JS thread when it processes the queue
-/// in its wait loop.
+/// The callback is added to a queue that will be processed either:
+/// - Synchronously by `process_pending()` in the JS wait loop, or
+/// - Asynchronously when the channel wake-up triggers `process_pending()`
 pub fn queue(
     callback: Arc<Root<JsFunction>>,
     args: Vec<Value>,
@@ -52,21 +50,20 @@ pub fn queue(
     rx
 }
 
-/// Sends a callback to the JS thread via the Neon channel.
+/// Queues a callback and sends a wake-up message via the channel.
 ///
-/// Use this when `gtk_dispatch::is_js_waiting()` is false (normal case).
-/// The callback is scheduled on the UV event loop and processed asynchronously.
-pub fn send_via_channel(
+/// Use this when JS might be idle (not in a wait loop). The channel message
+/// ensures the queue gets processed even if JS isn't actively polling.
+pub fn queue_with_wakeup(
     channel: &Channel,
     callback: Arc<Root<JsFunction>>,
     args: Vec<Value>,
     capture_result: bool,
 ) -> mpsc::Receiver<Result<Value, ()>> {
-    let (tx, rx) = mpsc::channel();
+    let rx = queue(callback, args, capture_result);
 
-    channel.send(move |mut cx| {
-        let result = execute_callback(&mut cx, &callback, &args, capture_result);
-        tx.send(result).expect("JS callback result channel disconnected");
+    channel.send(|mut cx| {
+        process_pending(&mut cx);
         Ok(())
     });
 

@@ -179,7 +179,7 @@ describe("call - callback types", () => {
         });
     });
 
-    describe.skip("sourceFunc trampoline (idle/timeout)", () => {
+    describe("sourceFunc trampoline (idle/timeout)", () => {
         it("invokes idle callback", () => {
             const sourceId = call(
                 GLIB_LIB,

@@ -152,7 +152,7 @@ where
     let rx = if gtk_dispatch::is_js_waiting() {
         js_dispatch::queue(callback.clone(), args_values, capture_result)
     } else {
-        js_dispatch::send_via_channel(channel, callback.clone(), args_values, capture_result)
+        js_dispatch::queue_with_wakeup(channel, callback.clone(), args_values, capture_result)
     };
 
     wait_for_js_result(rx, on_result)

@@ -93,5 +93,16 @@ pub fn dispatch_pending() -> bool {
         dispatched = true;
     }
 
+    if dispatched {
+        DISPATCH_SCHEDULED.store(false, Ordering::Release);
+        if !QUEUE.is_empty()
+            && DISPATCH_SCHEDULED
+                .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+                .is_ok()
+        {
+            glib::idle_add_once(dispatch_batch);
+        }
+    }
+
     dispatched
 }

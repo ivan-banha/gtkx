@@ -238,10 +238,30 @@ packages/gir/tests/
 
 ### Public API
 
-TODO: Document public exports (Rust native module)
+The native package exposes (Rust native module via Neon):
+1. `createRef(value)` - Creates a reference wrapper for out/inout parameters in FFI calls
+2. `call(library, symbol, args, returnType)` - Calls a native GTK function via FFI
+3. `batchCall(calls)` - Executes multiple void FFI calls in a single native dispatch
+4. `start(appId, flags?)` - Starts the GTK application main loop
+5. `stop()` - Stops the GTK application and exits the main loop
+6. `read(objectId, type, offset)` - Reads a field from a boxed record at the specified offset
+7. `write(objectId, type, offset, value)` - Writes a value to a field in a boxed record
+8. `alloc(size, glibTypeName, lib?)` - Allocates a zeroed struct and registers it as a boxed type
+9. `getObjectId(id)` - Gets the unique identifier for a GObject/boxed pointer
+
+Note: Also exports types `Ref`, `Arg`, `Type`, `CallDescriptor`
 
 ### Test Files
 
-TODO: Plan test files
+```
+packages/native/tests/
+├── create-ref.test.ts      # createRef()
+├── call.test.ts            # call() - primitive, string, gobject, array, ref, callback types
+├── batch-call.test.ts      # batchCall()
+├── start.test.ts           # start() (implicit via test setup)
+├── read-write.test.ts      # read() and write()
+├── alloc.test.ts           # alloc()
+└── get-object-id.test.ts   # getObjectId()
+```
 
-### Status: ⏳ Pending
+### Status: ✅ Complete (48 tests)

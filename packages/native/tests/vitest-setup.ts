@@ -1,3 +1,3 @@
-import { setup } from "./test-setup.js";
+import { initGtk } from "./test-setup.js";
 
-setup();
+initGtk();

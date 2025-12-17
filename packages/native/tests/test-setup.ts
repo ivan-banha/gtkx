@@ -1,4 +1,3 @@
-import { beforeAll } from "vitest";
 import { start, stop } from "../index.js";
 
 export const GTK_LIB = "libgtk-4.so.1";
@@ -11,16 +10,13 @@ const APP_ID = "com.gtkx.test.native";
 
 let isInitialized = false;
 
-export const setup = () => {
-    beforeAll(() => {
-        if (!isInitialized) {
-            start(APP_ID);
-            isInitialized = true;
-        }
-    });
+export const initGtk = () => {
+    if (isInitialized) return;
+    start(APP_ID);
+    isInitialized = true;
 };
 
-export const teardown = () => {
+export const cleanupGtk = () => {
     if (isInitialized) {
         stop();
         isInitialized = false;

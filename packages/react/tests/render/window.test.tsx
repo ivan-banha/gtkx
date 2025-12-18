@@ -1,18 +1,18 @@
+import { getCurrentApp } from "@gtkx/ffi";
 import type * as Adw from "@gtkx/ffi/adw";
 import type * as Gtk from "@gtkx/ffi/gtk";
 import { createRef as createNativeRef } from "@gtkx/native";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { AdwApplicationWindow, AdwWindow, ApplicationWindow, Label, Window } from "../../src/index.js";
-import { flushMicrotasks, getCurrentApp, render } from "../setup.js";
+import { render } from "../utils.js";
 
 describe("render - Window", () => {
     describe("creation", () => {
         it("creates Gtk.Window", async () => {
             const ref = createRef<Gtk.Window>();
 
-            render(<Window.Root ref={ref} title="Plain Window" />);
-            await flushMicrotasks();
+            await render(<Window.Root ref={ref} title="Plain Window" />);
 
             expect(ref.current).not.toBeNull();
             expect(ref.current?.getTitle()).toBe("Plain Window");
@@ -21,8 +21,7 @@ describe("render - Window", () => {
         it("creates Gtk.ApplicationWindow with current app", async () => {
             const ref = createRef<Gtk.ApplicationWindow>();
 
-            render(<ApplicationWindow ref={ref} title="App Window" />);
-            await flushMicrotasks();
+            await render(<ApplicationWindow ref={ref} title="App Window" />);
 
             expect(ref.current).not.toBeNull();
             expect(ref.current?.getApplication()?.id).toEqual(getCurrentApp().id);
@@ -31,8 +30,7 @@ describe("render - Window", () => {
         it("creates Adw.Window", async () => {
             const ref = createRef<Adw.Window>();
 
-            render(<AdwWindow.Root ref={ref} />);
-            await flushMicrotasks();
+            await render(<AdwWindow.Root ref={ref} />);
 
             expect(ref.current).not.toBeNull();
         });
@@ -40,8 +38,7 @@ describe("render - Window", () => {
         it("creates Adw.ApplicationWindow with current app", async () => {
             const ref = createRef<Adw.ApplicationWindow>();
 
-            render(<AdwApplicationWindow.Root ref={ref} />);
-            await flushMicrotasks();
+            await render(<AdwApplicationWindow.Root ref={ref} />);
 
             expect(ref.current).not.toBeNull();
             expect(ref.current?.getApplication()?.id).toEqual(getCurrentApp().id);
@@ -52,8 +49,7 @@ describe("render - Window", () => {
         it("sets default size via defaultWidth/defaultHeight", async () => {
             const ref = createRef<Gtk.Window>();
 
-            render(<Window.Root ref={ref} defaultWidth={300} defaultHeight={200} />);
-            await flushMicrotasks();
+            await render(<Window.Root ref={ref} defaultWidth={300} defaultHeight={200} />);
 
             const widthRef = createNativeRef(0);
             const heightRef = createNativeRef(0);
@@ -69,8 +65,7 @@ describe("render - Window", () => {
                 return <Window.Root ref={ref} defaultWidth={width} defaultHeight={height} />;
             }
 
-            render(<App width={200} height={150} />);
-            await flushMicrotasks();
+            await render(<App width={200} height={150} />);
 
             const widthRef = createNativeRef(0);
             const heightRef = createNativeRef(0);
@@ -78,8 +73,7 @@ describe("render - Window", () => {
             const initialWidth = widthRef.value;
             const initialHeight = heightRef.value;
 
-            render(<App width={400} height={300} />);
-            await flushMicrotasks();
+            await render(<App width={400} height={300} />);
 
             ref.current?.getDefaultSize(widthRef, heightRef);
             expect(widthRef.value).toBeGreaterThanOrEqual(initialWidth);
@@ -89,8 +83,7 @@ describe("render - Window", () => {
         it("handles partial size (only width)", async () => {
             const ref = createRef<Gtk.Window>();
 
-            render(<Window.Root ref={ref} defaultWidth={300} />);
-            await flushMicrotasks();
+            await render(<Window.Root ref={ref} defaultWidth={300} />);
 
             const widthRef = createNativeRef(0);
             ref.current?.getDefaultSize(widthRef, null);
@@ -100,8 +93,7 @@ describe("render - Window", () => {
         it("handles partial size (only height)", async () => {
             const ref = createRef<Gtk.Window>();
 
-            render(<Window.Root ref={ref} defaultHeight={200} />);
-            await flushMicrotasks();
+            await render(<Window.Root ref={ref} defaultHeight={200} />);
 
             const heightRef = createNativeRef(0);
             ref.current?.getDefaultSize(null, heightRef);
@@ -113,8 +105,7 @@ describe("render - Window", () => {
         it("presents window on mount", async () => {
             const ref = createRef<Gtk.Window>();
 
-            render(<Window.Root ref={ref} title="Present" />);
-            await flushMicrotasks();
+            await render(<Window.Root ref={ref} title="Present" />);
 
             expect(ref.current?.getVisible()).toBe(true);
         });
@@ -126,14 +117,12 @@ describe("render - Window", () => {
                 return show ? <Window.Root ref={ref} title="Destroy" /> : null;
             }
 
-            render(<App show={true} />);
-            await flushMicrotasks();
+            await render(<App show={true} />);
 
             const windowId = ref.current?.id;
             expect(windowId).toBeDefined();
 
-            render(<App show={false} />);
-            await flushMicrotasks();
+            await render(<App show={false} />);
         });
     });
 
@@ -142,12 +131,11 @@ describe("render - Window", () => {
             const windowRef = createRef<Gtk.Window>();
             const labelRef = createRef<Gtk.Label>();
 
-            render(
+            await render(
                 <Window.Root ref={windowRef}>
                     <Label ref={labelRef} label="Window Child" />
                 </Window.Root>,
             );
-            await flushMicrotasks();
 
             expect(windowRef.current?.getChild()?.id).toEqual(labelRef.current?.id);
         });
@@ -169,13 +157,11 @@ describe("render - Window", () => {
                 );
             }
 
-            render(<App first={true} />);
-            await flushMicrotasks();
+            await render(<App first={true} />);
 
             expect(windowRef.current?.getChild()?.id).toEqual(label1Ref.current?.id);
 
-            render(<App first={false} />);
-            await flushMicrotasks();
+            await render(<App first={false} />);
 
             expect(windowRef.current?.getChild()?.id).toEqual(label2Ref.current?.id);
         });

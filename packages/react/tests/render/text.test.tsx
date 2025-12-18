@@ -2,7 +2,7 @@ import * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { Box } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 const getChildLabels = (box: Gtk.Box): string[] => {
     const labels: string[] = [];
@@ -20,12 +20,11 @@ describe("render - text instances", () => {
     it("renders string child as Label", async () => {
         const boxRef = createRef<Gtk.Box>();
 
-        render(
+        await render(
             <Box ref={boxRef} spacing={0} orientation={Gtk.Orientation.VERTICAL}>
                 Hello World
             </Box>,
         );
-        await flushMicrotasks();
 
         const labels = getChildLabels(boxRef.current as Gtk.Box);
         expect(labels).toContain("Hello World");
@@ -42,13 +41,11 @@ describe("render - text instances", () => {
             );
         }
 
-        render(<App text="Initial" />);
-        await flushMicrotasks();
+        await render(<App text="Initial" />);
 
         expect(getChildLabels(boxRef.current as Gtk.Box)).toContain("Initial");
 
-        render(<App text="Updated" />);
-        await flushMicrotasks();
+        await render(<App text="Updated" />);
 
         expect(getChildLabels(boxRef.current as Gtk.Box)).toContain("Updated");
     });
@@ -56,12 +53,11 @@ describe("render - text instances", () => {
     it("handles empty string", async () => {
         const boxRef = createRef<Gtk.Box>();
 
-        render(
+        await render(
             <Box ref={boxRef} spacing={0} orientation={Gtk.Orientation.VERTICAL}>
                 {""}
             </Box>,
         );
-        await flushMicrotasks();
 
         const labels = getChildLabels(boxRef.current as Gtk.Box);
         expect(labels).toHaveLength(0);
@@ -70,12 +66,11 @@ describe("render - text instances", () => {
     it("handles unicode text", async () => {
         const boxRef = createRef<Gtk.Box>();
 
-        render(
+        await render(
             <Box ref={boxRef} spacing={0} orientation={Gtk.Orientation.VERTICAL}>
                 你好世界 🌍 مرحبا
             </Box>,
         );
-        await flushMicrotasks();
 
         const labels = getChildLabels(boxRef.current as Gtk.Box);
         expect(labels).toContain("你好世界 🌍 مرحبا");
@@ -92,13 +87,11 @@ describe("render - text instances", () => {
             );
         }
 
-        render(<App showText={true} />);
-        await flushMicrotasks();
+        await render(<App showText={true} />);
 
         expect(getChildLabels(boxRef.current as Gtk.Box)).toContain("Removable Text");
 
-        render(<App showText={false} />);
-        await flushMicrotasks();
+        await render(<App showText={false} />);
 
         expect(getChildLabels(boxRef.current as Gtk.Box)).not.toContain("Removable Text");
     });
@@ -106,14 +99,13 @@ describe("render - text instances", () => {
     it("handles multiple text children", async () => {
         const boxRef = createRef<Gtk.Box>();
 
-        render(
+        await render(
             <Box ref={boxRef} spacing={0} orientation={Gtk.Orientation.VERTICAL}>
                 {"First"}
                 {"Second"}
                 {"Third"}
             </Box>,
         );
-        await flushMicrotasks();
 
         const labels = getChildLabels(boxRef.current as Gtk.Box);
         expect(labels).toContain("First");

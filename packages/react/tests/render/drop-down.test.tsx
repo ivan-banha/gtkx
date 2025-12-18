@@ -2,19 +2,18 @@ import type * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { DropDown } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 describe("render - DropDown", () => {
     describe("DropDown.Root", () => {
         it("creates DropDown widget", async () => {
             const ref = createRef<Gtk.DropDown>();
 
-            render(
+            await render(
                 <DropDown.Root ref={ref}>
                     <DropDown.Item id="1" label="First" />
                 </DropDown.Root>,
             );
-            await flushMicrotasks();
 
             expect(ref.current).not.toBeNull();
         });
@@ -24,13 +23,12 @@ describe("render - DropDown", () => {
         it("adds item with id and label", async () => {
             const ref = createRef<Gtk.DropDown>();
 
-            render(
+            await render(
                 <DropDown.Root ref={ref}>
                     <DropDown.Item id="option1" label="Option 1" />
                     <DropDown.Item id="option2" label="Option 2" />
                 </DropDown.Root>,
             );
-            await flushMicrotasks();
 
             expect(ref.current?.getModel()?.getNItems()).toBe(2);
         });
@@ -48,7 +46,7 @@ describe("render - DropDown", () => {
                 );
             }
 
-            render(
+            await render(
                 <App
                     items={[
                         { id: "1", label: "First" },
@@ -56,9 +54,8 @@ describe("render - DropDown", () => {
                     ]}
                 />,
             );
-            await flushMicrotasks();
 
-            render(
+            await render(
                 <App
                     items={[
                         { id: "1", label: "First" },
@@ -67,7 +64,6 @@ describe("render - DropDown", () => {
                     ]}
                 />,
             );
-            await flushMicrotasks();
 
             expect(ref.current?.getModel()?.getNItems()).toBe(3);
         });
@@ -85,7 +81,7 @@ describe("render - DropDown", () => {
                 );
             }
 
-            render(
+            await render(
                 <App
                     items={[
                         { id: "1", label: "A" },
@@ -94,9 +90,8 @@ describe("render - DropDown", () => {
                     ]}
                 />,
             );
-            await flushMicrotasks();
 
-            render(
+            await render(
                 <App
                     items={[
                         { id: "1", label: "A" },
@@ -104,7 +99,6 @@ describe("render - DropDown", () => {
                     ]}
                 />,
             );
-            await flushMicrotasks();
 
             expect(ref.current?.getModel()?.getNItems()).toBe(2);
         });
@@ -120,11 +114,9 @@ describe("render - DropDown", () => {
                 );
             }
 
-            render(<App label="Initial" />);
-            await flushMicrotasks();
+            await render(<App label="Initial" />);
 
-            render(<App label="Updated" />);
-            await flushMicrotasks();
+            await render(<App label="Updated" />);
         });
     });
 
@@ -132,27 +124,25 @@ describe("render - DropDown", () => {
         it("sets selected item via selectedId prop", async () => {
             const ref = createRef<Gtk.DropDown>();
 
-            render(
+            await render(
                 <DropDown.Root ref={ref} selectedId="2">
                     <DropDown.Item id="1" label="First" />
                     <DropDown.Item id="2" label="Second" />
                     <DropDown.Item id="3" label="Third" />
                 </DropDown.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("calls onSelectionChanged when selection changes", async () => {
             const ref = createRef<Gtk.DropDown>();
             const onSelectionChanged = vi.fn();
 
-            render(
+            await render(
                 <DropDown.Root ref={ref} onSelectionChanged={onSelectionChanged}>
                     <DropDown.Item id="1" label="First" />
                     <DropDown.Item id="2" label="Second" />
                 </DropDown.Root>,
             );
-            await flushMicrotasks();
 
             expect(onSelectionChanged).toHaveBeenCalled();
         });
@@ -169,11 +159,9 @@ describe("render - DropDown", () => {
                 );
             }
 
-            render(<App selectedId="1" />);
-            await flushMicrotasks();
+            await render(<App selectedId="1" />);
 
-            render(<App selectedId="2" />);
-            await flushMicrotasks();
+            await render(<App selectedId="2" />);
         });
     });
 });

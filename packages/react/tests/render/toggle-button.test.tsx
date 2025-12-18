@@ -2,14 +2,13 @@ import type * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ToggleButton } from "../../src/index.js";
-import { fireEvent, flushMicrotasks, render } from "../setup.js";
+import { fireEvent, render } from "../utils.js";
 
 describe("render - ToggleButton", () => {
     it("creates ToggleButton widget", async () => {
         const ref = createRef<Gtk.ToggleButton>();
 
-        render(<ToggleButton.Root ref={ref} label="Toggle" />);
-        await flushMicrotasks();
+        await render(<ToggleButton.Root ref={ref} label="Toggle" />);
 
         expect(ref.current).not.toBeNull();
     });
@@ -17,8 +16,7 @@ describe("render - ToggleButton", () => {
     it("sets active state via active prop", async () => {
         const ref = createRef<Gtk.ToggleButton>();
 
-        render(<ToggleButton.Root ref={ref} active={true} label="Active" />);
-        await flushMicrotasks();
+        await render(<ToggleButton.Root ref={ref} active={true} label="Active" />);
 
         expect(ref.current?.getActive()).toBe(true);
     });
@@ -30,13 +28,11 @@ describe("render - ToggleButton", () => {
             return <ToggleButton.Root ref={ref} active={active} label="Toggle" />;
         }
 
-        render(<App active={false} />);
-        await flushMicrotasks();
+        await render(<App active={false} />);
 
         expect(ref.current?.getActive()).toBe(false);
 
-        render(<App active={true} />);
-        await flushMicrotasks();
+        await render(<App active={true} />);
 
         expect(ref.current?.getActive()).toBe(true);
     });
@@ -45,8 +41,7 @@ describe("render - ToggleButton", () => {
         const ref = createRef<Gtk.ToggleButton>();
         const onToggled = vi.fn();
 
-        render(<ToggleButton.Root ref={ref} onToggled={onToggled} label="Toggle" />);
-        await flushMicrotasks();
+        await render(<ToggleButton.Root ref={ref} onToggled={onToggled} label="Toggle" />);
 
         await fireEvent(ref.current as Gtk.Widget, "toggled");
 

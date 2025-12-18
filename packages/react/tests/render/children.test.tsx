@@ -2,7 +2,7 @@ import * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { Box, Frame, Label, Window } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 const getChildWidgets = (parent: Gtk.Widget): Gtk.Widget[] => {
     const children: Gtk.Widget[] = [];
@@ -26,12 +26,11 @@ describe("render - children", () => {
             const boxRef = createRef<Gtk.Box>();
             const labelRef = createRef<Gtk.Label>();
 
-            render(
+            await render(
                 <Box ref={boxRef} spacing={0} orientation={Gtk.Orientation.VERTICAL}>
                     <Label ref={labelRef} label="Child" />
                 </Box>,
             );
-            await flushMicrotasks();
 
             expect(labelRef.current?.getParent()?.id).toEqual(boxRef.current?.id);
         });
@@ -40,12 +39,11 @@ describe("render - children", () => {
             const frameRef = createRef<Gtk.Frame>();
             const labelRef = createRef<Gtk.Label>();
 
-            render(
+            await render(
                 <Frame.Root ref={frameRef}>
                     <Label ref={labelRef} label="Single Child" />
                 </Frame.Root>,
             );
-            await flushMicrotasks();
 
             expect(frameRef.current?.getChild()?.id).toEqual(labelRef.current?.id);
         });
@@ -63,13 +61,11 @@ describe("render - children", () => {
                 );
             }
 
-            render(<App showChild={true} />);
-            await flushMicrotasks();
+            await render(<App showChild={true} />);
 
             expect(getChildWidgets(boxRef.current as Gtk.Box).length).toBe(1);
 
-            render(<App showChild={false} />);
-            await flushMicrotasks();
+            await render(<App showChild={false} />);
 
             expect(getChildWidgets(boxRef.current as Gtk.Box).length).toBe(0);
         });
@@ -81,13 +77,11 @@ describe("render - children", () => {
                 return <Frame.Root ref={frameRef}>{showChild && <Label label="Child" />}</Frame.Root>;
             }
 
-            render(<App showChild={true} />);
-            await flushMicrotasks();
+            await render(<App showChild={true} />);
 
             expect(frameRef.current?.getChild()).not.toBeNull();
 
-            render(<App showChild={false} />);
-            await flushMicrotasks();
+            await render(<App showChild={false} />);
 
             expect(frameRef.current?.getChild()).toBeNull();
         });
@@ -107,13 +101,11 @@ describe("render - children", () => {
                 );
             }
 
-            render(<App items={["A", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "C"]} />);
 
             expect(getChildLabels(boxRef.current as Gtk.Box)).toEqual(["A", "C"]);
 
-            render(<App items={["A", "B", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "B", "C"]} />);
 
             expect(getChildLabels(boxRef.current as Gtk.Box)).toEqual(["A", "B", "C"]);
         });
@@ -131,11 +123,9 @@ describe("render - children", () => {
                 );
             }
 
-            render(<App items={["A", "B"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "B"]} />);
 
-            render(<App items={["A", "B", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "B", "C"]} />);
 
             expect(getChildLabels(boxRef.current as Gtk.Box)).toEqual(["A", "B", "C"]);
         });
@@ -145,8 +135,7 @@ describe("render - children", () => {
         it("appendChildToContainer works with root container", async () => {
             const windowRef = createRef<Gtk.Window>();
 
-            render(<Window.Root ref={windowRef} title="Root Container" />);
-            await flushMicrotasks();
+            await render(<Window.Root ref={windowRef} title="Root Container" />);
 
             expect(windowRef.current).not.toBeNull();
         });
@@ -158,13 +147,11 @@ describe("render - children", () => {
                 return showWindow ? <Window.Root ref={windowRef} title="Window" /> : null;
             }
 
-            render(<App showWindow={true} />);
-            await flushMicrotasks();
+            await render(<App showWindow={true} />);
 
             expect(windowRef.current).not.toBeNull();
 
-            render(<App showWindow={false} />);
-            await flushMicrotasks();
+            await render(<App showWindow={false} />);
         });
 
         it("insertInContainerBefore works with root container", async () => {
@@ -181,11 +168,9 @@ describe("render - children", () => {
                 );
             }
 
-            render(<App windows={["First"]} />);
-            await flushMicrotasks();
+            await render(<App windows={["First"]} />);
 
-            render(<App windows={["Second", "First"]} />);
-            await flushMicrotasks();
+            await render(<App windows={["Second", "First"]} />);
         });
     });
 
@@ -203,16 +188,13 @@ describe("render - children", () => {
                 );
             }
 
-            render(<App items={["A", "B", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "B", "C"]} />);
             expect(getChildLabels(boxRef.current as Gtk.Box)).toEqual(["A", "B", "C"]);
 
-            render(<App items={["A", "D", "B", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "D", "B", "C"]} />);
             expect(getChildLabels(boxRef.current as Gtk.Box)).toEqual(["A", "D", "B", "C"]);
 
-            render(<App items={["D", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["D", "C"]} />);
             expect(getChildLabels(boxRef.current as Gtk.Box)).toEqual(["D", "C"]);
         });
 
@@ -229,12 +211,10 @@ describe("render - children", () => {
                 );
             }
 
-            render(<App items={["A", "B", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "B", "C"]} />);
             expect(getChildLabels(boxRef.current as Gtk.Box)).toEqual(["A", "B", "C"]);
 
-            render(<App items={["C", "B", "A"]} />);
-            await flushMicrotasks();
+            await render(<App items={["C", "B", "A"]} />);
             expect(getChildLabels(boxRef.current as Gtk.Box)).toEqual(["C", "B", "A"]);
         });
     });

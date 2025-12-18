@@ -39,7 +39,7 @@ describe("batchCall", () => {
             GTK_LIB,
             "gtk_label_get_text",
             [{ type: { type: "gobject", borrowed: true }, value: label }],
-            { type: "string" },
+            { type: "string", borrowed: true },
         );
         const selectable = call(
             GTK_LIB,
@@ -83,7 +83,7 @@ describe("batchCall", () => {
             GTK_LIB,
             "gtk_label_get_text",
             [{ type: { type: "gobject", borrowed: true }, value: label }],
-            { type: "string" },
+            { type: "string", borrowed: true },
         );
 
         expect(text).toBe("Single");
@@ -120,13 +120,13 @@ describe("batchCall", () => {
             GTK_LIB,
             "gtk_label_get_text",
             [{ type: { type: "gobject", borrowed: true }, value: label1 }],
-            { type: "string" },
+            { type: "string", borrowed: true },
         );
         const text2 = call(
             GTK_LIB,
             "gtk_label_get_text",
             [{ type: { type: "gobject", borrowed: true }, value: label2 }],
-            { type: "string" },
+            { type: "string", borrowed: true },
         );
 
         expect(text1).toBe("Updated 1");

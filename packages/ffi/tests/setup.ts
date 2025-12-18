@@ -1,6 +1,6 @@
-import { registerType, start, stop } from "@gtkx/ffi";
-import * as Gtk from "@gtkx/ffi/gtk";
 import { afterAll, beforeAll } from "vitest";
+import * as Gtk from "../src/generated/gtk/index.js";
+import { registerType, start, stop } from "../src/index.js";
 
 const toAppId = (name: string) => {
     return `com.gtkx.${name.replace(/[^a-zA-Z0-9]/g, "_")}`;

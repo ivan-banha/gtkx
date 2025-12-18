@@ -12,10 +12,11 @@
         "docs": "turbo build --filter=website",
         "knip": "knip --no-gitignore --no-config-hints",
         "lint": "biome check .",
-        "test": "turbo test"
+        "test": "turbo test --concurrency 1"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.3.9",
+        "@gtkx/ffi": "workspace:*",
         "@types/node": "^25.0.2",
         "@types/react": "^19.2.7",
         "@types/react-reconciler": "^0.32.3",

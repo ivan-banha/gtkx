@@ -2,19 +2,18 @@ import type * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { Menu, PopoverMenu, PopoverMenuBar } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 describe("render - Menu", () => {
     describe("PopoverMenu.Root", () => {
         it("creates PopoverMenu widget", async () => {
             const ref = createRef<Gtk.PopoverMenu>();
 
-            render(
+            await render(
                 <PopoverMenu.Root ref={ref}>
                     <Menu.Item label="Item 1" />
                 </PopoverMenu.Root>,
             );
-            await flushMicrotasks();
 
             expect(ref.current).not.toBeNull();
         });
@@ -32,11 +31,9 @@ describe("render - Menu", () => {
                 );
             }
 
-            render(<App items={["Item 1", "Item 2"]} />);
-            await flushMicrotasks();
+            await render(<App items={["Item 1", "Item 2"]} />);
 
-            render(<App items={["Item 1", "Item 2", "Item 3"]} />);
-            await flushMicrotasks();
+            await render(<App items={["Item 1", "Item 2", "Item 3"]} />);
         });
     });
 
@@ -44,14 +41,13 @@ describe("render - Menu", () => {
         it("creates PopoverMenuBar widget", async () => {
             const ref = createRef<Gtk.PopoverMenuBar>();
 
-            render(
+            await render(
                 <PopoverMenuBar ref={ref}>
                     <Menu.Submenu label="File">
                         <Menu.Item label="New" />
                     </Menu.Submenu>
                 </PopoverMenuBar>,
             );
-            await flushMicrotasks();
 
             expect(ref.current).not.toBeNull();
         });
@@ -61,35 +57,32 @@ describe("render - Menu", () => {
         it("adds menu item with label", async () => {
             const ref = createRef<Gtk.PopoverMenu>();
 
-            render(
+            await render(
                 <PopoverMenu.Root ref={ref}>
                     <Menu.Item label="Test Item" />
                 </PopoverMenu.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("creates action for onActivate handler", async () => {
             const ref = createRef<Gtk.PopoverMenu>();
             const onActivate = vi.fn();
 
-            render(
+            await render(
                 <PopoverMenu.Root ref={ref}>
                     <Menu.Item label="Clickable" onActivate={onActivate} />
                 </PopoverMenu.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("sets keyboard accelerators via accels prop", async () => {
             const ref = createRef<Gtk.PopoverMenu>();
 
-            render(
+            await render(
                 <PopoverMenu.Root ref={ref}>
                     <Menu.Item label="Save" accels="<Control>s" onActivate={() => {}} />
                 </PopoverMenu.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("updates label when prop changes", async () => {
@@ -103,11 +96,9 @@ describe("render - Menu", () => {
                 );
             }
 
-            render(<App label="Initial" />);
-            await flushMicrotasks();
+            await render(<App label="Initial" />);
 
-            render(<App label="Updated" />);
-            await flushMicrotasks();
+            await render(<App label="Updated" />);
         });
 
         it("cleans up action on unmount", async () => {
@@ -122,11 +113,9 @@ describe("render - Menu", () => {
                 );
             }
 
-            render(<App showItem={true} />);
-            await flushMicrotasks();
+            await render(<App showItem={true} />);
 
-            render(<App showItem={false} />);
-            await flushMicrotasks();
+            await render(<App showItem={false} />);
         });
     });
 
@@ -134,7 +123,7 @@ describe("render - Menu", () => {
         it("creates menu section", async () => {
             const ref = createRef<Gtk.PopoverMenu>();
 
-            render(
+            await render(
                 <PopoverMenu.Root ref={ref}>
                     <Menu.Section>
                         <Menu.Item label="Section Item 1" />
@@ -142,13 +131,12 @@ describe("render - Menu", () => {
                     </Menu.Section>
                 </PopoverMenu.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("adds items within section", async () => {
             const ref = createRef<Gtk.PopoverMenu>();
 
-            render(
+            await render(
                 <PopoverMenu.Root ref={ref}>
                     <Menu.Section>
                         <Menu.Item label="Item A" />
@@ -158,20 +146,18 @@ describe("render - Menu", () => {
                     </Menu.Section>
                 </PopoverMenu.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("sets section label", async () => {
             const ref = createRef<Gtk.PopoverMenu>();
 
-            render(
+            await render(
                 <PopoverMenu.Root ref={ref}>
                     <Menu.Section label="Section Title">
                         <Menu.Item label="Item" />
                     </Menu.Section>
                 </PopoverMenu.Root>,
             );
-            await flushMicrotasks();
         });
     });
 
@@ -179,7 +165,7 @@ describe("render - Menu", () => {
         it("creates submenu", async () => {
             const ref = createRef<Gtk.PopoverMenu>();
 
-            render(
+            await render(
                 <PopoverMenu.Root ref={ref}>
                     <Menu.Submenu label="File">
                         <Menu.Item label="New" />
@@ -187,13 +173,12 @@ describe("render - Menu", () => {
                     </Menu.Submenu>
                 </PopoverMenu.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("adds items within submenu", async () => {
             const ref = createRef<Gtk.PopoverMenu>();
 
-            render(
+            await render(
                 <PopoverMenu.Root ref={ref}>
                     <Menu.Submenu label="Edit">
                         <Menu.Item label="Cut" />
@@ -202,26 +187,24 @@ describe("render - Menu", () => {
                     </Menu.Submenu>
                 </PopoverMenu.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("sets submenu label", async () => {
             const ref = createRef<Gtk.PopoverMenu>();
 
-            render(
+            await render(
                 <PopoverMenu.Root ref={ref}>
                     <Menu.Submenu label="Help">
                         <Menu.Item label="About" />
                     </Menu.Submenu>
                 </PopoverMenu.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("supports nested submenus", async () => {
             const ref = createRef<Gtk.PopoverMenu>();
 
-            render(
+            await render(
                 <PopoverMenu.Root ref={ref}>
                     <Menu.Submenu label="File">
                         <Menu.Submenu label="Recent">
@@ -231,7 +214,6 @@ describe("render - Menu", () => {
                     </Menu.Submenu>
                 </PopoverMenu.Root>,
             );
-            await flushMicrotasks();
         });
     });
 });

@@ -1,9 +1,14 @@
-import { mergeConfig } from "vitest/config";
-import baseConfig from "../../vitest.config.js";
+import { defineConfig } from "vitest/config";
 
-export default mergeConfig(baseConfig, {
+export default defineConfig({
     test: {
-        setupFiles: [import.meta.resolve("./tests/setup.ts")],
+        include: ["tests/**/*.test.ts"],
+        typecheck: {
+            tsconfig: "tsconfig.test.json",
+        },
+        setupFiles: ["tests/setup.ts"],
+        pool: "forks",
+        bail: 1,
         execArgv: ["--expose-gc"],
     },
 });

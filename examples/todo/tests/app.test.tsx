@@ -232,11 +232,13 @@ describe("Todo App", () => {
             await userEvent.type(input, "Delete this");
             await userEvent.click(addButton);
 
-            const deleteButtons = await screen.findAllByTestId(/^delete-\d+$/);
-            expect(deleteButtons.length).toBeGreaterThanOrEqual(2);
-            const secondDeleteButton = deleteButtons[1] as Widget;
-            expect(secondDeleteButton).toBeDefined();
-            await userEvent.click(secondDeleteButton);
+            const deleteThisLabel = await screen.findByText("Delete this");
+            const labelName = deleteThisLabel.getName();
+            expect(labelName).toBeDefined();
+            const todoId = labelName?.split("-")[1];
+            expect(todoId).toBeDefined();
+            const deleteButton = await screen.findByTestId(`delete-${todoId}`);
+            await userEvent.click(deleteButton);
 
             const kept = await screen.findByText("Keep this");
             expect(kept).toBeDefined();

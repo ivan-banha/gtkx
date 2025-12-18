@@ -28,12 +28,11 @@ pub fn set_gtk_thread_handle(handle: JoinHandle<()>) {
 }
 
 pub fn join_gtk_thread() {
-    if let Some(mutex) = GTK_THREAD_HANDLE.get() {
-        if let Ok(mut guard) = mutex.lock() {
-            if let Some(handle) = guard.take() {
-                let _ = handle.join();
-            }
-        }
+    if let Some(mutex) = GTK_THREAD_HANDLE.get()
+        && let Ok(mut guard) = mutex.lock()
+        && let Some(handle) = guard.take()
+    {
+        let _ = handle.join();
     }
 }
 
@@ -43,7 +42,12 @@ pub fn join_gtk_thread() {
 /// FFI calls on the GTK thread.
 pub struct GtkThreadState {
     /// Map from ObjectId values to their corresponding native objects.
-    pub object_map: HashMap<usize, Object>,
+    ///
+    /// Wrapped in ManuallyDrop to prevent automatic dropping during TLS
+    /// destruction. Objects must be explicitly drained via `clear_objects()`
+    /// before the GTK main loop exits. This avoids panics from signal emissions
+    /// during TLS destruction trying to access already-destroyed TLS state.
+    pub object_map: ManuallyDrop<HashMap<usize, Object>>,
     /// Counter for generating unique ObjectId values.
     pub next_object_id: usize,
     /// Cache of loaded dynamic libraries by name.
@@ -58,7 +62,7 @@ pub struct GtkThreadState {
 impl Default for GtkThreadState {
     fn default() -> Self {
         GtkThreadState {
-            object_map: HashMap::new(),
+            object_map: ManuallyDrop::new(HashMap::new()),
             next_object_id: 1,
             libraries: ManuallyDrop::new(HashMap::new()),
             app_hold_guard: None,

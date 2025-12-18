@@ -2,7 +2,7 @@ import type * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { Button, Entry, Switch } from "../../src/index.js";
-import { fireEvent, flushMicrotasks, render } from "../setup.js";
+import { fireEvent, render } from "../utils.js";
 
 describe("render - signals", () => {
     describe("connection", () => {
@@ -10,8 +10,7 @@ describe("render - signals", () => {
             const handleClick = vi.fn();
             const ref = createRef<Gtk.Button>();
 
-            render(<Button ref={ref} onClicked={handleClick} label="Click" />);
-            await flushMicrotasks();
+            await render(<Button ref={ref} onClicked={handleClick} label="Click" />);
 
             expect(ref.current).not.toBeNull();
             await fireEvent(ref.current as Gtk.Widget, "clicked");
@@ -23,8 +22,7 @@ describe("render - signals", () => {
             const handleActivate = vi.fn();
             const ref = createRef<Gtk.Entry>();
 
-            render(<Entry ref={ref} onActivate={handleActivate} />);
-            await flushMicrotasks();
+            await render(<Entry ref={ref} onActivate={handleActivate} />);
 
             expect(ref.current).not.toBeNull();
             await fireEvent(ref.current as Gtk.Widget, "activate");
@@ -36,14 +34,15 @@ describe("render - signals", () => {
             const handleStateSet = vi.fn(() => false);
             const ref = createRef<Gtk.Switch>();
 
-            render(<Switch ref={ref} onStateSet={handleStateSet} />);
-            await flushMicrotasks();
+            await render(<Switch ref={ref} onStateSet={handleStateSet} />);
 
             expect(ref.current).not.toBeNull();
-            await fireEvent(ref.current as Gtk.Widget, "state-set", {
-                type: { type: "boolean" },
-                value: true,
-            });
+            await fireEvent(
+                ref.current as Gtk.Widget,
+                "state-set",
+                { type: { type: "boolean" }, value: true },
+                { type: { type: "ref", innerType: { type: "int", size: 32 } }, value: { value: 0 } },
+            );
 
             expect(handleStateSet).toHaveBeenCalledTimes(1);
         });
@@ -58,14 +57,12 @@ describe("render - signals", () => {
                 return <Button ref={ref} onClicked={hasHandler ? handleClick : undefined} label="Click" />;
             }
 
-            render(<App hasHandler={true} />);
-            await flushMicrotasks();
+            await render(<App hasHandler={true} />);
 
             await fireEvent(ref.current as Gtk.Widget, "clicked");
             expect(handleClick).toHaveBeenCalledTimes(1);
 
-            render(<App hasHandler={false} />);
-            await flushMicrotasks();
+            await render(<App hasHandler={false} />);
 
             await fireEvent(ref.current as Gtk.Widget, "clicked");
             expect(handleClick).toHaveBeenCalledTimes(1);
@@ -79,15 +76,13 @@ describe("render - signals", () => {
                 return showButton ? <Button ref={ref} onClicked={handleClick} label="Click" /> : null;
             }
 
-            render(<App showButton={true} />);
-            await flushMicrotasks();
+            await render(<App showButton={true} />);
 
             const button = ref.current;
             await fireEvent(button as Gtk.Widget, "clicked");
             expect(handleClick).toHaveBeenCalledTimes(1);
 
-            render(<App showButton={false} />);
-            await flushMicrotasks();
+            await render(<App showButton={false} />);
         });
     });
 
@@ -101,15 +96,13 @@ describe("render - signals", () => {
                 return <Button ref={ref} onClicked={useHandler1 ? handler1 : handler2} label="Click" />;
             }
 
-            render(<App useHandler1={true} />);
-            await flushMicrotasks();
+            await render(<App useHandler1={true} />);
 
             await fireEvent(ref.current as Gtk.Widget, "clicked");
             expect(handler1).toHaveBeenCalledTimes(1);
             expect(handler2).not.toHaveBeenCalled();
 
-            render(<App useHandler1={false} />);
-            await flushMicrotasks();
+            await render(<App useHandler1={false} />);
 
             await fireEvent(ref.current as Gtk.Widget, "clicked");
             expect(handler1).toHaveBeenCalledTimes(1);
@@ -124,11 +117,9 @@ describe("render - signals", () => {
                 return <Button ref={ref} onClicked={handleClick} label={label} />;
             }
 
-            render(<App label="First" />);
-            await flushMicrotasks();
+            await render(<App label="First" />);
 
-            render(<App label="Second" />);
-            await flushMicrotasks();
+            await render(<App label="Second" />);
 
             await fireEvent(ref.current as Gtk.Widget, "clicked");
             expect(handleClick).toHaveBeenCalledTimes(1);
@@ -140,13 +131,14 @@ describe("render - signals", () => {
             const handleStateSet = vi.fn(() => false);
             const ref = createRef<Gtk.Switch>();
 
-            render(<Switch ref={ref} onStateSet={handleStateSet} />);
-            await flushMicrotasks();
+            await render(<Switch ref={ref} onStateSet={handleStateSet} />);
 
-            await fireEvent(ref.current as Gtk.Widget, "state-set", {
-                type: { type: "boolean" },
-                value: true,
-            });
+            await fireEvent(
+                ref.current as Gtk.Widget,
+                "state-set",
+                { type: { type: "boolean" }, value: true },
+                { type: { type: "ref", innerType: { type: "int", size: 32 } }, value: { value: 0 } },
+            );
 
             expect(handleStateSet).toHaveBeenCalledWith(expect.anything(), true);
         });
@@ -155,8 +147,7 @@ describe("render - signals", () => {
             const handleClick = vi.fn();
             const ref = createRef<Gtk.Button>();
 
-            render(<Button ref={ref} onClicked={handleClick} label="Click" />);
-            await flushMicrotasks();
+            await render(<Button ref={ref} onClicked={handleClick} label="Click" />);
 
             await fireEvent(ref.current as Gtk.Widget, "clicked");
 

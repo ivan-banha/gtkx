@@ -3,15 +3,14 @@ import type * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { AdwHeaderBar, Button, HeaderBar, Label } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 describe("render - HeaderBar", () => {
     describe("HeaderBar.Root", () => {
         it("creates HeaderBar widget", async () => {
             const ref = createRef<Gtk.HeaderBar>();
 
-            render(<HeaderBar.Root ref={ref} />);
-            await flushMicrotasks();
+            await render(<HeaderBar.Root ref={ref} />);
 
             expect(ref.current).not.toBeNull();
         });
@@ -22,14 +21,13 @@ describe("render - HeaderBar", () => {
             const headerBarRef = createRef<Gtk.HeaderBar>();
             const labelRef = createRef<Gtk.Label>();
 
-            render(
+            await render(
                 <HeaderBar.Root ref={headerBarRef}>
                     <HeaderBar.TitleWidget>
                         <Label ref={labelRef} label="Custom Title" />
                     </HeaderBar.TitleWidget>
                 </HeaderBar.Root>,
             );
-            await flushMicrotasks();
 
             expect(headerBarRef.current?.getTitleWidget()?.id).toEqual(labelRef.current?.id);
         });
@@ -49,13 +47,11 @@ describe("render - HeaderBar", () => {
                 );
             }
 
-            render(<App showTitle={true} />);
-            await flushMicrotasks();
+            await render(<App showTitle={true} />);
 
             expect(headerBarRef.current?.getTitleWidget()).not.toBeNull();
 
-            render(<App showTitle={false} />);
-            await flushMicrotasks();
+            await render(<App showTitle={false} />);
 
             expect(headerBarRef.current?.getTitleWidget()).toBeNull();
         });
@@ -66,12 +62,11 @@ describe("render - HeaderBar", () => {
             const headerBarRef = createRef<Gtk.HeaderBar>();
             const buttonRef = createRef<Gtk.Button>();
 
-            render(
+            await render(
                 <HeaderBar.Root ref={headerBarRef}>
                     <Button ref={buttonRef} label="Direct Child" />
                 </HeaderBar.Root>,
             );
-            await flushMicrotasks();
 
             expect(buttonRef.current?.getParent()?.id).toEqual(headerBarRef.current?.id);
         });
@@ -81,13 +76,12 @@ describe("render - HeaderBar", () => {
             const button1Ref = createRef<Gtk.Button>();
             const button2Ref = createRef<Gtk.Button>();
 
-            render(
+            await render(
                 <HeaderBar.Root ref={headerBarRef}>
                     <Button ref={button1Ref} label="Button 1" />
                     <Button ref={button2Ref} label="Button 2" />
                 </HeaderBar.Root>,
             );
-            await flushMicrotasks();
 
             expect(button1Ref.current?.getParent()?.id).toEqual(headerBarRef.current?.id);
             expect(button2Ref.current?.getParent()?.id).toEqual(headerBarRef.current?.id);
@@ -102,13 +96,11 @@ describe("render - HeaderBar", () => {
                 return <HeaderBar.Root ref={headerBarRef}>{showButton && <Button label="Removable" />}</HeaderBar.Root>;
             }
 
-            render(<App showButton={true} />);
-            await flushMicrotasks();
+            await render(<App showButton={true} />);
 
             expect(headerBarRef.current?.getFirstChild()).not.toBeNull();
 
-            render(<App showButton={false} />);
-            await flushMicrotasks();
+            await render(<App showButton={false} />);
         });
     });
 
@@ -116,8 +108,7 @@ describe("render - HeaderBar", () => {
         it("creates Adw.HeaderBar", async () => {
             const ref = createRef<Adw.HeaderBar>();
 
-            render(<AdwHeaderBar.Root ref={ref} />);
-            await flushMicrotasks();
+            await render(<AdwHeaderBar.Root ref={ref} />);
 
             expect(ref.current).not.toBeNull();
         });
@@ -126,14 +117,13 @@ describe("render - HeaderBar", () => {
             const headerBarRef = createRef<Adw.HeaderBar>();
             const labelRef = createRef<Gtk.Label>();
 
-            render(
+            await render(
                 <AdwHeaderBar.Root ref={headerBarRef}>
                     <AdwHeaderBar.TitleWidget>
                         <Label ref={labelRef} label="Adw Title" />
                     </AdwHeaderBar.TitleWidget>
                 </AdwHeaderBar.Root>,
             );
-            await flushMicrotasks();
 
             expect(headerBarRef.current?.getTitleWidget()?.id).toEqual(labelRef.current?.id);
         });
@@ -142,12 +132,11 @@ describe("render - HeaderBar", () => {
             const headerBarRef = createRef<Adw.HeaderBar>();
             const buttonRef = createRef<Gtk.Button>();
 
-            render(
+            await render(
                 <AdwHeaderBar.Root ref={headerBarRef}>
                     <Button ref={buttonRef} label="Child" />
                 </AdwHeaderBar.Root>,
             );
-            await flushMicrotasks();
 
             expect(buttonRef.current?.getParent()?.id).toEqual(headerBarRef.current?.id);
         });

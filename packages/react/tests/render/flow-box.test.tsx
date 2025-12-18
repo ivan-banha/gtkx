@@ -2,7 +2,7 @@ import type * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { FlowBox, Label } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 const getFlowBoxChildLabels = (flowBox: Gtk.FlowBox): string[] => {
     const labels: string[] = [];
@@ -24,13 +24,12 @@ describe("render - FlowBox", () => {
         it("appends child widgets", async () => {
             const ref = createRef<Gtk.FlowBox>();
 
-            render(
+            await render(
                 <FlowBox ref={ref}>
                     <Label label="First" />
                     <Label label="Second" />
                 </FlowBox>,
             );
-            await flushMicrotasks();
 
             const labels = getFlowBoxChildLabels(ref.current as Gtk.FlowBox);
             expect(labels).toEqual(["First", "Second"]);
@@ -51,11 +50,9 @@ describe("render - FlowBox", () => {
                 );
             }
 
-            render(<App items={["A", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "C"]} />);
 
-            render(<App items={["A", "B", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "B", "C"]} />);
 
             const labels = getFlowBoxChildLabels(ref.current as Gtk.FlowBox);
             expect(labels).toEqual(["A", "B", "C"]);
@@ -74,11 +71,9 @@ describe("render - FlowBox", () => {
                 );
             }
 
-            render(<App items={["First", "Last"]} />);
-            await flushMicrotasks();
+            await render(<App items={["First", "Last"]} />);
 
-            render(<App items={["First", "Middle", "Last"]} />);
-            await flushMicrotasks();
+            await render(<App items={["First", "Middle", "Last"]} />);
 
             const labels = getFlowBoxChildLabels(ref.current as Gtk.FlowBox);
             expect(labels).toEqual(["First", "Middle", "Last"]);
@@ -99,11 +94,9 @@ describe("render - FlowBox", () => {
                 );
             }
 
-            render(<App items={["A", "B", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "B", "C"]} />);
 
-            render(<App items={["A", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "C"]} />);
 
             const labels = getFlowBoxChildLabels(ref.current as Gtk.FlowBox);
             expect(labels).toEqual(["A", "C"]);

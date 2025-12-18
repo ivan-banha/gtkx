@@ -2,7 +2,7 @@ import type * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { Label, ListBox } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 const getRowLabels = (listBox: Gtk.ListBox): string[] => {
     const labels: string[] = [];
@@ -24,13 +24,12 @@ describe("render - ListBox", () => {
         it("appends child widgets", async () => {
             const ref = createRef<Gtk.ListBox>();
 
-            render(
+            await render(
                 <ListBox ref={ref}>
                     <Label label="First" />
                     <Label label="Second" />
                 </ListBox>,
             );
-            await flushMicrotasks();
 
             const labels = getRowLabels(ref.current as Gtk.ListBox);
             expect(labels).toEqual(["First", "Second"]);
@@ -39,14 +38,13 @@ describe("render - ListBox", () => {
         it("maintains correct order", async () => {
             const ref = createRef<Gtk.ListBox>();
 
-            render(
+            await render(
                 <ListBox ref={ref}>
                     <Label label="A" />
                     <Label label="B" />
                     <Label label="C" />
                 </ListBox>,
             );
-            await flushMicrotasks();
 
             const labels = getRowLabels(ref.current as Gtk.ListBox);
             expect(labels).toEqual(["A", "B", "C"]);
@@ -67,11 +65,9 @@ describe("render - ListBox", () => {
                 );
             }
 
-            render(<App items={["A", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "C"]} />);
 
-            render(<App items={["A", "B", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "B", "C"]} />);
 
             const labels = getRowLabels(ref.current as Gtk.ListBox);
             expect(labels).toEqual(["A", "B", "C"]);
@@ -90,11 +86,9 @@ describe("render - ListBox", () => {
                 );
             }
 
-            render(<App items={["First", "Last"]} />);
-            await flushMicrotasks();
+            await render(<App items={["First", "Last"]} />);
 
-            render(<App items={["First", "Middle", "Last"]} />);
-            await flushMicrotasks();
+            await render(<App items={["First", "Middle", "Last"]} />);
 
             const labels = getRowLabels(ref.current as Gtk.ListBox);
             expect(labels).toEqual(["First", "Middle", "Last"]);
@@ -115,11 +109,9 @@ describe("render - ListBox", () => {
                 );
             }
 
-            render(<App items={["A", "B", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "B", "C"]} />);
 
-            render(<App items={["A", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "C"]} />);
 
             const labels = getRowLabels(ref.current as Gtk.ListBox);
             expect(labels).toEqual(["A", "C"]);
@@ -140,11 +132,9 @@ describe("render - ListBox", () => {
                 );
             }
 
-            render(<App items={["A", "B", "C"]} />);
-            await flushMicrotasks();
+            await render(<App items={["A", "B", "C"]} />);
 
-            render(<App items={["C", "B", "A"]} />);
-            await flushMicrotasks();
+            await render(<App items={["C", "B", "A"]} />);
 
             const labels = getRowLabels(ref.current as Gtk.ListBox);
             expect(labels).toEqual(["C", "B", "A"]);

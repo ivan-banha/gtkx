@@ -43,6 +43,13 @@ export class ListBoxNode extends IndexedChildContainerNode<Gtk.ListBox> {
     }
 
     detachChild(child: Gtk.Widget): void {
+        if (isListBoxRow(child)) {
+            beginBatch();
+            child.setChild(null);
+            this.widget.remove(child);
+            endBatch();
+            return;
+        }
         this.unparentFromRow(child);
     }
 }

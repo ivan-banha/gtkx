@@ -4,7 +4,7 @@ import * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { GridView, Label, ListView } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 const getModelItemCount = (listView: Gtk.ListView): number => {
     const model = listView.getModel();
@@ -18,12 +18,11 @@ describe("render - ListView", () => {
         it("creates ListView widget", async () => {
             const ref = createRef<Gtk.ListView>();
 
-            render(
+            await render(
                 <ListView.Root ref={ref} renderItem={() => <Label label="Item" />}>
                     <ListView.Item id="1" item={{ name: "First" }} />
                 </ListView.Root>,
             );
-            await flushMicrotasks();
 
             expect(ref.current).not.toBeNull();
         });
@@ -31,12 +30,11 @@ describe("render - ListView", () => {
         it("sets up SignalListItemFactory", async () => {
             const ref = createRef<Gtk.ListView>();
 
-            render(
+            await render(
                 <ListView.Root ref={ref} renderItem={() => <Label label="Item" />}>
                     <ListView.Item id="1" item={{ name: "First" }} />
                 </ListView.Root>,
             );
-            await flushMicrotasks();
 
             expect(ref.current?.getFactory()).not.toBeNull();
         });
@@ -46,13 +44,12 @@ describe("render - ListView", () => {
         it("adds item to list model", async () => {
             const ref = createRef<Gtk.ListView>();
 
-            render(
+            await render(
                 <ListView.Root ref={ref} renderItem={() => <Label label="Item" />}>
                     <ListView.Item id="1" item={{ name: "First" }} />
                     <ListView.Item id="2" item={{ name: "Second" }} />
                 </ListView.Root>,
             );
-            await flushMicrotasks();
 
             expect(getModelItemCount(ref.current as Gtk.ListView)).toBe(2);
         });
@@ -70,7 +67,7 @@ describe("render - ListView", () => {
                 );
             }
 
-            render(
+            await render(
                 <App
                     items={[
                         { id: "1", name: "First" },
@@ -78,11 +75,10 @@ describe("render - ListView", () => {
                     ]}
                 />,
             );
-            await flushMicrotasks();
 
             expect(getModelItemCount(ref.current as Gtk.ListView)).toBe(2);
 
-            render(
+            await render(
                 <App
                     items={[
                         { id: "1", name: "First" },
@@ -91,7 +87,6 @@ describe("render - ListView", () => {
                     ]}
                 />,
             );
-            await flushMicrotasks();
 
             expect(getModelItemCount(ref.current as Gtk.ListView)).toBe(3);
         });
@@ -109,7 +104,7 @@ describe("render - ListView", () => {
                 );
             }
 
-            render(
+            await render(
                 <App
                     items={[
                         { id: "1", name: "A" },
@@ -118,11 +113,10 @@ describe("render - ListView", () => {
                     ]}
                 />,
             );
-            await flushMicrotasks();
 
             expect(getModelItemCount(ref.current as Gtk.ListView)).toBe(3);
 
-            render(
+            await render(
                 <App
                     items={[
                         { id: "1", name: "A" },
@@ -130,7 +124,6 @@ describe("render - ListView", () => {
                     ]}
                 />,
             );
-            await flushMicrotasks();
 
             expect(getModelItemCount(ref.current as Gtk.ListView)).toBe(2);
         });
@@ -146,11 +139,9 @@ describe("render - ListView", () => {
                 );
             }
 
-            render(<App itemName="Initial" />);
-            await flushMicrotasks();
+            await render(<App itemName="Initial" />);
 
-            render(<App itemName="Updated" />);
-            await flushMicrotasks();
+            await render(<App itemName="Updated" />);
         });
     });
 
@@ -159,12 +150,11 @@ describe("render - ListView", () => {
             const ref = createRef<Gtk.ListView>();
             const renderItem = vi.fn((item: { name: string } | null) => <Label label={item?.name ?? "Empty"} />);
 
-            render(
+            await render(
                 <ListView.Root ref={ref} renderItem={renderItem}>
                     <ListView.Item id="1" item={{ name: "Test Item" }} />
                 </ListView.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("updates when renderItem function changes", async () => {
@@ -183,11 +173,9 @@ describe("render - ListView", () => {
                 );
             }
 
-            render(<App prefix="First" />);
-            await flushMicrotasks();
+            await render(<App prefix="First" />);
 
-            render(<App prefix="Second" />);
-            await flushMicrotasks();
+            await render(<App prefix="Second" />);
         });
     });
 
@@ -195,20 +183,19 @@ describe("render - ListView", () => {
         it("sets selected item via selected prop", async () => {
             const ref = createRef<Gtk.ListView>();
 
-            render(
+            await render(
                 <ListView.Root ref={ref} renderItem={() => <Label label="Item" />} selected={["2"]}>
                     <ListView.Item id="1" item={{ name: "First" }} />
                     <ListView.Item id="2" item={{ name: "Second" }} />
                 </ListView.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("calls onSelectionChanged when selection changes", async () => {
             const ref = createRef<Gtk.ListView>();
             const onSelectionChanged = vi.fn();
 
-            render(
+            await render(
                 <ListView.Root
                     ref={ref}
                     renderItem={() => <Label label="Item" />}
@@ -218,7 +205,6 @@ describe("render - ListView", () => {
                     <ListView.Item id="2" item={{ name: "Second" }} />
                 </ListView.Root>,
             );
-            await flushMicrotasks();
 
             expect(onSelectionChanged).toHaveBeenCalled();
         });
@@ -234,11 +220,9 @@ describe("render - ListView", () => {
                 );
             }
 
-            render(<App selected={["1"]} />);
-            await flushMicrotasks();
+            await render(<App selected={["1"]} />);
 
-            render(<App selected={[]} />);
-            await flushMicrotasks();
+            await render(<App selected={[]} />);
         });
     });
 
@@ -246,7 +230,7 @@ describe("render - ListView", () => {
         it("enables multi-select with selectionMode", async () => {
             const ref = createRef<Gtk.ListView>();
 
-            render(
+            await render(
                 <ListView.Root
                     ref={ref}
                     renderItem={() => <Label label="Item" />}
@@ -256,13 +240,12 @@ describe("render - ListView", () => {
                     <ListView.Item id="2" item={{ name: "Second" }} />
                 </ListView.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("sets multiple selected items", async () => {
             const ref = createRef<Gtk.ListView>();
 
-            render(
+            await render(
                 <ListView.Root
                     ref={ref}
                     renderItem={() => <Label label="Item" />}
@@ -274,14 +257,13 @@ describe("render - ListView", () => {
                     <ListView.Item id="3" item={{ name: "Third" }} />
                 </ListView.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("calls onSelectionChanged with array of ids", async () => {
             const ref = createRef<Gtk.ListView>();
             const onSelectionChanged = vi.fn();
 
-            render(
+            await render(
                 <ListView.Root
                     ref={ref}
                     renderItem={() => <Label label="Item" />}
@@ -292,7 +274,6 @@ describe("render - ListView", () => {
                     <ListView.Item id="2" item={{ name: "Second" }} />
                 </ListView.Root>,
             );
-            await flushMicrotasks();
 
             expect(onSelectionChanged).toHaveBeenCalledWith(expect.any(Array));
         });
@@ -302,12 +283,11 @@ describe("render - ListView", () => {
         it("creates GridView widget", async () => {
             const ref = createRef<Gtk.GridView>();
 
-            render(
+            await render(
                 <GridView.Root ref={ref} renderItem={() => <Label label="Item" />}>
                     <GridView.Item id="1" item={{ name: "First" }} />
                 </GridView.Root>,
             );
-            await flushMicrotasks();
 
             expect(ref.current).not.toBeNull();
         });

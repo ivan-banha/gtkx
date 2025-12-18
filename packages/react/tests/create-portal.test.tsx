@@ -3,15 +3,13 @@ import * as GtkEnums from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { Box, Button, createPortal, Label, Window } from "../src/index.js";
-import { flushMicrotasks, render } from "./setup.js";
+import { render, tick } from "./utils.js";
 
 describe("createPortal", () => {
     it("renders children at root level when no container specified", async () => {
         const windowRef = createRef<Gtk.Window>();
 
-        render(createPortal(<Window.Root ref={windowRef} title="Portal Window" />));
-
-        await flushMicrotasks();
+        await render(createPortal(<Window.Root ref={windowRef} title="Portal Window" />));
 
         expect(windowRef.current).not.toBeNull();
         expect(windowRef.current?.getTitle()).toBe("Portal Window");
@@ -31,10 +29,8 @@ describe("createPortal", () => {
             );
         }
 
-        render(<App />);
-        await flushMicrotasks();
-        render(<App />);
-        await flushMicrotasks();
+        await render(<App />);
+        await render(<App />);
 
         expect(labelRef.current).not.toBeNull();
         expect(labelRef.current?.getParent()?.id).toEqual(boxRef.current?.id);
@@ -43,9 +39,9 @@ describe("createPortal", () => {
     it("preserves key when provided", async () => {
         const labelRef = createRef<Gtk.Label>();
 
-        render(createPortal(<Label ref={labelRef} label="Keyed" />, undefined, "my-key"));
+        await render(createPortal(<Label ref={labelRef} label="Keyed" />, undefined, "my-key"));
 
-        await flushMicrotasks();
+        await tick();
         expect(labelRef.current).not.toBeNull();
     });
 
@@ -56,14 +52,12 @@ describe("createPortal", () => {
             return <>{showPortal && createPortal(<Window.Root ref={windowRef} title="Portal" />)}</>;
         }
 
-        render(<App showPortal={true} />);
-        await flushMicrotasks();
+        await render(<App showPortal={true} />);
 
         const windowId = windowRef.current?.id;
         expect(windowId).not.toBeUndefined();
 
-        render(<App showPortal={false} />);
-        await flushMicrotasks();
+        await render(<App showPortal={false} />);
     });
 
     it("updates portal children when props change", async () => {
@@ -73,12 +67,10 @@ describe("createPortal", () => {
             return <>{createPortal(<Window.Root ref={windowRef} title={title} />)}</>;
         }
 
-        render(<App title="First" />);
-        await flushMicrotasks();
+        await render(<App title="First" />);
         expect(windowRef.current?.getTitle()).toBe("First");
 
-        render(<App title="Second" />);
-        await flushMicrotasks();
+        await render(<App title="Second" />);
         expect(windowRef.current?.getTitle()).toBe("Second");
     });
 
@@ -98,10 +90,8 @@ describe("createPortal", () => {
             );
         }
 
-        render(<App />);
-        await flushMicrotasks();
-        render(<App />);
-        await flushMicrotasks();
+        await render(<App />);
+        await render(<App />);
 
         expect(label1Ref.current).not.toBeNull();
         expect(label2Ref.current).not.toBeNull();
@@ -125,10 +115,8 @@ describe("createPortal", () => {
             );
         }
 
-        render(<App />);
-        await flushMicrotasks();
-        render(<App />);
-        await flushMicrotasks();
+        await render(<App />);
+        await render(<App />);
 
         expect(buttonRef.current).not.toBeNull();
         expect(buttonRef.current?.getParent()?.id).toEqual(innerBoxRef.current?.id);

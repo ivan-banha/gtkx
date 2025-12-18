@@ -1,3 +1,4 @@
+import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -6,7 +7,7 @@ export default defineConfig({
         typecheck: {
             tsconfig: "tsconfig.test.json",
         },
-        setupFiles: [import.meta.resolve("./vitest.setup.ts")],
+        setupFiles: [path.join(import.meta.dirname, "vitest.setup.ts")],
         pool: "forks",
         bail: 1,
     },

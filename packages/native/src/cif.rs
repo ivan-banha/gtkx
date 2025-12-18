@@ -169,6 +169,20 @@ fn closure_to_glib_full(closure: &glib::Closure) -> *mut c_void {
     ptr as *mut c_void
 }
 
+/// Transfers full ownership of a closure to C for async callbacks.
+///
+/// Unlike `closure_to_glib_full`, this completely transfers ownership to C
+/// by using `forget()` to prevent Rust from dropping the closure. Use this
+/// for callbacks that may be invoked asynchronously after the FFI call returns
+/// (e.g., idle sources, timeouts) where a destroy notify will handle cleanup.
+fn closure_ptr_for_transfer(closure: glib::Closure) -> *mut c_void {
+    use glib::translate::ToGlibPtr as _;
+    let stash: glib::translate::Stash<*mut glib::gobject_ffi::GClosure, _> = closure.to_glib_none();
+    let ptr = stash.0 as *mut c_void;
+    std::mem::forget(closure);
+    ptr
+}
+
 fn convert_glib_args(
     args: &[glib::Value],
     arg_types: &Option<Vec<Type>>,
@@ -515,12 +529,12 @@ impl Value {
                     )
                 });
 
-                let closure_ptr = closure_to_glib_full(&closure);
+                let closure_ptr = closure_ptr_for_transfer(closure);
                 let trampoline_ptr = callback::get_async_ready_trampoline_ptr();
 
                 Ok(Value::TrampolineCallback(TrampolineCallbackValue {
                     trampoline_ptr,
-                    closure: OwnedPtr::new(closure, closure_ptr),
+                    closure: OwnedPtr::new((), closure_ptr),
                     destroy_ptr: None,
                     data_first: false,
                 }))
@@ -537,12 +551,12 @@ impl Value {
                     )
                 });
 
-                let closure_ptr = closure_to_glib_full(&closure);
+                let closure_ptr = closure_ptr_for_transfer(closure);
                 let trampoline_ptr = callback::get_destroy_trampoline_ptr();
 
                 Ok(Value::TrampolineCallback(TrampolineCallbackValue {
                     trampoline_ptr,
-                    closure: OwnedPtr::new(closure, closure_ptr),
+                    closure: OwnedPtr::new((), closure_ptr),
                     destroy_ptr: None,
                     data_first: true,
                 }))
@@ -562,13 +576,13 @@ impl Value {
                     )
                 });
 
-                let closure_ptr = closure_to_glib_full(&closure);
+                let closure_ptr = closure_ptr_for_transfer(closure);
                 let trampoline_ptr = callback::get_source_func_trampoline_ptr();
                 let destroy_ptr = callback::get_unref_closure_trampoline_ptr();
 
                 Ok(Value::TrampolineCallback(TrampolineCallbackValue {
                     trampoline_ptr,
-                    closure: OwnedPtr::new(closure, closure_ptr),
+                    closure: OwnedPtr::new((), closure_ptr),
                     destroy_ptr: Some(destroy_ptr),
                     data_first: false,
                 }))
@@ -590,13 +604,13 @@ impl Value {
                     )
                 });
 
-                let closure_ptr = closure_to_glib_full(&closure);
+                let closure_ptr = closure_ptr_for_transfer(closure);
                 let trampoline_ptr = callback::get_draw_func_trampoline_ptr();
                 let destroy_ptr = callback::get_unref_closure_trampoline_ptr();
 
                 Ok(Value::TrampolineCallback(TrampolineCallbackValue {
                     trampoline_ptr,
-                    closure: OwnedPtr::new(closure, closure_ptr),
+                    closure: OwnedPtr::new((), closure_ptr),
                     destroy_ptr: Some(destroy_ptr),
                     data_first: false,
                 }))
@@ -627,13 +641,13 @@ impl Value {
                     )
                 });
 
-                let closure_ptr = closure_to_glib_full(&closure);
+                let closure_ptr = closure_ptr_for_transfer(closure);
                 let trampoline_ptr = callback::get_compare_data_func_trampoline_ptr();
                 let destroy_ptr = callback::get_unref_closure_trampoline_ptr();
 
                 Ok(Value::TrampolineCallback(TrampolineCallbackValue {
                     trampoline_ptr,
-                    closure: OwnedPtr::new(closure, closure_ptr),
+                    closure: OwnedPtr::new((), closure_ptr),
                     destroy_ptr: Some(destroy_ptr),
                     data_first: false,
                 }))
@@ -658,13 +672,13 @@ impl Value {
                     )
                 });
 
-                let closure_ptr = closure_to_glib_full(&closure);
+                let closure_ptr = closure_ptr_for_transfer(closure);
                 let trampoline_ptr = callback::get_tick_func_trampoline_ptr();
                 let destroy_ptr = callback::get_unref_closure_trampoline_ptr();
 
                 Ok(Value::TrampolineCallback(TrampolineCallbackValue {
                     trampoline_ptr,
-                    closure: OwnedPtr::new(closure, closure_ptr),
+                    closure: OwnedPtr::new((), closure_ptr),
                     destroy_ptr: Some(destroy_ptr),
                     data_first: false,
                 }))

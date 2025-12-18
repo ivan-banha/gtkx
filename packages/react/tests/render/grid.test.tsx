@@ -2,15 +2,14 @@ import type * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { Grid, Label } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 describe("render - Grid", () => {
     describe("Grid.Root", () => {
         it("creates Grid widget", async () => {
             const ref = createRef<Gtk.Grid>();
 
-            render(<Grid.Root ref={ref} />);
-            await flushMicrotasks();
+            await render(<Grid.Root ref={ref} />);
 
             expect(ref.current).not.toBeNull();
         });
@@ -21,14 +20,13 @@ describe("render - Grid", () => {
             const gridRef = createRef<Gtk.Grid>();
             const labelRef = createRef<Gtk.Label>();
 
-            render(
+            await render(
                 <Grid.Root ref={gridRef}>
                     <Grid.Child column={1} row={2}>
                         <Label ref={labelRef} label="Positioned" />
                     </Grid.Child>
                 </Grid.Root>,
             );
-            await flushMicrotasks();
 
             expect(labelRef.current?.getParent()?.id).toEqual(gridRef.current?.id);
         });
@@ -37,14 +35,13 @@ describe("render - Grid", () => {
             const gridRef = createRef<Gtk.Grid>();
             const labelRef = createRef<Gtk.Label>();
 
-            render(
+            await render(
                 <Grid.Root ref={gridRef}>
                     <Grid.Child column={0} row={0} columnSpan={2} rowSpan={3}>
                         <Label ref={labelRef} label="Spanning" />
                     </Grid.Child>
                 </Grid.Root>,
             );
-            await flushMicrotasks();
 
             expect(labelRef.current).not.toBeNull();
         });
@@ -53,14 +50,13 @@ describe("render - Grid", () => {
             const gridRef = createRef<Gtk.Grid>();
             const labelRef = createRef<Gtk.Label>();
 
-            render(
+            await render(
                 <Grid.Root ref={gridRef}>
                     <Grid.Child>
                         <Label ref={labelRef} label="Default Position" />
                     </Grid.Child>
                 </Grid.Root>,
             );
-            await flushMicrotasks();
 
             expect(labelRef.current?.getParent()?.id).toEqual(gridRef.current?.id);
         });
@@ -81,11 +77,9 @@ describe("render - Grid", () => {
                 );
             }
 
-            render(<App column={0} row={0} />);
-            await flushMicrotasks();
+            await render(<App column={0} row={0} />);
 
-            render(<App column={2} row={3} />);
-            await flushMicrotasks();
+            await render(<App column={2} row={3} />);
 
             expect(labelRef.current?.getParent()?.id).toEqual(gridRef.current?.id);
         });
@@ -104,11 +98,9 @@ describe("render - Grid", () => {
                 );
             }
 
-            render(<App columnSpan={1} rowSpan={1} />);
-            await flushMicrotasks();
+            await render(<App columnSpan={1} rowSpan={1} />);
 
-            render(<App columnSpan={3} rowSpan={2} />);
-            await flushMicrotasks();
+            await render(<App columnSpan={3} rowSpan={2} />);
 
             expect(labelRef.current).not.toBeNull();
         });
@@ -130,13 +122,11 @@ describe("render - Grid", () => {
                 );
             }
 
-            render(<App showChild={true} />);
-            await flushMicrotasks();
+            await render(<App showChild={true} />);
 
             expect(gridRef.current?.getFirstChild()).not.toBeNull();
 
-            render(<App showChild={false} />);
-            await flushMicrotasks();
+            await render(<App showChild={false} />);
 
             expect(gridRef.current?.getFirstChild()).toBeNull();
         });

@@ -2,21 +2,20 @@ import type * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { Button, HeaderBar, Label, MenuButton, Popover } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 describe("render - Slot", () => {
     it("sets slot child via Widget.SlotName pattern", async () => {
         const headerBarRef = createRef<Gtk.HeaderBar>();
         const titleRef = createRef<Gtk.Label>();
 
-        render(
+        await render(
             <HeaderBar.Root ref={headerBarRef}>
                 <HeaderBar.TitleWidget>
                     <Label ref={titleRef} label="Custom Title" />
                 </HeaderBar.TitleWidget>
             </HeaderBar.Root>,
         );
-        await flushMicrotasks();
 
         expect(headerBarRef.current?.getTitleWidget()?.id).toEqual(titleRef.current?.id);
     });
@@ -25,14 +24,13 @@ describe("render - Slot", () => {
         const menuButtonRef = createRef<Gtk.MenuButton>();
         const labelRef = createRef<Gtk.Label>();
 
-        render(
+        await render(
             <MenuButton.Root ref={menuButtonRef}>
                 <MenuButton.Child>
                     <Label ref={labelRef} label="Button Content" />
                 </MenuButton.Child>
             </MenuButton.Root>,
         );
-        await flushMicrotasks();
 
         expect(menuButtonRef.current?.getChild()?.id).toEqual(labelRef.current?.id);
     });
@@ -52,13 +50,11 @@ describe("render - Slot", () => {
             );
         }
 
-        render(<App showTitle={true} />);
-        await flushMicrotasks();
+        await render(<App showTitle={true} />);
 
         expect(headerBarRef.current?.getTitleWidget()).not.toBeNull();
 
-        render(<App showTitle={false} />);
-        await flushMicrotasks();
+        await render(<App showTitle={false} />);
 
         expect(headerBarRef.current?.getTitleWidget()).toBeNull();
     });
@@ -82,13 +78,11 @@ describe("render - Slot", () => {
             );
         }
 
-        render(<App first={true} />);
-        await flushMicrotasks();
+        await render(<App first={true} />);
 
         expect(headerBarRef.current?.getTitleWidget()?.id).toEqual(label1Ref.current?.id);
 
-        render(<App first={false} />);
-        await flushMicrotasks();
+        await render(<App first={false} />);
 
         expect(headerBarRef.current?.getTitleWidget()?.id).toEqual(label2Ref.current?.id);
     });
@@ -97,14 +91,13 @@ describe("render - Slot", () => {
         const menuButtonRef = createRef<Gtk.MenuButton>();
         const labelRef = createRef<Gtk.Label>();
 
-        render(
+        await render(
             <MenuButton.Root ref={menuButtonRef}>
                 <MenuButton.Child>
                     <Label ref={labelRef} label="Custom Child" />
                 </MenuButton.Child>
             </MenuButton.Root>,
         );
-        await flushMicrotasks();
 
         expect(menuButtonRef.current?.getChild()?.id).toEqual(labelRef.current?.id);
     });
@@ -113,7 +106,7 @@ describe("render - Slot", () => {
         const menuButtonRef = createRef<Gtk.MenuButton>();
         const popoverRef = createRef<Gtk.Popover>();
 
-        render(
+        await render(
             <MenuButton.Root ref={menuButtonRef}>
                 <MenuButton.Popover>
                     <Popover.Root ref={popoverRef}>
@@ -122,7 +115,6 @@ describe("render - Slot", () => {
                 </MenuButton.Popover>
             </MenuButton.Root>,
         );
-        await flushMicrotasks();
 
         expect(menuButtonRef.current?.getPopover()?.id).toEqual(popoverRef.current?.id);
     });
@@ -132,7 +124,7 @@ describe("render - Slot", () => {
         const labelRef = createRef<Gtk.Label>();
         const popoverRef = createRef<Gtk.Popover>();
 
-        render(
+        await render(
             <MenuButton.Root ref={menuButtonRef}>
                 <MenuButton.Child>
                     <Label ref={labelRef} label="Button Label" />
@@ -144,7 +136,6 @@ describe("render - Slot", () => {
                 </MenuButton.Popover>
             </MenuButton.Root>,
         );
-        await flushMicrotasks();
 
         expect(menuButtonRef.current?.getChild()?.id).toEqual(labelRef.current?.id);
         expect(menuButtonRef.current?.getPopover()?.id).toEqual(popoverRef.current?.id);
@@ -154,12 +145,11 @@ describe("render - Slot", () => {
         const headerBarRef = createRef<Gtk.HeaderBar>();
         const buttonRef = createRef<Gtk.Button>();
 
-        render(
+        await render(
             <HeaderBar.Root ref={headerBarRef}>
                 <Button ref={buttonRef} label="Direct Button" />
             </HeaderBar.Root>,
         );
-        await flushMicrotasks();
 
         expect(buttonRef.current?.getParent()?.id).toEqual(headerBarRef.current?.id);
     });

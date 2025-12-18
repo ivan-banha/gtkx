@@ -2,7 +2,7 @@ import type * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { Button, Label, Overlay } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 describe("render - Overlay", () => {
     describe("main child", () => {
@@ -10,12 +10,11 @@ describe("render - Overlay", () => {
             const overlayRef = createRef<Gtk.Overlay>();
             const labelRef = createRef<Gtk.Label>();
 
-            render(
+            await render(
                 <Overlay ref={overlayRef}>
                     <Label ref={labelRef} label="Main Child" />
                 </Overlay>,
             );
-            await flushMicrotasks();
 
             expect(overlayRef.current?.getChild()?.id).toEqual(labelRef.current?.id);
         });
@@ -27,13 +26,11 @@ describe("render - Overlay", () => {
                 return <Overlay ref={overlayRef}>{showMain && <Label label="Main" />}</Overlay>;
             }
 
-            render(<App showMain={true} />);
-            await flushMicrotasks();
+            await render(<App showMain={true} />);
 
             expect(overlayRef.current?.getChild()).not.toBeNull();
 
-            render(<App showMain={false} />);
-            await flushMicrotasks();
+            await render(<App showMain={false} />);
 
             expect(overlayRef.current?.getChild()).toBeNull();
         });
@@ -46,14 +43,13 @@ describe("render - Overlay", () => {
             const overlay1Ref = createRef<Gtk.Button>();
             const overlay2Ref = createRef<Gtk.Button>();
 
-            render(
+            await render(
                 <Overlay ref={overlayRef}>
                     <Label ref={mainRef} label="Main" />
                     <Button ref={overlay1Ref} label="Overlay 1" />
                     <Button ref={overlay2Ref} label="Overlay 2" />
                 </Overlay>,
             );
-            await flushMicrotasks();
 
             expect(overlayRef.current?.getChild()?.id).toEqual(mainRef.current?.id);
             expect(overlay1Ref.current?.getParent()?.id).toEqual(overlayRef.current?.id);
@@ -74,11 +70,9 @@ describe("render - Overlay", () => {
                 );
             }
 
-            render(<App overlays={["A", "B", "C"]} />);
-            await flushMicrotasks();
+            await render(<App overlays={["A", "B", "C"]} />);
 
-            render(<App overlays={["A", "C"]} />);
-            await flushMicrotasks();
+            await render(<App overlays={["A", "C"]} />);
         });
     });
 
@@ -97,13 +91,11 @@ describe("render - Overlay", () => {
                 );
             }
 
-            render(<App insertFirst={false} />);
-            await flushMicrotasks();
+            await render(<App insertFirst={false} />);
 
             expect(overlayRef.current?.getChild()?.id).toEqual(labelRef.current?.id);
 
-            render(<App insertFirst={true} />);
-            await flushMicrotasks();
+            await render(<App insertFirst={true} />);
         });
 
         it("inserts before overlay at correct position", async () => {
@@ -120,11 +112,9 @@ describe("render - Overlay", () => {
                 );
             }
 
-            render(<App overlays={["First", "Last"]} />);
-            await flushMicrotasks();
+            await render(<App overlays={["First", "Last"]} />);
 
-            render(<App overlays={["First", "Middle", "Last"]} />);
-            await flushMicrotasks();
+            await render(<App overlays={["First", "Middle", "Last"]} />);
         });
     });
 });

@@ -2,7 +2,7 @@ import type * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { Label, Notebook } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 const getPageLabels = (notebook: Gtk.Notebook): string[] => {
     const labels: string[] = [];
@@ -24,8 +24,7 @@ describe("render - Notebook", () => {
         it("creates Notebook widget", async () => {
             const ref = createRef<Gtk.Notebook>();
 
-            render(<Notebook.Root ref={ref} />);
-            await flushMicrotasks();
+            await render(<Notebook.Root ref={ref} />);
 
             expect(ref.current).not.toBeNull();
         });
@@ -35,14 +34,13 @@ describe("render - Notebook", () => {
         it("adds page with label", async () => {
             const notebookRef = createRef<Gtk.Notebook>();
 
-            render(
+            await render(
                 <Notebook.Root ref={notebookRef}>
                     <Notebook.Page label="Tab 1">
                         <Label label="Page 1 Content" />
                     </Notebook.Page>
                 </Notebook.Root>,
             );
-            await flushMicrotasks();
 
             expect(notebookRef.current?.getNPages()).toBe(1);
             const labels = getPageLabels(notebookRef.current as Gtk.Notebook);
@@ -52,14 +50,13 @@ describe("render - Notebook", () => {
         it("adds page with empty label", async () => {
             const notebookRef = createRef<Gtk.Notebook>();
 
-            render(
+            await render(
                 <Notebook.Root ref={notebookRef}>
                     <Notebook.Page label="">
                         <Label label="No Tab Label" />
                     </Notebook.Page>
                 </Notebook.Root>,
             );
-            await flushMicrotasks();
 
             expect(notebookRef.current?.getNPages()).toBe(1);
         });
@@ -81,11 +78,9 @@ describe("render - Notebook", () => {
                 );
             }
 
-            render(<App pages={["First", "Last"]} />);
-            await flushMicrotasks();
+            await render(<App pages={["First", "Last"]} />);
 
-            render(<App pages={["First", "Middle", "Last"]} />);
-            await flushMicrotasks();
+            await render(<App pages={["First", "Middle", "Last"]} />);
 
             const labels = getPageLabels(notebookRef.current as Gtk.Notebook);
             expect(labels).toEqual(["First", "Middle", "Last"]);
@@ -106,11 +101,9 @@ describe("render - Notebook", () => {
                 );
             }
 
-            render(<App pages={["A", "B", "C"]} />);
-            await flushMicrotasks();
+            await render(<App pages={["A", "B", "C"]} />);
 
-            render(<App pages={["A", "C"]} />);
-            await flushMicrotasks();
+            await render(<App pages={["A", "C"]} />);
 
             const labels = getPageLabels(notebookRef.current as Gtk.Notebook);
             expect(labels).toEqual(["A", "C"]);
@@ -129,13 +122,11 @@ describe("render - Notebook", () => {
                 );
             }
 
-            render(<App label="Initial" />);
-            await flushMicrotasks();
+            await render(<App label="Initial" />);
 
             expect(getPageLabels(notebookRef.current as Gtk.Notebook)).toEqual(["Initial"]);
 
-            render(<App label="Updated" />);
-            await flushMicrotasks();
+            await render(<App label="Updated" />);
 
             expect(getPageLabels(notebookRef.current as Gtk.Notebook)).toEqual(["Updated"]);
         });
@@ -145,12 +136,11 @@ describe("render - Notebook", () => {
         it("appends child without Page wrapper", async () => {
             const notebookRef = createRef<Gtk.Notebook>();
 
-            render(
+            await render(
                 <Notebook.Root ref={notebookRef}>
                     <Label label="Direct Child" />
                 </Notebook.Root>,
             );
-            await flushMicrotasks();
 
             expect(notebookRef.current?.getNPages()).toBe(1);
         });

@@ -2,20 +2,19 @@ import * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ColumnView, Label } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 describe("render - ColumnView", () => {
     describe("ColumnView.Root", () => {
         it("creates ColumnView widget", async () => {
             const ref = createRef<Gtk.ColumnView>();
 
-            render(
+            await render(
                 <ColumnView.Root ref={ref}>
                     <ColumnView.Column title="Name" renderCell={() => <Label label="Cell" />} />
                     <ColumnView.Item id="1" item={{ name: "First" }} />
                 </ColumnView.Root>,
             );
-            await flushMicrotasks();
 
             expect(ref.current).not.toBeNull();
         });
@@ -25,13 +24,12 @@ describe("render - ColumnView", () => {
         it("adds column with title", async () => {
             const ref = createRef<Gtk.ColumnView>();
 
-            render(
+            await render(
                 <ColumnView.Root ref={ref}>
                     <ColumnView.Column title="Column Title" renderCell={() => <Label label="Cell" />} />
                     <ColumnView.Item id="1" item={{ name: "First" }} />
                 </ColumnView.Root>,
             );
-            await flushMicrotasks();
 
             const columns = ref.current?.getColumns();
             expect(columns).not.toBeNull();
@@ -51,11 +49,9 @@ describe("render - ColumnView", () => {
                 );
             }
 
-            render(<App columns={["First", "Last"]} />);
-            await flushMicrotasks();
+            await render(<App columns={["First", "Last"]} />);
 
-            render(<App columns={["First", "Middle", "Last"]} />);
-            await flushMicrotasks();
+            await render(<App columns={["First", "Middle", "Last"]} />);
 
             expect(ref.current?.getColumns()).not.toBeNull();
         });
@@ -74,11 +70,9 @@ describe("render - ColumnView", () => {
                 );
             }
 
-            render(<App columns={["A", "B", "C"]} />);
-            await flushMicrotasks();
+            await render(<App columns={["A", "B", "C"]} />);
 
-            render(<App columns={["A", "C"]} />);
-            await flushMicrotasks();
+            await render(<App columns={["A", "C"]} />);
 
             expect(ref.current?.getColumns()).not.toBeNull();
         });
@@ -86,7 +80,7 @@ describe("render - ColumnView", () => {
         it("sets column properties (expand, resizable, fixedWidth)", async () => {
             const ref = createRef<Gtk.ColumnView>();
 
-            render(
+            await render(
                 <ColumnView.Root ref={ref}>
                     <ColumnView.Column
                         title="Props"
@@ -98,7 +92,6 @@ describe("render - ColumnView", () => {
                     <ColumnView.Item id="1" item={{ name: "First" }} />
                 </ColumnView.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("updates column properties when props change", async () => {
@@ -113,11 +106,9 @@ describe("render - ColumnView", () => {
                 );
             }
 
-            render(<App title="Initial" />);
-            await flushMicrotasks();
+            await render(<App title="Initial" />);
 
-            render(<App title="Updated" />);
-            await flushMicrotasks();
+            await render(<App title="Updated" />);
         });
     });
 
@@ -125,14 +116,13 @@ describe("render - ColumnView", () => {
         it("adds item to list model", async () => {
             const ref = createRef<Gtk.ColumnView>();
 
-            render(
+            await render(
                 <ColumnView.Root ref={ref}>
                     <ColumnView.Column title="Name" renderCell={() => <Label label="Cell" />} />
                     <ColumnView.Item id="1" item={{ name: "First" }} />
                     <ColumnView.Item id="2" item={{ name: "Second" }} />
                 </ColumnView.Root>,
             );
-            await flushMicrotasks();
 
             expect(ref.current?.getModel()).not.toBeNull();
         });
@@ -151,7 +141,7 @@ describe("render - ColumnView", () => {
                 );
             }
 
-            render(
+            await render(
                 <App
                     items={[
                         { id: "1", name: "First" },
@@ -159,9 +149,8 @@ describe("render - ColumnView", () => {
                     ]}
                 />,
             );
-            await flushMicrotasks();
 
-            render(
+            await render(
                 <App
                     items={[
                         { id: "1", name: "First" },
@@ -170,7 +159,6 @@ describe("render - ColumnView", () => {
                     ]}
                 />,
             );
-            await flushMicrotasks();
 
             expect(ref.current?.getModel()).not.toBeNull();
         });
@@ -189,7 +177,7 @@ describe("render - ColumnView", () => {
                 );
             }
 
-            render(
+            await render(
                 <App
                     items={[
                         { id: "1", name: "A" },
@@ -198,9 +186,8 @@ describe("render - ColumnView", () => {
                     ]}
                 />,
             );
-            await flushMicrotasks();
 
-            render(
+            await render(
                 <App
                     items={[
                         { id: "1", name: "A" },
@@ -208,7 +195,6 @@ describe("render - ColumnView", () => {
                     ]}
                 />,
             );
-            await flushMicrotasks();
 
             expect(ref.current?.getModel()).not.toBeNull();
         });
@@ -219,13 +205,12 @@ describe("render - ColumnView", () => {
             const ref = createRef<Gtk.ColumnView>();
             const renderCell = vi.fn((item: { name: string } | null) => <Label label={item?.name ?? "Empty"} />);
 
-            render(
+            await render(
                 <ColumnView.Root ref={ref}>
                     <ColumnView.Column title="Name" renderCell={renderCell} />
                     <ColumnView.Item id="1" item={{ name: "Test" }} />
                 </ColumnView.Root>,
             );
-            await flushMicrotasks();
         });
     });
 
@@ -233,38 +218,35 @@ describe("render - ColumnView", () => {
         it("sets sort column via sortColumn prop", async () => {
             const ref = createRef<Gtk.ColumnView>();
 
-            render(
+            await render(
                 <ColumnView.Root ref={ref} sortColumn="name">
                     <ColumnView.Column id="name" title="Name" renderCell={() => <Label label="Cell" />} />
                     <ColumnView.Item id="1" item={{ name: "First" }} />
                 </ColumnView.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("sets sort order via sortOrder prop", async () => {
             const ref = createRef<Gtk.ColumnView>();
 
-            render(
+            await render(
                 <ColumnView.Root ref={ref} sortColumn="name" sortOrder={Gtk.SortType.DESCENDING}>
                     <ColumnView.Column id="name" title="Name" renderCell={() => <Label label="Cell" />} />
                     <ColumnView.Item id="1" item={{ name: "First" }} />
                 </ColumnView.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("calls onSortChange when sort changes", async () => {
             const ref = createRef<Gtk.ColumnView>();
             const onSortChange = vi.fn();
 
-            render(
+            await render(
                 <ColumnView.Root ref={ref} onSortChange={onSortChange}>
                     <ColumnView.Column id="name" title="Name" renderCell={() => <Label label="Cell" />} />
                     <ColumnView.Item id="1" item={{ name: "First" }} />
                 </ColumnView.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("updates sort indicator when props change", async () => {
@@ -280,11 +262,9 @@ describe("render - ColumnView", () => {
                 );
             }
 
-            render(<App sortColumn="name" />);
-            await flushMicrotasks();
+            await render(<App sortColumn="name" />);
 
-            render(<App sortColumn="age" />);
-            await flushMicrotasks();
+            await render(<App sortColumn="age" />);
         });
     });
 
@@ -292,20 +272,19 @@ describe("render - ColumnView", () => {
         it("supports single selection", async () => {
             const ref = createRef<Gtk.ColumnView>();
 
-            render(
+            await render(
                 <ColumnView.Root ref={ref} selected={["1"]}>
                     <ColumnView.Column title="Name" renderCell={() => <Label label="Cell" />} />
                     <ColumnView.Item id="1" item={{ name: "First" }} />
                     <ColumnView.Item id="2" item={{ name: "Second" }} />
                 </ColumnView.Root>,
             );
-            await flushMicrotasks();
         });
 
         it("supports multiple selection", async () => {
             const ref = createRef<Gtk.ColumnView>();
 
-            render(
+            await render(
                 <ColumnView.Root ref={ref} selectionMode={Gtk.SelectionMode.MULTIPLE} selected={["1", "2"]}>
                     <ColumnView.Column title="Name" renderCell={() => <Label label="Cell" />} />
                     <ColumnView.Item id="1" item={{ name: "First" }} />
@@ -313,7 +292,6 @@ describe("render - ColumnView", () => {
                     <ColumnView.Item id="3" item={{ name: "Third" }} />
                 </ColumnView.Root>,
             );
-            await flushMicrotasks();
         });
     });
 });

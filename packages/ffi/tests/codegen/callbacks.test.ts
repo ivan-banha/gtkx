@@ -6,9 +6,8 @@ describe("callbacks", () => {
         it("accepts tick callback function", () => {
             const button = new Gtk.Button();
             const tickCallback = vi.fn(() => true);
-            const destroyNotify = vi.fn();
 
-            const id = button.addTickCallback(tickCallback, destroyNotify);
+            const id = button.addTickCallback(tickCallback);
 
             expect(typeof id).toBe("number");
             expect(id).toBeGreaterThan(0);
@@ -17,9 +16,8 @@ describe("callbacks", () => {
         it("can remove tick callback by id", () => {
             const button = new Gtk.Button();
             const tickCallback = vi.fn(() => true);
-            const destroyNotify = vi.fn();
 
-            const id = button.addTickCallback(tickCallback, destroyNotify);
+            const id = button.addTickCallback(tickCallback);
 
             expect(() => {
                 button.removeTickCallback(id);

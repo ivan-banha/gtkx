@@ -2,15 +2,14 @@ import * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { Box, Label, Switch } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 describe("render - props", () => {
     describe("property setting", () => {
         it("sets string properties", async () => {
             const ref = createRef<Gtk.Label>();
 
-            render(<Label ref={ref} label="Test Label" />);
-            await flushMicrotasks();
+            await render(<Label ref={ref} label="Test Label" />);
 
             expect(ref.current?.getLabel()).toBe("Test Label");
         });
@@ -18,8 +17,7 @@ describe("render - props", () => {
         it("sets boolean properties", async () => {
             const ref = createRef<Gtk.Label>();
 
-            render(<Label ref={ref} selectable={true} />);
-            await flushMicrotasks();
+            await render(<Label ref={ref} selectable={true} />);
 
             expect(ref.current?.getSelectable()).toBe(true);
         });
@@ -27,8 +25,7 @@ describe("render - props", () => {
         it("sets numeric properties", async () => {
             const ref = createRef<Gtk.Label>();
 
-            render(<Label ref={ref} maxWidthChars={20} />);
-            await flushMicrotasks();
+            await render(<Label ref={ref} maxWidthChars={20} />);
 
             expect(ref.current?.getMaxWidthChars()).toBe(20);
         });
@@ -36,8 +33,7 @@ describe("render - props", () => {
         it("sets enum properties", async () => {
             const ref = createRef<Gtk.Box>();
 
-            render(<Box ref={ref} spacing={0} orientation={Gtk.Orientation.VERTICAL} />);
-            await flushMicrotasks();
+            await render(<Box ref={ref} spacing={0} orientation={Gtk.Orientation.VERTICAL} />);
 
             expect(ref.current?.getOrientation()).toBe(Gtk.Orientation.VERTICAL);
         });
@@ -51,13 +47,11 @@ describe("render - props", () => {
                 return <Label ref={ref} label="Same" />;
             }
 
-            render(<App />);
-            await flushMicrotasks();
+            await render(<App />);
 
             const initialId = ref.current?.id;
 
-            render(<App />);
-            await flushMicrotasks();
+            await render(<App />);
 
             expect(ref.current?.id).toEqual(initialId);
             expect(ref.current?.getLabel()).toBe("Same");
@@ -70,12 +64,10 @@ describe("render - props", () => {
                 return <Label ref={ref} label={text} />;
             }
 
-            render(<App text="Initial" />);
-            await flushMicrotasks();
+            await render(<App text="Initial" />);
             expect(ref.current?.getLabel()).toBe("Initial");
 
-            render(<App text="Updated" />);
-            await flushMicrotasks();
+            await render(<App text="Updated" />);
             expect(ref.current?.getLabel()).toBe("Updated");
         });
 
@@ -86,11 +78,9 @@ describe("render - props", () => {
                 return <Label ref={ref} label={label} />;
             }
 
-            render(<App label={undefined} />);
-            await flushMicrotasks();
+            await render(<App label={undefined} />);
 
-            render(<App label="Now Set" />);
-            await flushMicrotasks();
+            await render(<App label="Now Set" />);
 
             expect(ref.current?.getLabel()).toBe("Now Set");
         });
@@ -102,12 +92,10 @@ describe("render - props", () => {
                 return <Label ref={ref} label={label} />;
             }
 
-            render(<App label="Has Value" />);
-            await flushMicrotasks();
+            await render(<App label="Has Value" />);
             expect(ref.current?.getLabel()).toBe("Has Value");
 
-            render(<App label={undefined} />);
-            await flushMicrotasks();
+            await render(<App label={undefined} />);
         });
     });
 
@@ -127,11 +115,9 @@ describe("render - props", () => {
                 return <Label ref={ref} label={label} selectable={selectable} maxWidthChars={maxWidthChars} />;
             }
 
-            render(<App label="Initial" selectable={false} maxWidthChars={10} />);
-            await flushMicrotasks();
+            await render(<App label="Initial" selectable={false} maxWidthChars={10} />);
 
-            render(<App label="Updated" selectable={true} maxWidthChars={20} />);
-            await flushMicrotasks();
+            await render(<App label="Updated" selectable={true} maxWidthChars={20} />);
 
             expect(ref.current?.getLabel()).toBe("Updated");
             expect(ref.current?.getSelectable()).toBe(true);
@@ -143,12 +129,11 @@ describe("render - props", () => {
         it("does not pass children prop to widget", async () => {
             const ref = createRef<Gtk.Box>();
 
-            render(
+            await render(
                 <Box ref={ref} spacing={0} orientation={Gtk.Orientation.VERTICAL}>
                     <Label label="Child" />
                 </Box>,
             );
-            await flushMicrotasks();
 
             expect(ref.current).not.toBeNull();
         });
@@ -156,8 +141,7 @@ describe("render - props", () => {
         it("handles node-specific consumed props", async () => {
             const ref = createRef<Gtk.Switch>();
 
-            render(<Switch ref={ref} active={true} />);
-            await flushMicrotasks();
+            await render(<Switch ref={ref} active={true} />);
 
             expect(ref.current?.getActive()).toBe(true);
         });

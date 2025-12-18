@@ -14,11 +14,15 @@ use crate::{
 /// JavaScript signature: `stop() => void`
 ///
 /// Releases the application hold guard allowing the GTK main loop to exit,
-/// then joins the GTK thread to ensure clean shutdown.
+/// then joins the GTK thread to ensure clean shutdown. Also marks the dispatch
+/// system as stopped to prevent crashes from GC finalizers running after
+/// the main loop has exited.
 pub fn stop(mut cx: FunctionContext) -> JsResult<JsUndefined> {
     let (tx, rx) = mpsc::channel::<()>();
 
     gtk_dispatch::schedule(move || {
+        gtk_dispatch::mark_stopped();
+
         GtkThreadState::with(|state| {
             state.app_hold_guard.take();
         });

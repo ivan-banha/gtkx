@@ -2,14 +2,13 @@ import * as Gtk from "@gtkx/ffi/gtk";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { AboutDialog, Box } from "../../src/index.js";
-import { flushMicrotasks, render } from "../setup.js";
+import { render } from "../utils.js";
 
 describe("render - AboutDialog", () => {
     it("creates AboutDialog widget", async () => {
         const ref = createRef<Gtk.AboutDialog>();
 
-        render(<AboutDialog ref={ref} programName="Test App" />);
-        await flushMicrotasks();
+        await render(<AboutDialog ref={ref} programName="Test App" />);
 
         expect(ref.current).not.toBeNull();
     });
@@ -18,12 +17,11 @@ describe("render - AboutDialog", () => {
         const boxRef = createRef<Gtk.Box>();
         const dialogRef = createRef<Gtk.AboutDialog>();
 
-        render(
+        await render(
             <Box ref={boxRef} spacing={0} orientation={Gtk.Orientation.VERTICAL}>
                 <AboutDialog ref={dialogRef} programName="Dialog" />
             </Box>,
         );
-        await flushMicrotasks();
 
         expect(dialogRef.current?.getParent()).toBeNull();
     });
@@ -31,8 +29,7 @@ describe("render - AboutDialog", () => {
     it("presents on mount", async () => {
         const ref = createRef<Gtk.AboutDialog>();
 
-        render(<AboutDialog ref={ref} programName="Mount Test" />);
-        await flushMicrotasks();
+        await render(<AboutDialog ref={ref} programName="Mount Test" />);
 
         expect(ref.current?.getVisible()).toBe(true);
     });
@@ -44,20 +41,18 @@ describe("render - AboutDialog", () => {
             return show ? <AboutDialog ref={ref} programName="Unmount Test" /> : null;
         }
 
-        render(<App show={true} />);
-        await flushMicrotasks();
+        await render(<App show={true} />);
 
         const dialogId = ref.current?.id;
         expect(dialogId).toBeDefined();
 
-        render(<App show={false} />);
-        await flushMicrotasks();
+        await render(<App show={false} />);
     });
 
     it("sets dialog properties (programName, version, etc.)", async () => {
         const ref = createRef<Gtk.AboutDialog>();
 
-        render(
+        await render(
             <AboutDialog
                 ref={ref}
                 programName="My Application"
@@ -67,7 +62,6 @@ describe("render - AboutDialog", () => {
                 website="https://example.com"
             />,
         );
-        await flushMicrotasks();
 
         expect(ref.current?.getProgramName()).toBe("My Application");
         expect(ref.current?.getVersion()).toBe("1.0.0");

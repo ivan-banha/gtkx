@@ -20,7 +20,6 @@ export class ToolbarViewSlotNode extends Node<never> {
     }
 
     private slotType: ToolbarViewSlotType;
-    private parentNode: Node | null = null;
     private children: Node[] = [];
 
     constructor(type: string) {
@@ -35,18 +34,21 @@ export class ToolbarViewSlotNode extends Node<never> {
     }
 
     override appendChild(child: Node): void {
+        child.parent = this;
         const childWidget = child.getWidget() as Gtk.Widget | undefined;
 
         if (!childWidget) return;
 
         this.children.push(child);
 
-        if (this.parentNode) {
+        if (this.parent) {
             this.addBarToParent(childWidget);
         }
     }
 
     override removeChild(child: Node): void {
+        child.unmount();
+
         const index = this.children.indexOf(child);
 
         if (index !== -1) {
@@ -55,14 +57,14 @@ export class ToolbarViewSlotNode extends Node<never> {
 
         const childWidget = child.getWidget() as Gtk.Widget | undefined;
 
-        if (this.parentNode && childWidget) {
+        if (this.parent && childWidget) {
             this.removeBarFromParent(childWidget);
         }
+
+        child.parent = null;
     }
 
-    override attachToParent(parent: Node): void {
-        this.parentNode = parent;
-
+    override mount(): void {
         for (const child of this.children) {
             const childWidget = child.getWidget() as Gtk.Widget | undefined;
 
@@ -72,7 +74,7 @@ export class ToolbarViewSlotNode extends Node<never> {
         }
     }
 
-    override detachFromParent(_parent: Node): void {
+    override unmount(): void {
         for (const child of this.children) {
             const childWidget = child.getWidget() as Gtk.Widget | undefined;
 
@@ -81,11 +83,11 @@ export class ToolbarViewSlotNode extends Node<never> {
             }
         }
 
-        this.parentNode = null;
+        super.unmount();
     }
 
     private addBarToParent(childWidget: Gtk.Widget): void {
-        const parentWidget = this.parentNode?.getWidget() as Adw.ToolbarView | undefined;
+        const parentWidget = this.parent?.getWidget() as Adw.ToolbarView | undefined;
 
         if (!parentWidget) return;
 
@@ -97,7 +99,7 @@ export class ToolbarViewSlotNode extends Node<never> {
     }
 
     private removeBarFromParent(childWidget: Gtk.Widget): void {
-        const parentWidget = this.parentNode?.getWidget() as Adw.ToolbarView | undefined;
+        const parentWidget = this.parent?.getWidget() as Adw.ToolbarView | undefined;
 
         if (!parentWidget) return;
 

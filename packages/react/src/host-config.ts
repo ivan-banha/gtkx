@@ -2,9 +2,9 @@ import { beginBatch, endBatch } from "@gtkx/ffi";
 import type * as Gtk from "@gtkx/ffi/gtk";
 import React from "react";
 import type ReactReconciler from "react-reconciler";
-import { beginCommit, endCommit } from "../batch.js";
-import { createNode, type Props, type ROOT_NODE_CONTAINER } from "../factory.js";
-import type { Node } from "../node.js";
+import { beginCommit, endCommit } from "./batch.js";
+import { createNode, type Props, type ROOT_NODE_CONTAINER } from "./factory.js";
+import type { Node } from "./node.js";
 
 type Container = Gtk.Widget | typeof ROOT_NODE_CONTAINER;
 type TextInstance = Node;

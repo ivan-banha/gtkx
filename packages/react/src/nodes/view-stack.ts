@@ -1,6 +1,6 @@
 import type * as Adw from "@gtkx/ffi/adw";
 import type * as Gtk from "@gtkx/ffi/gtk";
-import type { StackPageProps } from "../container-interfaces.js";
+import type { StackPageProps } from "../containers.js";
 import { PagedStackNode } from "./paged-stack.js";
 import { applyStackPageProps } from "./stack-page-props.js";
 

@@ -1,7 +1,8 @@
 import type * as Gtk from "@gtkx/ffi/gtk";
-import { type GridContainer, isGridContainer } from "../container-interfaces.js";
+import type { GridContainer } from "../containers.js";
 import type { Props } from "../factory.js";
 import { Node } from "../node.js";
+import { isGridContainer } from "../predicates.js";
 import { VirtualSlotNode } from "./virtual-slot.js";
 
 export class GridNode extends Node<Gtk.Grid> implements GridContainer {
@@ -15,6 +16,47 @@ export class GridNode extends Node<Gtk.Grid> implements GridContainer {
 
     removeFromGrid(child: Gtk.Widget): void {
         this.widget.remove(child);
+    }
+
+    override appendChild(child: Node): void {
+        if (child instanceof GridChildNode) {
+            child.parent = this;
+            const childWidget = child.getChildWidget();
+            const props = child.getSlotProps();
+            if (childWidget) {
+                this.attachToGrid(childWidget, props.column, props.row, props.columnSpan, props.rowSpan);
+                child.setParentContainer(this);
+            }
+            return;
+        }
+        super.appendChild(child);
+    }
+
+    override insertBefore(child: Node, before: Node): void {
+        if (child instanceof GridChildNode) {
+            child.parent = this;
+            const childWidget = child.getChildWidget();
+            const props = child.getSlotProps();
+            if (childWidget) {
+                this.attachToGrid(childWidget, props.column, props.row, props.columnSpan, props.rowSpan);
+                child.setParentContainer(this);
+            }
+            return;
+        }
+        super.insertBefore(child, before);
+    }
+
+    override removeChild(child: Node): void {
+        if (child instanceof GridChildNode) {
+            const childWidget = child.getChildWidget();
+            if (childWidget) {
+                this.removeFromGrid(childWidget);
+            }
+            child.unmount();
+            child.parent = null;
+            return;
+        }
+        super.removeChild(child);
     }
 }
 

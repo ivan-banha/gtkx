@@ -1,58 +1,12 @@
 import type * as Adw from "@gtkx/ffi/adw";
 import type * as Gtk from "@gtkx/ffi/gtk";
-import { isPackContainer, type PackContainer } from "../container-interfaces.js";
+import type { PackContainer } from "../containers.js";
 import type { Props } from "../factory.js";
 import { Node } from "../node.js";
+import { isPackContainer } from "../predicates.js";
 import { VirtualSlotNode } from "./virtual-slot.js";
 
 type HeaderBarWidget = Gtk.HeaderBar | Adw.HeaderBar | Gtk.ActionBar;
-
-export class PackContainerNode<T extends HeaderBarWidget> extends Node<T> implements PackContainer {
-    packStart(child: Gtk.Widget): void {
-        this.widget.packStart(child);
-    }
-
-    packEnd(child: Gtk.Widget): void {
-        this.widget.packEnd(child);
-    }
-
-    removeFromPack(child: Gtk.Widget): void {
-        this.widget.remove(child);
-    }
-
-    appendChild(child: Node): void {
-        const childWidget = child.getWidget();
-
-        if (!childWidget) {
-            child.attachToParent(this);
-            return;
-        }
-
-        this.packStart(childWidget);
-    }
-
-    removeChild(child: Node): void {
-        const childWidget = child.getWidget();
-
-        if (childWidget) {
-            this.removeFromPack(childWidget);
-        } else {
-            child.detachFromParent(this);
-        }
-    }
-}
-
-export class AdwHeaderBarNode extends PackContainerNode<Adw.HeaderBar> {
-    static matches(type: string): boolean {
-        return type === "AdwHeaderBar" || type === "AdwHeaderBar.Root";
-    }
-}
-
-export class HeaderBarNode extends PackContainerNode<Gtk.HeaderBar> {
-    static matches(type: string): boolean {
-        return type === "HeaderBar" || type === "HeaderBar.Root";
-    }
-}
 
 type PackPosition = "start" | "end";
 
@@ -108,5 +62,91 @@ export class PackEndNode extends PackSlotNode {
 
     static matches(type: string): boolean {
         return type === "HeaderBar.End" || type === "AdwHeaderBar.End" || type === "ActionBar.End";
+    }
+}
+
+export class PackContainerNode<T extends HeaderBarWidget> extends Node<T> implements PackContainer {
+    packStart(child: Gtk.Widget): void {
+        this.widget.packStart(child);
+    }
+
+    packEnd(child: Gtk.Widget): void {
+        this.widget.packEnd(child);
+    }
+
+    removeFromPack(child: Gtk.Widget): void {
+        this.widget.remove(child);
+    }
+
+    override appendChild(child: Node): void {
+        if (child instanceof PackSlotNode) {
+            child.parent = this;
+            const childWidget = child.getChildWidget();
+            const props = child.getSlotProps();
+            if (childWidget) {
+                if (props.position === "start") {
+                    this.packStart(childWidget);
+                } else {
+                    this.packEnd(childWidget);
+                }
+                child.setParentContainer(this);
+            }
+            return;
+        }
+
+        child.parent = this;
+        const childWidget = child.getWidget();
+        if (childWidget) {
+            this.packStart(childWidget);
+        }
+    }
+
+    override insertBefore(child: Node, before: Node): void {
+        if (child instanceof PackSlotNode) {
+            child.parent = this;
+            const childWidget = child.getChildWidget();
+            const props = child.getSlotProps();
+            if (childWidget) {
+                if (props.position === "start") {
+                    this.packStart(childWidget);
+                } else {
+                    this.packEnd(childWidget);
+                }
+                child.setParentContainer(this);
+            }
+            return;
+        }
+        super.insertBefore(child, before);
+    }
+
+    override removeChild(child: Node): void {
+        if (child instanceof PackSlotNode) {
+            const childWidget = child.getChildWidget();
+            if (childWidget) {
+                this.removeFromPack(childWidget);
+            }
+            child.unmount();
+            child.parent = null;
+            return;
+        }
+
+        child.unmount();
+        const childWidget = child.getWidget();
+        if (childWidget) {
+            this.removeFromPack(childWidget);
+        }
+        child.parent = null;
+    }
+}
+
+export class AdwHeaderBarNode extends PackContainerNode<Adw.HeaderBar> {
+    static matches(type: string): boolean {
+        return type === "AdwHeaderBar" || type === "AdwHeaderBar.Root";
+    }
+}
+
+export class HeaderBarNode extends PackContainerNode<Gtk.HeaderBar> {
+    static matches(type: string): boolean {
+        return type === "HeaderBar" || type === "HeaderBar.Root";
     }
 }

@@ -1,8 +1,10 @@
+import type { StringListContainer, StringListItem } from "../containers.js";
 import type { Props } from "../factory.js";
-import { Node } from "../node.js";
-import { isStringListContainer, type StringListItem } from "./string-list-container.js";
+import type { Node } from "../node.js";
+import { Node as NodeClass } from "../node.js";
+import { isStringListContainer } from "../predicates.js";
 
-export abstract class StringListItemNode extends Node<never> {
+export abstract class StringListItemNode extends NodeClass<never> {
     static override consumedPropNames = ["id", "label"];
 
     protected override isVirtual(): boolean {
@@ -11,6 +13,7 @@ export abstract class StringListItemNode extends Node<never> {
 
     private id = "";
     private label = "";
+    private parentContainer: (Node & StringListContainer) | null = null;
 
     override initialize(props: Props): void {
         this.id = props.id as string;
@@ -18,28 +21,32 @@ export abstract class StringListItemNode extends Node<never> {
         super.initialize(props);
     }
 
+    getId(): string {
+        return this.id;
+    }
+
     getStringListItem(): StringListItem {
         return { id: this.id, label: this.label };
     }
 
-    override attachToParent(parent: Node): void {
-        if (isStringListContainer(parent)) {
-            parent.addStringListItem(this.id, this.label);
-        }
+    setParentContainer(container: Node & StringListContainer): void {
+        this.parentContainer = container;
     }
 
-    override attachToParentBefore(parent: Node, before: Node): void {
-        if (isStringListContainer(parent) && before instanceof StringListItemNode) {
-            parent.insertStringListItemBefore(this.id, this.label, before.id);
-        } else {
-            this.attachToParent(parent);
-        }
+    addToContainer(container: StringListContainer): void {
+        container.addStringListItem(this.id, this.label);
     }
 
-    override detachFromParent(parent: Node): void {
-        if (isStringListContainer(parent)) {
-            parent.removeStringListItem(this.id);
+    insertBeforeInContainer(container: StringListContainer, beforeId: string): void {
+        container.insertStringListItemBefore(this.id, this.label, beforeId);
+    }
+
+    override unmount(): void {
+        if (this.parentContainer) {
+            this.parentContainer.removeStringListItem(this.id);
         }
+        this.parentContainer = null;
+        super.unmount();
     }
 
     override updateProps(oldProps: Props, newProps: Props): void {

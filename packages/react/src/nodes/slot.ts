@@ -16,7 +16,6 @@ export class SlotNode extends Node<never> {
 
     private child: Node | null = null;
     private slotName: string;
-    private parentNode: Node | null = null;
 
     constructor(type: string) {
         super(type);
@@ -31,9 +30,9 @@ export class SlotNode extends Node<never> {
     }
 
     private updateParentSlot(): void {
-        if (!this.parentNode) return;
+        if (!this.parent) return;
 
-        const parentWidget = this.parentNode.getWidget();
+        const parentWidget = this.parent.getWidget();
         const childWidget = this.child?.getWidget();
 
         if (!parentWidget) return;
@@ -47,25 +46,27 @@ export class SlotNode extends Node<never> {
     }
 
     override appendChild(child: Node): void {
+        child.parent = this;
         if (child.getWidget()) {
             this.child = child;
             this.updateParentSlot();
         }
     }
 
-    override removeChild(_child: Node): void {
+    override removeChild(child: Node): void {
+        child.unmount();
         this.child = null;
         this.updateParentSlot();
+        child.parent = null;
     }
 
-    override attachToParent(parent: Node): void {
-        this.parentNode = parent;
+    override mount(): void {
         this.updateParentSlot();
     }
 
-    override detachFromParent(_parent: Node): void {
-        if (this.parentNode) {
-            const parentWidget = this.parentNode.getWidget();
+    override unmount(): void {
+        if (this.parent) {
+            const parentWidget = this.parent.getWidget();
 
             if (parentWidget) {
                 const setterName = `set${this.slotName}`;
@@ -77,6 +78,6 @@ export class SlotNode extends Node<never> {
             }
         }
 
-        this.parentNode = null;
+        super.unmount();
     }
 }

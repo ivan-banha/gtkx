@@ -1,4 +1,4 @@
-import type { StackPageProps } from "../container-interfaces.js";
+import type { StackPageProps } from "../containers.js";
 
 export type StackPageLike = {
     setName(name: string): void;

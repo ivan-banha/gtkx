@@ -6,15 +6,16 @@ export class AboutDialogNode extends Node<Gtk.AboutDialog> {
         return type === "AboutDialog";
     }
 
-    override attachToParent(_parent: Node): void {}
-
-    override attachToParentBefore(_parent: Node, _before: Node): void {}
-
-    override detachFromParent(_parent: Node): void {
-        this.widget.destroy();
+    protected override isStandalone(): boolean {
+        return true;
     }
 
     override mount(): void {
         this.widget.present();
+    }
+
+    override unmount(): void {
+        this.widget.destroy();
+        super.unmount();
     }
 }

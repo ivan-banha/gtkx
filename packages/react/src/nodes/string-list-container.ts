@@ -1,29 +1,13 @@
 import { getInterface } from "@gtkx/ffi";
 import * as Gio from "@gtkx/ffi/gio";
 import type * as Gtk from "@gtkx/ffi/gtk";
+import type { StringListContainer } from "../containers.js";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
 import { Node as NodeClass } from "../node.js";
 import { getCallbackChange } from "../props.js";
+import { StringListItemNode } from "./string-list-item.js";
 import { StringListStore } from "./string-list-store.js";
-
-export type StringListItem = {
-    id: string;
-    label: string;
-};
-
-type StringListContainer = {
-    addStringListItem(id: string, label: string): void;
-    insertStringListItemBefore(id: string, label: string, beforeId: string): void;
-    removeStringListItem(id: string): void;
-    updateStringListItem(oldId: string, newId: string, newLabel: string): void;
-};
-
-export const isStringListContainer = (node: Node): node is Node & StringListContainer =>
-    "addStringListItem" in node &&
-    "insertStringListItemBefore" in node &&
-    "removeStringListItem" in node &&
-    "updateStringListItem" in node;
 
 type StringListContainerState = {
     store: StringListStore;
@@ -45,6 +29,39 @@ export abstract class StringListContainerNode<T extends StringListWidget>
     implements StringListContainer
 {
     static override consumedPropNames = ["onSelectionChanged", "selectedId"];
+
+    override appendChild(child: Node): void {
+        if (child instanceof StringListItemNode) {
+            child.parent = this;
+            child.addToContainer(this);
+            child.setParentContainer(this);
+            return;
+        }
+        super.appendChild(child);
+    }
+
+    override insertBefore(child: Node, before: Node): void {
+        if (child instanceof StringListItemNode) {
+            child.parent = this;
+            if (before instanceof StringListItemNode) {
+                child.insertBeforeInContainer(this, before.getId());
+            } else {
+                child.addToContainer(this);
+            }
+            child.setParentContainer(this);
+            return;
+        }
+        super.insertBefore(child, before);
+    }
+
+    override removeChild(child: Node): void {
+        if (child instanceof StringListItemNode) {
+            child.unmount();
+            child.parent = null;
+            return;
+        }
+        super.removeChild(child);
+    }
 
     override initialize(props: Props): void {
         const store = new StringListStore();

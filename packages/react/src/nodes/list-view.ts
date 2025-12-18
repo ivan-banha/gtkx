@@ -1,6 +1,5 @@
 import * as Gtk from "@gtkx/ffi/gtk";
 import type { Props } from "../factory.js";
-import type { Node } from "../node.js";
 import type { RenderItemFn } from "../types.js";
 import { connectListItemFactorySignals, type ListItemFactoryHandlers, type ListItemInfo } from "./list-item-factory.js";
 import { SelectableListNode, type SelectableListState } from "./selectable-list.js";
@@ -44,10 +43,10 @@ export class ListViewNode extends SelectableListNode<Gtk.ListView | Gtk.GridView
         this.widget.setFactory(this.state.factory);
     }
 
-    override detachFromParent(parent: Node): void {
+    override unmount(): void {
         this.state.factoryHandlers?.disconnect();
         this.cleanupSelection();
-        super.detachFromParent(parent);
+        super.unmount();
     }
 
     override updateProps(oldProps: Props, newProps: Props): void {

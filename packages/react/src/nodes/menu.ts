@@ -3,7 +3,8 @@ import * as Gio from "@gtkx/ffi/gio";
 import * as GObject from "@gtkx/ffi/gobject";
 import * as Gtk from "@gtkx/ffi/gtk";
 import type { Props } from "../factory.js";
-import { Node } from "../node.js";
+import type { Node } from "../node.js";
+import { Node as NodeClass } from "../node.js";
 import { RootNode } from "./root.js";
 
 let actionCounter = 0;
@@ -22,10 +23,19 @@ interface MenuContainer {
     removeMenuEntry(entry: MenuEntry): void;
 }
 
-const isMenuContainer = (node: Node): node is Node & MenuContainer =>
-    "getMenu" in node && "addMenuEntry" in node && "removeMenuEntry" in node;
+interface MenuEntryNode {
+    parent: Node | null;
+    getMenuEntry(): MenuEntry;
+    setParentContainer(container: Node & MenuContainer): void;
+    onAttach(): void;
+    onDetach(): void;
+    unmount(): void;
+}
 
-abstract class MenuContainerNode<T extends Gtk.Widget | undefined> extends Node<T> implements MenuContainer {
+const isMenuEntryNode = (node: Node): node is Node & MenuEntryNode =>
+    "getMenuEntry" in node && "setParentContainer" in node;
+
+abstract class MenuContainerNode<T extends Gtk.Widget | undefined> extends NodeClass<T> implements MenuContainer {
     protected menu: Gio.Menu = new Gio.Menu();
     protected entries: MenuEntry[] = [];
     private rebuildScheduled = false;
@@ -45,6 +55,38 @@ abstract class MenuContainerNode<T extends Gtk.Widget | undefined> extends Node<
             this.entries.splice(index, 1);
             this.scheduleRebuild();
         }
+    }
+
+    override appendChild(child: Node): void {
+        if (isMenuEntryNode(child)) {
+            child.parent = this;
+            child.onAttach();
+            this.addMenuEntry(child.getMenuEntry());
+            child.setParentContainer(this);
+            return;
+        }
+        super.appendChild(child);
+    }
+
+    override insertBefore(child: Node, before: Node): void {
+        if (isMenuEntryNode(child)) {
+            child.parent = this;
+            child.onAttach();
+            this.addMenuEntry(child.getMenuEntry());
+            child.setParentContainer(this);
+            return;
+        }
+        super.insertBefore(child, before);
+    }
+
+    override removeChild(child: Node): void {
+        if (isMenuEntryNode(child)) {
+            this.removeMenuEntry(child.getMenuEntry());
+            child.unmount();
+            child.parent = null;
+            return;
+        }
+        super.removeChild(child);
     }
 
     private scheduleRebuild(): void {
@@ -121,18 +163,16 @@ export class ApplicationMenuNode extends MenuContainerNode<never> {
         return true;
     }
 
-    override detachFromParent(_parent: Node): void {
-        getCurrentApp().setMenubar(null);
-    }
-
-    override attachToParent(parent: Node): void {
-        if (!(parent instanceof RootNode)) {
+    override mount(): void {
+        if (!(this.parent instanceof RootNode)) {
             throw new Error("ApplicationMenu must be a direct child of a fragment at the root level");
         }
+        getCurrentApp().setMenubar(this.menu);
     }
 
-    override mount(): void {
-        getCurrentApp().setMenubar(this.menu);
+    override unmount(): void {
+        getCurrentApp().setMenubar(null);
+        super.unmount();
     }
 
     protected override onMenuRebuilt(): void {
@@ -140,7 +180,7 @@ export class ApplicationMenuNode extends MenuContainerNode<never> {
     }
 }
 
-export class MenuItemNode extends Node<never> {
+export class MenuItemNode extends NodeClass<never> implements MenuEntryNode {
     static override consumedPropNames = ["label", "onActivate", "accels"];
 
     static matches(type: string): boolean {
@@ -157,7 +197,7 @@ export class MenuItemNode extends Node<never> {
     private signalHandlerId: number | null = null;
     private onActivateCallback: (() => void) | undefined;
     private currentAccels: string | string[] | undefined;
-    private isAttached = false;
+    private parentContainer: (Node & MenuContainer) | null = null;
 
     override initialize(props: Props): void {
         this.onActivateCallback = props.onActivate as (() => void) | undefined;
@@ -166,18 +206,26 @@ export class MenuItemNode extends Node<never> {
         super.initialize(props);
     }
 
-    override attachToParent(parent: Node): void {
-        if (!isMenuContainer(parent)) return;
-        this.isAttached = true;
-        this.setupAction();
-        parent.addMenuEntry(this.entry);
+    getMenuEntry(): MenuEntry {
+        return this.entry;
     }
 
-    override detachFromParent(parent: Node): void {
-        if (!isMenuContainer(parent)) return;
-        parent.removeMenuEntry(this.entry);
+    setParentContainer(container: Node & MenuContainer): void {
+        this.parentContainer = container;
+    }
+
+    onAttach(): void {
+        this.setupAction();
+    }
+
+    onDetach(): void {
         this.cleanupAction();
-        this.isAttached = false;
+    }
+
+    override unmount(): void {
+        this.cleanupAction();
+        this.parentContainer = null;
+        super.unmount();
     }
 
     private isFieldInitializationIncomplete(): boolean {
@@ -201,7 +249,7 @@ export class MenuItemNode extends Node<never> {
             this.entry.label = newProps.label as string | undefined;
         }
 
-        if (this.isAttached && callbackPresenceChanged) {
+        if (this.parentContainer && callbackPresenceChanged) {
             this.cleanupAction();
             this.setupAction();
         }
@@ -269,7 +317,7 @@ export class MenuItemNode extends Node<never> {
     }
 }
 
-class MenuContainerItemNode extends MenuContainerNode<never> {
+class MenuContainerItemNode extends MenuContainerNode<never> implements MenuEntryNode {
     static override consumedPropNames = ["label"];
 
     protected entryType: "section" | "submenu" = "section";
@@ -292,15 +340,15 @@ class MenuContainerItemNode extends MenuContainerNode<never> {
         super.initialize(props);
     }
 
-    override attachToParent(parent: Node): void {
-        if (!isMenuContainer(parent)) return;
-        parent.addMenuEntry(this.entry);
+    getMenuEntry(): MenuEntry {
+        return this.entry;
     }
 
-    override detachFromParent(parent: Node): void {
-        if (!isMenuContainer(parent)) return;
-        parent.removeMenuEntry(this.entry);
-    }
+    setParentContainer(_container: Node & MenuContainer): void {}
+
+    onAttach(): void {}
+
+    onDetach(): void {}
 
     override updateProps(oldProps: Props, newProps: Props): void {
         if (oldProps.label !== newProps.label && this.entry) {

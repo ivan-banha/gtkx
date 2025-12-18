@@ -4,10 +4,9 @@ import * as Gtk from "@gtkx/ffi/gtk";
 import * as GtkSource from "@gtkx/ffi/gtksource";
 import * as Vte from "@gtkx/ffi/vte";
 import * as WebKit from "@gtkx/ffi/webkit";
-import { isChildContainer } from "./container-interfaces.js";
 import type { Props, ROOT_NODE_CONTAINER } from "./factory.js";
 import { CONSTRUCTOR_PARAMS, PROP_SETTERS, SETTER_GETTERS } from "./generated/internal.js";
-import { isAddable, isAppendable, isRemovable, isSingleChild } from "./predicates.js";
+import { isAddable, isAppendable, isChildContainer, isRemovable, isSingleChild } from "./predicates.js";
 
 type WidgetConstructor = new (...args: unknown[]) => Gtk.Widget;
 type Namespace = Record<string, unknown>;
@@ -45,7 +44,7 @@ export abstract class Node<
     T extends Gtk.Widget | undefined = Gtk.Widget | undefined,
     S extends object | undefined = object | undefined,
 > {
-    static matches(_type: string, _existingWidget?: Gtk.Widget | typeof ROOT_NODE_CONTAINER): boolean {
+    static matches(_type: string, _widget?: Gtk.Widget | typeof ROOT_NODE_CONTAINER): boolean {
         return false;
     }
 
@@ -55,7 +54,7 @@ export abstract class Node<
     protected widget: T = undefined as T;
     protected widgetType: string;
     protected nodeType: string;
-    protected parent: Node | null = null;
+    parent: Node | null = null;
     private _state: S | null = null;
 
     protected get state(): S {
@@ -73,12 +72,16 @@ export abstract class Node<
         return false;
     }
 
-    constructor(type: string, existingWidget?: Gtk.Widget) {
+    protected isStandalone(): boolean {
+        return false;
+    }
+
+    constructor(type: string, widget?: Gtk.Widget) {
         this.nodeType = type;
         this.widgetType = normalizeWidgetType(type);
 
-        if (existingWidget) {
-            this.widget = existingWidget as T;
+        if (widget) {
+            this.widget = widget as T;
         }
     }
 
@@ -109,60 +112,59 @@ export abstract class Node<
     }
 
     appendChild(child: Node): void {
-        child.attachToParent(this);
+        child.parent = this;
+        const childWidget = child.getWidget();
+        if (!childWidget || child.isStandalone()) return;
+
+        if (isChildContainer(this)) {
+            this.attachChild(childWidget);
+        } else if (this.widget && isAppendable(this.widget)) {
+            childWidget.insertBefore(this.widget, null);
+        } else if (this.widget && isAddable(this.widget)) {
+            this.widget.add(childWidget);
+        } else if (this.widget && isSingleChild(this.widget)) {
+            this.widget.setChild(childWidget);
+        }
     }
 
     removeChild(child: Node): void {
-        child.detachFromParent(this);
+        child.unmount();
+        const childWidget = child.getWidget();
+
+        if (childWidget) {
+            if (isChildContainer(this)) {
+                this.detachChild(childWidget);
+            } else if (this.widget && isRemovable(this.widget)) {
+                this.widget.remove(childWidget);
+            } else if (this.widget && isSingleChild(this.widget)) {
+                this.widget.setChild(null);
+            }
+        }
+
+        child.parent = null;
     }
 
     insertBefore(child: Node, before: Node): void {
-        child.attachToParentBefore(this, before);
-    }
+        child.parent = this;
+        const childWidget = child.getWidget();
+        const beforeWidget = before.getWidget();
+        if (!childWidget || child.isStandalone()) return;
 
-    attachToParent(parent: Node): void {
-        this.parent = parent;
-
-        if (isChildContainer(parent)) {
-            const widget = this.getWidget();
-            if (widget) parent.attachChild(widget);
-            return;
-        }
-
-        const parentWidget = parent.getWidget();
-        const widget = this.getWidget();
-
-        if (!parentWidget || !widget) return;
-
-        if (isAppendable(parentWidget)) {
-            widget.insertBefore(parentWidget, null);
-        } else if (isAddable(parentWidget)) {
-            parentWidget.add(widget);
-        } else if (isSingleChild(parentWidget)) {
-            parentWidget.setChild(widget);
+        if (isChildContainer(this)) {
+            if (beforeWidget) {
+                this.insertChildBefore(childWidget, beforeWidget);
+            } else {
+                this.attachChild(childWidget);
+            }
+        } else if (this.widget && isAppendable(this.widget) && beforeWidget) {
+            childWidget.insertBefore(this.widget, beforeWidget);
+        } else {
+            this.appendChild(child);
         }
     }
 
-    detachFromParent(parent: Node): void {
-        this.parent = null;
+    unmount(): void {
         this.disconnectAllSignals();
-
-        if (isChildContainer(parent)) {
-            const widget = this.getWidget();
-            if (widget) parent.detachChild(widget);
-            return;
-        }
-
-        const parentWidget = parent.getWidget();
-        const widget = this.getWidget();
-
-        if (!parentWidget || !widget) return;
-
-        if (isRemovable(parentWidget)) {
-            parentWidget.remove(widget);
-        } else if (isSingleChild(parentWidget)) {
-            parentWidget.setChild(null);
-        }
     }
 
     protected disconnectAllSignals(): void {
@@ -177,37 +179,6 @@ export abstract class Node<
 
     hasParent(): boolean {
         return this.parent !== null;
-    }
-
-    attachToParentBefore(parent: Node, before: Node): void {
-        this.parent = parent;
-
-        if (isChildContainer(parent)) {
-            const widget = this.getWidget();
-            const beforeWidget = before.getWidget();
-
-            if (widget) {
-                if (beforeWidget) {
-                    parent.insertChildBefore(widget, beforeWidget);
-                } else {
-                    parent.attachChild(widget);
-                }
-            }
-
-            return;
-        }
-
-        const parentWidget = parent.getWidget();
-        const widget = this.getWidget();
-        const beforeWidget = before.getWidget();
-
-        if (!parentWidget || !widget) return;
-
-        if (isAppendable(parentWidget) && beforeWidget) {
-            widget.insertBefore(parentWidget, beforeWidget);
-        } else {
-            this.attachToParent(parent);
-        }
     }
 
     protected consumedProps(): Set<string> {

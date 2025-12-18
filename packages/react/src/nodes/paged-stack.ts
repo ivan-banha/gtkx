@@ -1,7 +1,9 @@
 import type * as Gtk from "@gtkx/ffi/gtk";
-import type { ChildContainer, StackPageContainer, StackPageProps } from "../container-interfaces.js";
+import type { ChildContainer, StackPageContainer, StackPageProps } from "../containers.js";
 import type { Props } from "../factory.js";
-import { Node } from "../node.js";
+import type { Node } from "../node.js";
+import { Node as NodeClass } from "../node.js";
+import { StackPageNode } from "./stack.js";
 import { applyStackPageProps, type StackPageLike } from "./stack-page-props.js";
 
 type StackWidget = Gtk.Widget & {
@@ -16,7 +18,7 @@ type StackWidget = Gtk.Widget & {
  * Handles visible child deferral and common page operations.
  */
 export abstract class PagedStackNode<T extends StackWidget>
-    extends Node<T>
+    extends NodeClass<T>
     implements StackPageContainer, ChildContainer
 {
     static override consumedPropNames = ["visibleChildName"];
@@ -79,6 +81,52 @@ export abstract class PagedStackNode<T extends StackWidget>
         } else {
             this.pendingVisibleChildName = name;
         }
+    }
+
+    override appendChild(child: Node): void {
+        if (child instanceof StackPageNode) {
+            child.parent = this;
+            const childWidget = child.getChildWidget();
+            const props = child.getSlotProps();
+            if (childWidget) {
+                this.addStackPage(childWidget, props);
+                child.setParentContainer(this);
+            }
+            return;
+        }
+        super.appendChild(child);
+    }
+
+    override insertBefore(child: Node, before: Node): void {
+        if (child instanceof StackPageNode) {
+            child.parent = this;
+            const childWidget = child.getChildWidget();
+            const props = child.getSlotProps();
+            if (childWidget) {
+                const beforeWidget = child.getBeforeWidget(before);
+                if (beforeWidget) {
+                    this.insertStackPageBefore(childWidget, props, beforeWidget);
+                } else {
+                    this.addStackPage(childWidget, props);
+                }
+                child.setParentContainer(this);
+            }
+            return;
+        }
+        super.insertBefore(child, before);
+    }
+
+    override removeChild(child: Node): void {
+        if (child instanceof StackPageNode) {
+            const childWidget = child.getChildWidget();
+            if (childWidget) {
+                this.removeStackPage(childWidget);
+            }
+            child.unmount();
+            child.parent = null;
+            return;
+        }
+        super.removeChild(child);
     }
 
     override updateProps(oldProps: Props, newProps: Props): void {

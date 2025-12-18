@@ -1,7 +1,8 @@
 import * as Gtk from "@gtkx/ffi/gtk";
-import { type ChildContainer, isPageContainer, type PageContainer } from "../container-interfaces.js";
+import type { ChildContainer, PageContainer } from "../containers.js";
 import type { Props } from "../factory.js";
 import { Node } from "../node.js";
+import { isPageContainer } from "../predicates.js";
 import { VirtualSlotNode } from "./virtual-slot.js";
 
 export class NotebookNode extends Node<Gtk.Notebook> implements PageContainer, ChildContainer {
@@ -57,6 +58,52 @@ export class NotebookNode extends Node<Gtk.Notebook> implements PageContainer, C
 
     detachChild(child: Gtk.Widget): void {
         this.removePage(child);
+    }
+
+    override appendChild(child: Node): void {
+        if (child instanceof NotebookPageNode) {
+            child.parent = this;
+            const childWidget = child.getChildWidget();
+            const props = child.getSlotProps();
+            if (childWidget) {
+                this.addPage(childWidget, props.label);
+                child.setParentContainer(this);
+            }
+            return;
+        }
+        super.appendChild(child);
+    }
+
+    override insertBefore(child: Node, before: Node): void {
+        if (child instanceof NotebookPageNode) {
+            child.parent = this;
+            const childWidget = child.getChildWidget();
+            const props = child.getSlotProps();
+            if (childWidget) {
+                const beforeWidget = child.getBeforeWidget(before);
+                if (beforeWidget) {
+                    this.insertPageBefore(childWidget, props.label, beforeWidget);
+                } else {
+                    this.addPage(childWidget, props.label);
+                }
+                child.setParentContainer(this);
+            }
+            return;
+        }
+        super.insertBefore(child, before);
+    }
+
+    override removeChild(child: Node): void {
+        if (child instanceof NotebookPageNode) {
+            const childWidget = child.getChildWidget();
+            if (childWidget) {
+                this.removePage(childWidget);
+            }
+            child.unmount();
+            child.parent = null;
+            return;
+        }
+        super.removeChild(child);
     }
 }
 

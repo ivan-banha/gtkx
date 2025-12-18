@@ -1,7 +1,8 @@
 import type * as Gtk from "@gtkx/ffi/gtk";
-import { isStackPageContainer, type StackPageContainer, type StackPageProps } from "../container-interfaces.js";
+import type { StackPageContainer, StackPageProps } from "../containers.js";
 import type { Props } from "../factory.js";
 import type { Node } from "../node.js";
+import { isStackPageContainer } from "../predicates.js";
 import { PagedStackNode } from "./paged-stack.js";
 import { applyStackPageProps } from "./stack-page-props.js";
 import { VirtualSlotNode } from "./virtual-slot.js";

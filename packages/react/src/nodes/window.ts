@@ -13,6 +13,10 @@ export class WindowNode extends Node<Gtk.Window> {
         return WINDOW_TYPES.has(normalizeWidgetType(type));
     }
 
+    protected override isStandalone(): boolean {
+        return true;
+    }
+
     protected override createWidget(type: string, _props: Props): Gtk.Window {
         const widgetType = normalizeWidgetType(type);
 
@@ -31,12 +35,13 @@ export class WindowNode extends Node<Gtk.Window> {
         return new Gtk.Window();
     }
 
-    override detachFromParent(_parent: Node): void {
-        this.widget.destroy();
-    }
-
     override mount(): void {
         this.widget.present();
+    }
+
+    override unmount(): void {
+        this.widget.destroy();
+        super.unmount();
     }
 
     override updateProps(oldProps: Props, newProps: Props): void {

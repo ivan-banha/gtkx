@@ -3,10 +3,12 @@ import * as Gio from "@gtkx/ffi/gio";
 import * as GObject from "@gtkx/ffi/gobject";
 import * as Gtk from "@gtkx/ffi/gtk";
 import { scheduleFlush } from "../batch.js";
-import type { ItemContainer } from "../container-interfaces.js";
+import type { ItemContainer } from "../containers.js";
 import type { Props } from "../factory.js";
-import { Node } from "../node.js";
+import type { Node } from "../node.js";
+import { Node as NodeClass } from "../node.js";
 import { getCallbackChange } from "../props.js";
+import { VirtualItemNode } from "./virtual-item.js";
 
 export type SelectableListState = {
     itemsById: Map<string, unknown>;
@@ -27,9 +29,42 @@ type SelectableListWidget = Gtk.Widget & {
 };
 
 export abstract class SelectableListNode<T extends SelectableListWidget, S extends SelectableListState>
-    extends Node<T, S>
+    extends NodeClass<T, S>
     implements ItemContainer<unknown>
 {
+    override appendChild(child: Node): void {
+        if (child instanceof VirtualItemNode) {
+            child.parent = this;
+            child.addToContainer(this);
+            child.setParentContainer(this);
+            return;
+        }
+        super.appendChild(child);
+    }
+
+    override insertBefore(child: Node, before: Node): void {
+        if (child instanceof VirtualItemNode) {
+            child.parent = this;
+            if (before instanceof VirtualItemNode) {
+                child.insertBeforeInContainer(this, before.getId());
+            } else {
+                child.addToContainer(this);
+            }
+            child.setParentContainer(this);
+            return;
+        }
+        super.insertBefore(child, before);
+    }
+
+    override removeChild(child: Node): void {
+        if (child instanceof VirtualItemNode) {
+            child.unmount();
+            child.parent = null;
+            return;
+        }
+        super.removeChild(child);
+    }
+
     protected initializeSelectionState(props: Props): SelectableListState {
         const selectionMode = (props.selectionMode as Gtk.SelectionMode | undefined) ?? Gtk.SelectionMode.SINGLE;
         const stringList = new Gtk.StringList([]);

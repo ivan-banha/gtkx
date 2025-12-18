@@ -1,5 +1,4 @@
 import type * as Gtk from "@gtkx/ffi/gtk";
-import { isChildContainer } from "../container-interfaces.js";
 import type { Props } from "../factory.js";
 import { Node } from "../node.js";
 
@@ -25,40 +24,6 @@ export class ToggleButtonNode extends Node<Gtk.ToggleButton, ToggleButtonState> 
     override initialize(props: Props): void {
         this.state = { lastPropsActive: undefined };
         super.initialize(props);
-    }
-
-    override attachToParent(parent: Node): void {
-        if (isChildContainer(parent)) {
-            parent.attachChild(this.widget);
-            return;
-        }
-
-        super.attachToParent(parent);
-    }
-
-    override attachToParentBefore(parent: Node, before: Node): void {
-        if (isChildContainer(parent)) {
-            const beforeWidget = before.getWidget();
-
-            if (beforeWidget) {
-                parent.insertChildBefore(this.widget, beforeWidget);
-            } else {
-                parent.attachChild(this.widget);
-            }
-
-            return;
-        }
-
-        super.attachToParentBefore(parent, before);
-    }
-
-    override detachFromParent(parent: Node): void {
-        if (isChildContainer(parent)) {
-            parent.detachChild(this.widget);
-            return;
-        }
-
-        super.detachFromParent(parent);
     }
 
     override updateProps(_oldProps: Props, newProps: Props): void {

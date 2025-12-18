@@ -1,5 +1,5 @@
 import type * as Gtk from "@gtkx/ffi/gtk";
-import type { ChildContainer } from "../container-interfaces.js";
+import type { ChildContainer } from "../containers.js";
 import { Node } from "../node.js";
 
 export class OverlayNode extends Node<Gtk.Overlay> implements ChildContainer {

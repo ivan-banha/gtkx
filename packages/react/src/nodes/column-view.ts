@@ -1,7 +1,7 @@
 import { getObject } from "@gtkx/ffi";
 import * as GObject from "@gtkx/ffi/gobject";
 import * as Gtk from "@gtkx/ffi/gtk";
-import { type ColumnContainer, isColumnContainer } from "../container-interfaces.js";
+import type { ColumnContainer } from "../containers.js";
 import type { Props } from "../factory.js";
 import { Node } from "../node.js";
 import type { RenderItemFn } from "../types.js";
@@ -92,10 +92,38 @@ export class ColumnViewNode extends SelectableListNode<Gtk.ColumnView, ColumnVie
         this.state.onSortChange(columnId, order);
     }
 
-    override detachFromParent(parent: Node): void {
+    override unmount(): void {
         this.disconnectSorterChangedSignal();
         this.cleanupSelection();
-        super.detachFromParent(parent);
+        super.unmount();
+    }
+
+    override appendChild(child: Node): void {
+        if (child instanceof ColumnViewColumnNode) {
+            child.parent = this;
+            this.addColumn(child);
+            return;
+        }
+        super.appendChild(child);
+    }
+
+    override insertBefore(child: Node, before: Node): void {
+        if (child instanceof ColumnViewColumnNode && before instanceof ColumnViewColumnNode) {
+            child.parent = this;
+            this.insertColumnBefore(child, before);
+            return;
+        }
+        super.insertBefore(child, before);
+    }
+
+    override removeChild(child: Node): void {
+        if (child instanceof ColumnViewColumnNode) {
+            this.removeColumn(child);
+            child.unmount();
+            child.parent = null;
+            return;
+        }
+        super.removeChild(child);
     }
 
     override updateProps(oldProps: Props, newProps: Props): void {
@@ -245,26 +273,9 @@ export class ColumnViewColumnNode extends Node<never, ColumnViewColumnState> {
         this.columnView = columnView;
     }
 
-    override attachToParent(parent: Node): void {
-        if (isColumnContainer(parent)) {
-            parent.addColumn(this);
-        }
-    }
-
-    override attachToParentBefore(parent: Node, before: Node): void {
-        if (isColumnContainer(parent) && before instanceof ColumnViewColumnNode) {
-            parent.insertColumnBefore(this, before);
-        } else {
-            this.attachToParent(parent);
-        }
-    }
-
-    override detachFromParent(parent: Node): void {
+    override unmount(): void {
         this.state.factoryHandlers?.disconnect();
-
-        if (isColumnContainer(parent)) {
-            parent.removeColumn(this);
-        }
+        super.unmount();
     }
 
     override updateProps(oldProps: Props, newProps: Props): void {

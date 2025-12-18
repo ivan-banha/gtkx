@@ -7,10 +7,8 @@ const GOBJECT_REF_COUNT_OFFSET = 8;
 export const GTK_LIB = "libgtk-4.so.1";
 export const GDK_LIB = "libgtk-4.so.1";
 export const GOBJECT_LIB = "libgobject-2.0.so.0";
-export const GLIB_LIB = "libglib-2.0.so.0";
 export const GIO_LIB = "libgio-2.0.so.0";
 export const PANGO_LIB = "libpango-1.0.so.0";
-
 export const INT8 = { type: "int" as const, size: 8 as const, unsigned: false as const };
 export const INT16 = { type: "int" as const, size: 16 as const, unsigned: false as const };
 export const INT32 = { type: "int" as const, size: 32 as const, unsigned: false as const };

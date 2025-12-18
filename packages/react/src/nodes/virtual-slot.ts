@@ -43,6 +43,21 @@ export abstract class VirtualSlotNode<TContainer, TProps> extends Node<never> {
         return this.childWidget;
     }
 
+    getSlotProps(): TProps {
+        return this.slotProps;
+    }
+
+    setParentContainer(container: Node & TContainer): void {
+        this.parentContainer = container;
+    }
+
+    getBeforeWidget(before: Node): Gtk.Widget | null {
+        if (before instanceof VirtualSlotNode) {
+            return before.getChildWidget();
+        }
+        return before.getWidget() ?? null;
+    }
+
     override appendChild(child: Node): void {
         const childWidget = child.getWidget();
         if (childWidget) {
@@ -50,38 +65,9 @@ export abstract class VirtualSlotNode<TContainer, TProps> extends Node<never> {
         }
     }
 
-    override attachToParent(parent: Node): void {
-        if (this.isValidContainer(parent) && this.childWidget) {
-            this.parentContainer = parent;
-            this.addToContainer(parent, this.childWidget, this.slotProps);
-        }
-    }
-
-    override attachToParentBefore(parent: Node, before: Node): void {
-        if (this.isValidContainer(parent) && this.childWidget) {
-            this.parentContainer = parent;
-            const beforeWidget = this.getBeforeWidget(before);
-
-            if (beforeWidget) {
-                this.insertBeforeInContainer(parent, this.childWidget, this.slotProps, beforeWidget);
-            } else {
-                this.addToContainer(parent, this.childWidget, this.slotProps);
-            }
-        }
-    }
-
-    protected getBeforeWidget(before: Node): Gtk.Widget | null {
-        if (before instanceof VirtualSlotNode) {
-            return before.getChildWidget();
-        }
-        return before.getWidget() ?? null;
-    }
-
-    override detachFromParent(parent: Node): void {
-        if (this.isValidContainer(parent) && this.childWidget) {
-            this.removeFromContainer(parent, this.childWidget);
-            this.parentContainer = null;
-        }
+    override unmount(): void {
+        this.parentContainer = null;
+        super.unmount();
     }
 
     protected updateSlotPropsIfChanged(oldProps: Props, newProps: Props, propKeys: string[]): boolean {

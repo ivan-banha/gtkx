@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { GirNamespace } from "@gtkx/gir";
@@ -79,6 +79,7 @@ const generateForNamespace = async (
     const generatedFiles = await generator.generateNamespace(namespace);
 
     const namespaceOutputDir = join(outputDir, namespace.name.toLowerCase());
+    rmSync(namespaceOutputDir, { recursive: true, force: true });
     mkdirSync(namespaceOutputDir, { recursive: true });
 
     for (const [filename, content] of generatedFiles) {

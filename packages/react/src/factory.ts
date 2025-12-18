@@ -38,8 +38,8 @@ export type Props = Record<string, unknown>;
 export { ROOT_NODE_CONTAINER } from "./nodes/root.js";
 
 type NodeClass = {
-    matches: (type: string, existingWidget?: Gtk.Widget | typeof ROOT_NODE_CONTAINER) => boolean;
-    new (type: string, existingWidget?: Gtk.Widget | typeof ROOT_NODE_CONTAINER): Node;
+    matches: (type: string, widget?: Gtk.Widget | typeof ROOT_NODE_CONTAINER) => boolean;
+    new (type: string, widget?: Gtk.Widget | typeof ROOT_NODE_CONTAINER): Node;
 };
 
 const VIRTUAL_NODES = [
@@ -92,14 +92,10 @@ const NODE_CLASSES = [RootNode, ...VIRTUAL_NODES, ...SPECIALIZED_NODES, ...CONTA
  * Creates a Node instance for the given JSX element type.
  * Matches the type against registered node classes and initializes with props.
  */
-export const createNode = (
-    type: string,
-    props: Props,
-    existingWidget?: Gtk.Widget | typeof ROOT_NODE_CONTAINER,
-): Node => {
+export const createNode = (type: string, props: Props, widget?: Gtk.Widget | typeof ROOT_NODE_CONTAINER): Node => {
     for (const NodeClass of NODE_CLASSES) {
-        if (NodeClass.matches(type, existingWidget)) {
-            const node = new NodeClass(type, existingWidget);
+        if (NodeClass.matches(type, widget)) {
+            const node = new NodeClass(type, widget);
             node.initialize(props);
             return node;
         }

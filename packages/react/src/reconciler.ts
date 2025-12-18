@@ -2,8 +2,8 @@ import type * as Gtk from "@gtkx/ffi/gtk";
 import ReactReconciler from "react-reconciler";
 import packageJson from "../package.json" with { type: "json" };
 import { createNode, type ROOT_NODE_CONTAINER } from "./factory.js";
+import { createHostConfig, type ReconcilerInstance } from "./host-config.js";
 import type { Node } from "./node.js";
-import { createHostConfig, type ReconcilerInstance } from "./reconciler/host-config.js";
 
 type Container = Gtk.Widget | typeof ROOT_NODE_CONTAINER;
 

@@ -1,4 +1,3 @@
-export { createRef } from "@gtkx/ffi";
 /**
  * @private Internal symbol used to identify the root container node.
  * This is an internal API used only by @gtkx/testing. Do not use directly.

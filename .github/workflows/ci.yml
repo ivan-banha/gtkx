@@ -32,6 +32,11 @@ jobs:
         with:
           install-xvfb: "true"
 
+      - name: Set runtime versions for Turbo cache
+        run: |
+          echo "NODE_VERSION=$(node -v)" >> $GITHUB_ENV
+          echo "GTK4_VERSION=$(pkg-config --modversion gtk4)" >> $GITHUB_ENV
+
       - name: Build all packages
         run: pnpm build
 
@@ -49,9 +54,9 @@ jobs:
       - name: Run tests
         run: |
           Xvfb :99 -screen 0 1024x768x24 2>/dev/null &
-          sleep 1
           pnpm test
         env:
           DISPLAY: ":99"
           GSK_RENDERER: cairo
-          GDK_DEBUG: portals
+          GTK_BACKEND: x11
+          LIBGL_ALWAYS_SOFTWARE: 1

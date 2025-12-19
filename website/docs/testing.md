@@ -22,7 +22,7 @@ npm install -D @gtkx/testing
 Tests require a display. Use `xvfb-run` to run tests in a virtual framebuffer:
 
 ```bash
-GDK_BACKEND=x11 xvfb-run -a <your-test-command>
+GDK_BACKEND=x11 GSK_RENDERER=cairo xvfb-run -a <your-test-command>
 ```
 
 ## Writing Tests

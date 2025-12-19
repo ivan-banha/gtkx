@@ -181,16 +181,18 @@ describe("isValidAppId", () => {
 });
 
 describe("getTestScript", () => {
+    const env = "GDK_BACKEND=x11 GSK_RENDERER=cairo LIBGL_ALWAYS_SOFTWARE=1";
+
     it("returns vitest script", () => {
-        expect(getTestScript("vitest")).toBe("GDK_BACKEND=x11 xvfb-run -a vitest");
+        expect(getTestScript("vitest")).toBe(`${env} xvfb-run -a vitest`);
     });
 
     it("returns jest script", () => {
-        expect(getTestScript("jest")).toBe("GDK_BACKEND=x11 xvfb-run -a jest");
+        expect(getTestScript("jest")).toBe(`${env} xvfb-run -a jest`);
     });
 
     it("returns node test runner script", () => {
-        expect(getTestScript("node")).toBe("GDK_BACKEND=x11 xvfb-run -a node --import tsx --test tests/**/*.test.ts");
+        expect(getTestScript("node")).toBe(`${env} xvfb-run -a node --import tsx --test tests/**/*.test.ts`);
     });
 
     it("returns undefined for none", () => {
@@ -278,21 +280,26 @@ describe("generatePackageJson", () => {
         const result = generatePackageJson("app", "org.app", "vitest");
         const parsed = JSON.parse(result);
 
-        expect(parsed.scripts.test).toBe("GDK_BACKEND=x11 xvfb-run -a vitest");
+        expect(parsed.scripts.test).toContain("xvfb-run -a vitest");
+        expect(parsed.scripts.test).toContain("GDK_BACKEND=x11");
+        expect(parsed.scripts.test).toContain("GSK_RENDERER=cairo");
+        expect(parsed.scripts.test).toContain("LIBGL_ALWAYS_SOFTWARE=1");
     });
 
     it("includes test script for jest", () => {
         const result = generatePackageJson("app", "org.app", "jest");
         const parsed = JSON.parse(result);
 
-        expect(parsed.scripts.test).toBe("GDK_BACKEND=x11 xvfb-run -a jest");
+        expect(parsed.scripts.test).toContain("xvfb-run -a jest");
+        expect(parsed.scripts.test).toContain("GDK_BACKEND=x11");
     });
 
     it("includes test script for node runner", () => {
         const result = generatePackageJson("app", "org.app", "node");
         const parsed = JSON.parse(result);
 
-        expect(parsed.scripts.test).toBe("GDK_BACKEND=x11 xvfb-run -a node --import tsx --test tests/**/*.test.ts");
+        expect(parsed.scripts.test).toContain("xvfb-run -a node --import tsx --test tests/**/*.test.ts");
+        expect(parsed.scripts.test).toContain("GDK_BACKEND=x11");
     });
 
     it("excludes test script for none", () => {

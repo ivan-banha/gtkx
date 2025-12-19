@@ -1,6 +1,7 @@
 {
     "$schema": "https://turborepo.com/schema.json",
-    "globalDependencies": ["tsconfig.json", "biome.json"],
+    "globalDependencies": ["tsconfig.base.json", "biome.json"],
+    "globalEnv": ["NODE_VERSION", "GTK4_VERSION"],
     "tasks": {
         "lint": {
             "inputs": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx", "scripts/**/*.ts"],

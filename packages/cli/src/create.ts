@@ -36,13 +36,15 @@ const TESTING_DEV_DEPENDENCIES: Record<Exclude<TestingFramework, "none">, string
 };
 
 export const getTestScript = (testing: TestingFramework): string | undefined => {
+    const env = "GDK_BACKEND=x11 GSK_RENDERER=cairo LIBGL_ALWAYS_SOFTWARE=1";
+
     switch (testing) {
         case "vitest":
-            return "GDK_BACKEND=x11 xvfb-run -a vitest";
+            return `${env} xvfb-run -a vitest`;
         case "jest":
-            return "GDK_BACKEND=x11 xvfb-run -a jest";
+            return `${env} xvfb-run -a jest`;
         case "node":
-            return "GDK_BACKEND=x11 xvfb-run -a node --import tsx --test tests/**/*.test.ts";
+            return `${env} xvfb-run -a node --import tsx --test tests/**/*.test.ts`;
         case "none":
             return undefined;
     }

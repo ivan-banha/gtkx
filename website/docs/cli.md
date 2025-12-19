@@ -97,12 +97,17 @@ When you create a new project, these scripts are set up in `package.json`:
     "dev": "gtkx dev src/app.tsx",
     "build": "tsc -b",
     "start": "node dist/index.js",
-    "test": "GDK_BACKEND=x11 xvfb-run -a vitest"
+    "test": "GDK_BACKEND=x11 GSK_RENDERER=cairo LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a vitest"
   }
 }
 ```
 
-The test script includes `GDK_BACKEND=x11 xvfb-run -a` to run tests in a virtual framebuffer, which is required for GTK4 widgets.
+The test script includes environment variables and a virtual framebuffer wrapper:
+
+- `GDK_BACKEND=x11` — Forces the X11 backend (required for xvfb)
+- `GSK_RENDERER=cairo` — Uses the Cairo software renderer
+- `LIBGL_ALWAYS_SOFTWARE=1` — Forces Mesa to use software rendering, avoiding EGL/DRI3 warnings
+- `xvfb-run -a` — Runs the tests in a virtual framebuffer (required for GTK4 widgets)
 
 ### `npm run dev`
 
@@ -118,11 +123,11 @@ Runs the compiled application without HMR. Use this for production or testing th
 
 ### `npm test`
 
-Runs the test suite. The test script varies based on your chosen framework (all include the xvfb wrapper):
+Runs the test suite. The test script varies based on your chosen framework (all include the environment variables and xvfb wrapper):
 
-- **Vitest**: `GDK_BACKEND=x11 xvfb-run -a vitest`
-- **Jest**: `GDK_BACKEND=x11 xvfb-run -a jest`
-- **Node.js**: `GDK_BACKEND=x11 xvfb-run -a node --import tsx --test tests/**/*.test.ts`
+- **Vitest**: `GDK_BACKEND=x11 GSK_RENDERER=cairo LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a vitest`
+- **Jest**: `GDK_BACKEND=x11 GSK_RENDERER=cairo LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a jest`
+- **Node.js**: `GDK_BACKEND=x11 GSK_RENDERER=cairo LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a node --import tsx --test tests/**/*.test.ts`
 
 ## App ID
 

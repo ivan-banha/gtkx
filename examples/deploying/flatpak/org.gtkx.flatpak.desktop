@@ -1,7 +1,7 @@
 [Desktop Entry]
-Name=GTKX Flatpak
-Comment=GTKX Flatpak
-Exec=gtkx-flatpak-demo
+Name=GTKX Demo
+Comment=GTKX Demo Application
+Exec=gtkx-demo
 Icon=org.gtkx.flatpak.png
 Terminal=false
 Type=Application

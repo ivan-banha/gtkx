@@ -1,11 +1,10 @@
 name: gtkx-snap
 base: core24
 version: '0.1'
-summary: GTKX Snap
-description: GTKX Snap
+summary: GTKX Snap Demo
+description: Example GTKX application packaged as a Snap
 
 grade: devel
-# Use devmode for development (no strict confinement)
 confinement: devmode
 
 platforms:
@@ -13,35 +12,28 @@ platforms:
 
 parts:
   gtkx-snap-part:
-    # Use 'nil' plugin to run custom build commands
     plugin: nil
     source: .
-    # We need the Node snap for the build tools (npm/node)
     build-snaps:
       - node/24/stable
     build-packages:
       - wget
-    #      - ca-certificates
 
-    # We do this during the build phase so it doesn't end up in the final snap
     override-build: |
       NODE_VERSION=$(node -v)
       NODE_DIST="node-$NODE_VERSION-linux-x64"
       NODE_URL="https://nodejs.org/dist/$NODE_VERSION/$NODE_DIST.tar.gz"
-      
+
       mkdir -p $CRAFT_PART_INSTALL/bin
       mkdir -p $CRAFT_PART_INSTALL/gui
-      
+
       cp ./assets/icon.png $CRAFT_PART_INSTALL/gui/
       cp ./snap/gtkx-demo.desktop $CRAFT_PART_INSTALL/gui/
-      
-      # 6. Copy native module
+
       cp ./dist/index.node $CRAFT_PART_INSTALL/bin/index.node
       cp ./dist/app $CRAFT_PART_INSTALL/bin/app
       ls $CRAFT_PART_INSTALL/bin
 
-    # CRITICAL: This acts like the "clean" step in Docker
-    # We only include the final binary. nothing else.
     prime:
       - bin/app
       - bin/index.node
@@ -51,8 +43,6 @@ apps:
   gtkx-demo:
     command: bin/app
     desktop: gui/gtkx-demo.desktop
-    # Automatically configure GNOME environment
     extensions: [ gnome ]
     environment:
-      # This fixes the libpxbackend-1.0.so missing error
       LD_LIBRARY_PATH: $SNAP_DESKTOP_RUNTIME/usr/lib/$CRAFT_ARCH_TRIPLET/libproxy:$LD_LIBRARY_PATH

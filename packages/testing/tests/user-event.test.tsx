@@ -222,19 +222,6 @@ describe("userEvent.selectOptions", () => {
                 "Cannot select multiple options on a ComboBox",
             );
         });
-
-        it("throws when passing non-numeric value to dropdown", async () => {
-            await render(
-                <GtkDropDown>
-                    <SimpleListItem id="a" value="A" />
-                </GtkDropDown>,
-            );
-
-            const dropdown = await screen.findByRole(Gtk.AccessibleRole.COMBO_BOX);
-            await expect(userEvent.selectOptions(dropdown, "invalid" as unknown as number)).rejects.toThrow(
-                "requires a numeric index",
-            );
-        });
     });
 });
 

@@ -11,7 +11,7 @@ describe("render - Menu", () => {
 
             await render(
                 <GtkPopoverMenu ref={ref}>
-                    <Menu.Item label="Item 1" />
+                    <Menu.Item id="item1" label="Item 1" onActivate={() => {}} />
                 </GtkPopoverMenu>,
                 { wrapper: false },
             );
@@ -25,8 +25,8 @@ describe("render - Menu", () => {
             function App({ items }: { items: string[] }) {
                 return (
                     <GtkPopoverMenu ref={ref}>
-                        {items.map((label) => (
-                            <Menu.Item key={label} label={label} />
+                        {items.map((label, i) => (
+                            <Menu.Item key={label} id={`item${i}`} label={label} onActivate={() => {}} />
                         ))}
                     </GtkPopoverMenu>
                 );
@@ -45,7 +45,7 @@ describe("render - Menu", () => {
             await render(
                 <GtkPopoverMenuBar ref={ref}>
                     <Menu.Submenu label="File">
-                        <Menu.Item label="New" />
+                        <Menu.Item id="new" label="New" onActivate={() => {}} />
                     </Menu.Submenu>
                 </GtkPopoverMenuBar>,
                 { wrapper: false },
@@ -61,7 +61,7 @@ describe("render - Menu", () => {
 
             await render(
                 <GtkPopoverMenu ref={ref}>
-                    <Menu.Item label="Test Item" />
+                    <Menu.Item id="test" label="Test Item" onActivate={() => {}} />
                 </GtkPopoverMenu>,
                 { wrapper: false },
             );
@@ -72,7 +72,7 @@ describe("render - Menu", () => {
 
             await render(
                 <GtkPopoverMenu ref={ref}>
-                    <Menu.Item label="Save" accels="<Control>s" onActivate={() => {}} />
+                    <Menu.Item id="save" label="Save" accels="<Control>s" onActivate={() => {}} />
                 </GtkPopoverMenu>,
                 { wrapper: false },
             );
@@ -84,7 +84,7 @@ describe("render - Menu", () => {
             function App({ label }: { label: string }) {
                 return (
                     <GtkPopoverMenu ref={ref}>
-                        <Menu.Item label={label} />
+                        <Menu.Item id="item" label={label} onActivate={() => {}} />
                     </GtkPopoverMenu>
                 );
             }
@@ -101,7 +101,7 @@ describe("render - Menu", () => {
             function App({ showItem }: { showItem: boolean }) {
                 return (
                     <GtkPopoverMenu ref={ref}>
-                        {showItem && <Menu.Item label="Removable" onActivate={onActivate} />}
+                        {showItem && <Menu.Item id="removable" label="Removable" onActivate={onActivate} />}
                     </GtkPopoverMenu>
                 );
             }
@@ -119,8 +119,8 @@ describe("render - Menu", () => {
             await render(
                 <GtkPopoverMenu ref={ref}>
                     <Menu.Section>
-                        <Menu.Item label="Section Item 1" />
-                        <Menu.Item label="Section Item 2" />
+                        <Menu.Item id="section1" label="Section Item 1" onActivate={() => {}} />
+                        <Menu.Item id="section2" label="Section Item 2" onActivate={() => {}} />
                     </Menu.Section>
                 </GtkPopoverMenu>,
                 { wrapper: false },
@@ -133,10 +133,10 @@ describe("render - Menu", () => {
             await render(
                 <GtkPopoverMenu ref={ref}>
                     <Menu.Section>
-                        <Menu.Item label="Item A" />
+                        <Menu.Item id="itemA" label="Item A" onActivate={() => {}} />
                     </Menu.Section>
                     <Menu.Section>
-                        <Menu.Item label="Item B" />
+                        <Menu.Item id="itemB" label="Item B" onActivate={() => {}} />
                     </Menu.Section>
                 </GtkPopoverMenu>,
                 { wrapper: false },
@@ -149,7 +149,7 @@ describe("render - Menu", () => {
             await render(
                 <GtkPopoverMenu ref={ref}>
                     <Menu.Section label="Section Title">
-                        <Menu.Item label="Item" />
+                        <Menu.Item id="item" label="Item" onActivate={() => {}} />
                     </Menu.Section>
                 </GtkPopoverMenu>,
                 { wrapper: false },
@@ -164,8 +164,8 @@ describe("render - Menu", () => {
             await render(
                 <GtkPopoverMenu ref={ref}>
                     <Menu.Submenu label="File">
-                        <Menu.Item label="New" />
-                        <Menu.Item label="Open" />
+                        <Menu.Item id="new" label="New" onActivate={() => {}} />
+                        <Menu.Item id="open" label="Open" onActivate={() => {}} />
                     </Menu.Submenu>
                 </GtkPopoverMenu>,
                 { wrapper: false },
@@ -178,9 +178,9 @@ describe("render - Menu", () => {
             await render(
                 <GtkPopoverMenu ref={ref}>
                     <Menu.Submenu label="Edit">
-                        <Menu.Item label="Cut" />
-                        <Menu.Item label="Copy" />
-                        <Menu.Item label="Paste" />
+                        <Menu.Item id="cut" label="Cut" onActivate={() => {}} />
+                        <Menu.Item id="copy" label="Copy" onActivate={() => {}} />
+                        <Menu.Item id="paste" label="Paste" onActivate={() => {}} />
                     </Menu.Submenu>
                 </GtkPopoverMenu>,
                 { wrapper: false },
@@ -193,7 +193,7 @@ describe("render - Menu", () => {
             await render(
                 <GtkPopoverMenu ref={ref}>
                     <Menu.Submenu label="Help">
-                        <Menu.Item label="About" />
+                        <Menu.Item id="about" label="About" onActivate={() => {}} />
                     </Menu.Submenu>
                 </GtkPopoverMenu>,
                 { wrapper: false },
@@ -207,8 +207,8 @@ describe("render - Menu", () => {
                 <GtkPopoverMenu ref={ref}>
                     <Menu.Submenu label="File">
                         <Menu.Submenu label="Recent">
-                            <Menu.Item label="File 1" />
-                            <Menu.Item label="File 2" />
+                            <Menu.Item id="file1" label="File 1" onActivate={() => {}} />
+                            <Menu.Item id="file2" label="File 2" onActivate={() => {}} />
                         </Menu.Submenu>
                     </Menu.Submenu>
                 </GtkPopoverMenu>,

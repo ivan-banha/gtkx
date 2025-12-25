@@ -1,4 +1,4 @@
-import { getObjectId } from "@gtkx/ffi";
+import { batch, getObjectId } from "@gtkx/ffi";
 import * as Gio from "@gtkx/ffi/gio";
 import type * as Gtk from "@gtkx/ffi/gtk";
 import type { Node } from "../../node.js";
@@ -20,6 +20,7 @@ export class Menu extends VirtualNode<MenuProps> {
     private type: MenuType;
     private application?: Gtk.Application;
     private action?: Gio.SimpleAction;
+    private children: Menu[] = [];
 
     constructor(type: MenuType, application?: Gtk.Application) {
         super("", {}, undefined);
@@ -39,7 +40,7 @@ export class Menu extends VirtualNode<MenuProps> {
     }
 
     private getActionName(): string {
-        return `${this.actionMap instanceof Gio.Application ? "app" : "win"}.${this.props.id}`;
+        return `${this.application ? "app" : "win"}.${this.props.id}`;
     }
 
     private getId(): string {
@@ -126,10 +127,12 @@ export class Menu extends VirtualNode<MenuProps> {
         this.actionMap = actionMap;
 
         if (actionMap) {
-            this.actionMap = actionMap;
-
             if (this.type === "item") {
                 this.createAction();
+            }
+
+            for (const child of this.children) {
+                child.setActionMap(actionMap);
             }
         }
     }
@@ -139,41 +142,47 @@ export class Menu extends VirtualNode<MenuProps> {
     }
 
     public removeFromParent(): void {
-        this.getParent().remove(this.getPosition());
+        batch(() => {
+            this.getParent().remove(this.getPosition());
+        });
     }
 
     public insertInParentBefore(before: Menu): void {
-        const parent = this.getParent();
-        const beforePosition = before.getPosition();
+        batch(() => {
+            const parent = this.getParent();
+            const beforePosition = before.getPosition();
 
-        switch (this.type) {
-            case "item": {
-                parent.insert(beforePosition, this.props.label, this.getActionName());
-                break;
+            switch (this.type) {
+                case "item": {
+                    parent.insert(beforePosition, this.props.label, this.getActionName());
+                    break;
+                }
+                case "section":
+                    parent.insertSection(beforePosition, this.menu, this.props.label);
+                    break;
+                case "submenu":
+                    parent.insertSubmenu(beforePosition, this.menu, this.props.label);
+                    break;
             }
-            case "section":
-                parent.insertSection(beforePosition, this.menu, this.props.label);
-                break;
-            case "submenu":
-                parent.insertSubmenu(beforePosition, this.menu, this.props.label);
-                break;
-        }
+        });
     }
 
     public appendToParent(): void {
-        const parent = this.getParent();
+        batch(() => {
+            const parent = this.getParent();
 
-        switch (this.type) {
-            case "item":
-                parent.append(this.props.label, this.getActionName());
-                break;
-            case "section":
-                parent.appendSection(this.menu, this.props.label);
-                break;
-            case "submenu":
-                parent.appendSubmenu(this.menu, this.props.label);
-                break;
-        }
+            switch (this.type) {
+                case "item":
+                    parent.append(this.props.label, this.getActionName());
+                    break;
+                case "section":
+                    parent.appendSection(this.menu, this.props.label);
+                    break;
+                case "submenu":
+                    parent.appendSubmenu(this.menu, this.props.label);
+                    break;
+            }
+        });
     }
 
     public override appendChild(child: Node): void {
@@ -181,6 +190,7 @@ export class Menu extends VirtualNode<MenuProps> {
             return;
         }
 
+        this.children.push(child);
         child.setParent(this.menu);
         child.setActionMap(this.actionMap);
         child.appendToParent();
@@ -191,6 +201,13 @@ export class Menu extends VirtualNode<MenuProps> {
             return;
         }
 
+        const beforeIndex = this.children.indexOf(before);
+        if (beforeIndex !== -1) {
+            this.children.splice(beforeIndex, 0, child);
+        } else {
+            this.children.push(child);
+        }
+
         child.setParent(this.menu);
         child.setActionMap(this.actionMap);
         child.insertInParentBefore(before);
@@ -199,6 +216,11 @@ export class Menu extends VirtualNode<MenuProps> {
     public override removeChild(child: Node): void {
         if (!(child instanceof Menu)) {
             return;
+        }
+
+        const index = this.children.indexOf(child);
+        if (index !== -1) {
+            this.children.splice(index, 1);
         }
 
         child.removeFromParent();
@@ -230,14 +252,18 @@ export class Menu extends VirtualNode<MenuProps> {
             this.removeAction();
             this.removeFromParent();
             this.createAction();
-            this.parent?.append(newProps.label, this.getActionName());
+            batch(() => {
+                this.parent?.append(newProps.label, this.getActionName());
+            });
             return;
         }
 
         if (!oldProps || oldProps.label !== newProps.label) {
-            const position = this.getPosition();
-            this.removeFromParent();
-            this.parent?.insert(position, newProps.label, this.getActionName());
+            batch(() => {
+                const position = this.getPosition();
+                this.getParent().remove(position);
+                this.parent?.insert(position, newProps.label, this.getActionName());
+            });
         }
 
         if (!oldProps || oldProps.onActivate !== newProps.onActivate) {
@@ -253,14 +279,16 @@ export class Menu extends VirtualNode<MenuProps> {
 
     private updateContainerProps(oldProps: MenuProps | null, newProps: MenuProps): void {
         if (!oldProps || oldProps.label !== newProps.label) {
-            const position = this.getPosition();
-            this.removeFromParent();
+            batch(() => {
+                const position = this.getPosition();
+                this.getParent().remove(position);
 
-            if (this.type === "section") {
-                this.parent?.insertSection(position, this.menu, newProps.label);
-            } else if (this.type === "submenu") {
-                this.parent?.insertSubmenu(position, this.menu, newProps.label);
-            }
+                if (this.type === "section") {
+                    this.parent?.insertSection(position, this.menu, newProps.label);
+                } else if (this.type === "submenu") {
+                    this.parent?.insertSubmenu(position, this.menu, newProps.label);
+                }
+            });
         }
     }
 

@@ -103,6 +103,13 @@ export abstract class BaseGenerator {
         }
         if (type.type === "boxed") {
             const innerType = typeof type.innerType === "string" ? type.innerType : "";
+            if (innerType === "GVariant") {
+                const parts = [`type: "gvariant"`];
+                if (type.borrowed) {
+                    parts.push(`borrowed: true`);
+                }
+                return `{ ${parts.join(", ")} }`;
+            }
             const lib = type.lib ?? this.currentSharedLibrary;
             const parts = [`type: "boxed"`, `innerType: "${innerType}"`, `lib: "${lib}"`];
             if (type.borrowed) {

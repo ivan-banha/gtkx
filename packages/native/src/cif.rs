@@ -203,6 +203,7 @@ fn type_to_glib_type(type_: &Type) -> glib::Type {
     match type_ {
         Type::GObject(_) => glib::types::Type::OBJECT,
         Type::Boxed(boxed) => boxed.get_gtype().unwrap_or(glib::types::Type::POINTER),
+        Type::GVariant(_) => glib::types::Type::VARIANT,
         Type::Integer(int_type) => match (&int_type.size, &int_type.sign) {
             (IntegerSize::_8, IntegerSign::Signed) => glib::types::Type::I8,
             (IntegerSize::_8, IntegerSign::Unsigned) => glib::types::Type::U8,
@@ -313,6 +314,30 @@ impl TryFrom<arg::Arg> for Value {
                         let copied =
                             glib::gobject_ffi::g_boxed_copy(gtype.into_glib(), ptr as *const _);
                         return Ok(Value::Ptr(copied));
+                    }
+                }
+
+                Ok(Value::Ptr(ptr))
+            }
+            Type::GVariant(type_) => {
+                let object_id = match &arg.value {
+                    value::Value::Object(id) => Some(id),
+                    value::Value::Null | value::Value::Undefined => None,
+                    _ => bail!("Expected an Object for GVariant type, got {:?}", arg.value),
+                };
+
+                let ptr = match object_id {
+                    Some(id) => id.as_ptr().ok_or_else(|| {
+                        anyhow::anyhow!("GVariant object has been garbage collected")
+                    })?,
+                    None => std::ptr::null_mut(),
+                };
+
+                let is_transfer_full = !type_.is_borrowed && !ptr.is_null();
+
+                if is_transfer_full {
+                    unsafe {
+                        glib::ffi::g_variant_ref(ptr as *mut glib::ffi::GVariant);
                     }
                 }
 
@@ -454,7 +479,7 @@ impl Value {
 
                 Ok(Value::OwnedPtr(OwnedPtr::new((cstrings, ptrs), ptr)))
             }
-            Type::GObject(_) | Type::Boxed(_) => {
+            Type::GObject(_) | Type::Boxed(_) | Type::GVariant(_) => {
                 let mut ids = Vec::new();
 
                 for value in array {
@@ -651,7 +676,7 @@ impl Value {
         // - If value is an ObjectId: caller-allocates, pass pointer directly (GTK writes INTO memory)
         // - If value is null/undefined: GTK-allocates, pass pointer-to-pointer (GTK writes pointer back)
         match &*type_.inner_type {
-            Type::Boxed(_) | Type::GObject(_) => {
+            Type::Boxed(_) | Type::GObject(_) | Type::GVariant(_) => {
                 match &*r#ref.value {
                     value::Value::Object(id) => {
                         // Caller-allocates: pass the pointer directly

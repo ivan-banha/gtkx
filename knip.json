@@ -28,7 +28,7 @@
         },
         "examples/*": {
             "project": ["src/**/*", "tests/**/*"],
-            "entry": ["src/app.tsx", "src/index.tsx"]
+            "entry": ["src/app.tsx", "src/dev.tsx", "src/index.tsx"]
         },
         "packages/cli": {
             "entry": ["src/cli.tsx", "src/index.ts"],

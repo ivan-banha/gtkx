@@ -9,6 +9,7 @@ mod macros;
 mod arg;
 mod boxed;
 mod callback;
+mod gvariant;
 mod cif;
 mod gtk_dispatch;
 mod js_dispatch;

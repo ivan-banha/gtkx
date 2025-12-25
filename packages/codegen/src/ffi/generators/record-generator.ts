@@ -39,7 +39,8 @@ export class RecordGenerator extends BaseGenerator {
         sections.push(`export class ${recordName} extends NativeObject {`);
         if (record.glibTypeName) {
             sections.push(`  static readonly glibTypeName: string = "${record.glibTypeName}";`);
-            sections.push(`  static readonly objectType = "boxed" as const;\n`);
+            const objectType = record.glibTypeName === "GVariant" ? "gvariant" : "boxed";
+            sections.push(`  static readonly objectType = "${objectType}" as const;\n`);
         }
 
         sections.push(this.generateRecordConstructors(record, sharedLibrary));
@@ -110,7 +111,13 @@ export class RecordGenerator extends BaseGenerator {
             for (const ctor of supportedConstructors) {
                 if (ctor !== mainConstructor) {
                     sections.push(
-                        this.generateRecordStaticFactoryMethod(ctor, recordName, sharedLibrary, record.glibTypeName),
+                        this.generateRecordStaticFactoryMethod(
+                            ctor,
+                            recordName,
+                            sharedLibrary,
+                            record.glibTypeName,
+                            record.glibGetType,
+                        ),
                     );
                 }
             }
@@ -251,6 +258,7 @@ ${args}
         recordName: string,
         sharedLibrary: string,
         glibTypeName?: string,
+        glibGetType?: string,
     ): string {
         let methodName = "new";
         if (ctor.cIdentifier) {
@@ -265,6 +273,7 @@ ${args}
         const args = this.generateCallArguments(ctor.parameters);
         const ctorDoc = this.formatMethodDoc(ctor.doc, ctor.parameters);
         const innerType = glibTypeName ?? recordName;
+        const getTypeFnPart = glibGetType ? `, getTypeFn: "${glibGetType}"` : "";
 
         this.ctx.usesGetNativeObject = true;
         return `${ctorDoc}  static ${methodName}(${params}): ${recordName} {
@@ -274,9 +283,9 @@ ${args}
       [
 ${args}
       ],
-      { type: "boxed", borrowed: true, innerType: "${innerType}" }
+      { type: "boxed", borrowed: true, innerType: "${innerType}", lib: "${sharedLibrary}"${getTypeFnPart} }
     );
-    return getNativeObject(ptr) as ${recordName};
+    return getNativeObject(ptr, ${recordName})!;
   }
 `;
     }

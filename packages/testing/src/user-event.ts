@@ -104,40 +104,62 @@ const isSelectable = (widget: Gtk.Widget): boolean => {
     return SELECTABLE_ROLES.has(accessible.getAccessibleRole());
 };
 
-const selectOptions = async (element: Gtk.Widget, values: string | string[] | number | number[]): Promise<void> => {
+const selectListViewItems = (selectionModel: Gtk.SelectionModel, positions: number[], exclusive: boolean): void => {
+    if (positions.length === 0) {
+        selectionModel.unselectRange(0, selectionModel.getNItems());
+        return;
+    }
+
+    if (exclusive && positions.length === 1) {
+        selectionModel.selectItem(positions[0] as number, true);
+        return;
+    }
+
+    const nItems = selectionModel.getNItems();
+    const selected = new Gtk.Bitset();
+    const mask = Gtk.Bitset.newRange(0, nItems);
+
+    for (const pos of positions) {
+        selected.add(pos);
+    }
+
+    selectionModel.setSelection(selected, mask);
+};
+
+const isListView = (widget: Gtk.Widget): widget is Gtk.ListView | Gtk.GridView | Gtk.ColumnView => {
+    return widget instanceof Gtk.ListView || widget instanceof Gtk.GridView || widget instanceof Gtk.ColumnView;
+};
+
+const selectOptions = async (element: Gtk.Widget, values: number | number[]): Promise<void> => {
+    const valueArray = Array.isArray(values) ? values : [values];
+
+    if (isListView(element)) {
+        const selectionModel = element.getModel() as Gtk.SelectionModel;
+        const isMultiSelection = selectionModel instanceof Gtk.MultiSelection;
+        selectListViewItems(selectionModel, valueArray, !isMultiSelection);
+        await tick();
+        return;
+    }
+
     if (!isSelectable(element)) {
-        throw new Error("Cannot select options: element is not a selectable widget (COMBO_BOX or LIST)");
+        throw new Error("Cannot select options: element is not a selectable widget");
     }
 
     const role = getNativeObject(element.id, Gtk.Accessible)?.getAccessibleRole();
-    const valueArray = Array.isArray(values) ? values : [values];
 
     if (role === Gtk.AccessibleRole.COMBO_BOX) {
-        if (valueArray.length > 1) {
-            throw new Error("Cannot select multiple options on a ComboBox/DropDown");
+        if (Array.isArray(values) && values.length > 1) {
+            throw new Error("Cannot select multiple options on a ComboBox");
         }
-
-        const value = valueArray[0];
-
-        if (typeof value !== "number") {
-            throw new Error("ComboBox/DropDown selection requires a numeric index");
-        }
-
-        const isDropDown = element.constructor.name === "DropDown";
-
-        if (isDropDown) {
-            (element as Gtk.DropDown).setSelected(value);
+        if (element instanceof Gtk.DropDown) {
+            (element as Gtk.DropDown).setSelected(valueArray[0] as number);
         } else {
-            (element as Gtk.ComboBox).setActive(value);
+            (element as Gtk.ComboBox).setActive(valueArray[0] as number);
         }
     } else if (role === Gtk.AccessibleRole.LIST) {
         const listBox = element as Gtk.ListBox;
 
         for (const value of valueArray) {
-            if (typeof value !== "number") {
-                throw new Error("ListBox selection requires numeric indices");
-            }
-
             const row = listBox.getRowAtIndex(value);
 
             if (row) {
@@ -151,6 +173,19 @@ const selectOptions = async (element: Gtk.Widget, values: string | string[] | nu
 };
 
 const deselectOptions = async (element: Gtk.Widget, values: number | number[]): Promise<void> => {
+    const valueArray = Array.isArray(values) ? values : [values];
+
+    if (isListView(element)) {
+        const selectionModel = element.getModel() as Gtk.SelectionModel;
+
+        for (const pos of valueArray) {
+            selectionModel.unselectItem(pos);
+        }
+
+        await tick();
+        return;
+    }
+
     const role = getNativeObject(element.id, Gtk.Accessible)?.getAccessibleRole();
 
     if (role !== Gtk.AccessibleRole.LIST) {
@@ -158,7 +193,6 @@ const deselectOptions = async (element: Gtk.Widget, values: number | number[]): 
     }
 
     const listBox = element as Gtk.ListBox;
-    const valueArray = Array.isArray(values) ? values : [values];
 
     for (const value of valueArray) {
         const row = listBox.getRowAtIndex(value);

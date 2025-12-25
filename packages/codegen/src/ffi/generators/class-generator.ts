@@ -110,7 +110,7 @@ export class ClassGenerator extends BaseGenerator {
         const hasGObjectNewConstructor = !mainConstructor && !!cls.parent && !!cls.glibGetType && !cls.abstract;
         const hasStaticFactoryMethods =
             cls.constructors.some((c) => c !== mainConstructor) || (cls.constructors.length > 0 && !cls.parent);
-        const { signals: allSignals, hasCrossNamespaceParent } = this.collectAllSignals(cls, classMap);
+        const { signals: allSignals, hasCrossNamespaceParent } = this.collectAllSignals(cls, classMap, interfaceMap);
         const hasSignalConnect = allSignals.length > 0 || hasCrossNamespaceParent;
 
         this.ctx.usesCall =
@@ -897,9 +897,31 @@ ${allArgs ? `${allArgs},` : ""}
     private collectAllSignals(
         cls: GirClass,
         classMap: Map<string, GirClass>,
+        interfaceMap: Map<string, GirInterface>,
     ): { signals: GirSignal[]; hasCrossNamespaceParent: boolean } {
         const allSignals: GirSignal[] = [...cls.signals];
         const seenNames = new Set(cls.signals.map((s) => s.name));
+
+        for (const ifaceName of cls.implements) {
+            let iface: GirInterface | undefined;
+            if (ifaceName.includes(".")) {
+                const [ns, ifaceClassName] = ifaceName.split(".", 2);
+                const ifaceNs = (this.options.allNamespaces as Map<string, GirNamespace> | undefined)?.get(ns ?? "");
+                if (ifaceNs && ifaceClassName) {
+                    iface = ifaceNs.interfaces.find((i) => i.name === ifaceClassName);
+                }
+            } else {
+                iface = interfaceMap.get(ifaceName);
+            }
+            if (!iface) continue;
+
+            for (const signal of iface.signals) {
+                if (!seenNames.has(signal.name)) {
+                    allSignals.push(signal);
+                    seenNames.add(signal.name);
+                }
+            }
+        }
 
         if (cls.parent?.includes(".")) {
             return { signals: allSignals, hasCrossNamespaceParent: true };

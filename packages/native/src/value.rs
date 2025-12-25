@@ -43,6 +43,7 @@ use neon::{handle::Root, object::Object as _, prelude::*};
 use crate::{
     boxed::Boxed,
     cif,
+    gvariant::GVariant as GVariantWrapper,
     object::{Object, ObjectId},
     types::{Callback, FloatSize, IntegerSign, IntegerSize, Type},
 };
@@ -345,6 +346,29 @@ impl Value {
 
                 Ok(Value::Object(ObjectId::new(boxed)))
             }
+            Type::GVariant(type_) => {
+                let variant_ptr = match cif_value {
+                    cif::Value::Ptr(ptr) => *ptr,
+                    _ => {
+                        bail!(
+                            "Expected a pointer cif::Value for GVariant, got {:?}",
+                            cif_value
+                        )
+                    }
+                };
+
+                if variant_ptr.is_null() {
+                    return Ok(Value::Null);
+                }
+
+                let variant = if type_.is_borrowed {
+                    GVariantWrapper::from_glib_none(variant_ptr)
+                } else {
+                    GVariantWrapper::from_glib_full(variant_ptr)
+                };
+
+                Ok(Value::Object(ObjectId::new(Object::GVariant(variant))))
+            }
             Type::Array(array_type) => {
                 use crate::types::ListType;
 
@@ -591,7 +615,7 @@ impl Value {
                             .map(|v| Value::Boolean(*v != 0))
                             .collect::<Vec<Value>>()
                     }
-                    Type::GObject(_) | Type::Boxed(_) => {
+                    Type::GObject(_) | Type::Boxed(_) | Type::GVariant(_) => {
                         let (ids, _) = array_ptr
                             .value
                             .downcast_ref::<(Vec<ObjectId>, Vec<*mut c_void>)>()
@@ -661,6 +685,21 @@ impl Value {
                         };
 
                         Ok(Value::Object(ObjectId::new(Object::Boxed(boxed))))
+                    }
+                    Type::GVariant(variant_type) => {
+                        let actual_ptr = unsafe { *(ref_ptr.ptr as *const *mut c_void) };
+
+                        if actual_ptr.is_null() {
+                            return Ok(Value::Null);
+                        }
+
+                        let variant = if variant_type.is_borrowed {
+                            GVariantWrapper::from_glib_none(actual_ptr)
+                        } else {
+                            GVariantWrapper::from_glib_full(actual_ptr)
+                        };
+
+                        Ok(Value::Object(ObjectId::new(Object::GVariant(variant))))
                     }
                     Type::Integer(int_type) => {
                         let number = match (int_type.size, int_type.sign) {
@@ -830,15 +869,8 @@ impl Value {
             Type::Boxed(boxed_type) => {
                 let gvalue_type = gvalue.type_();
 
-                let boxed_ptr = if gvalue_type == glib::Type::VARIANT {
-                    unsafe {
-                        glib::gobject_ffi::g_value_get_variant(gvalue.to_glib_none().0 as *const _)
-                            .cast::<c_void>()
-                    }
-                } else {
-                    unsafe {
-                        glib::gobject_ffi::g_value_get_boxed(gvalue.to_glib_none().0 as *const _)
-                    }
+                let boxed_ptr = unsafe {
+                    glib::gobject_ffi::g_value_get_boxed(gvalue.to_glib_none().0 as *const _)
                 };
 
                 if boxed_ptr.is_null() {
@@ -855,6 +887,24 @@ impl Value {
 
                 let object_id = ObjectId::new(Object::Boxed(boxed));
                 Ok(Value::Object(object_id))
+            }
+            Type::GVariant(variant_type) => {
+                let variant_ptr = unsafe {
+                    glib::gobject_ffi::g_value_get_variant(gvalue.to_glib_none().0 as *const _)
+                        .cast::<c_void>()
+                };
+
+                if variant_ptr.is_null() {
+                    return Ok(Value::Null);
+                }
+
+                let variant = if variant_type.is_borrowed {
+                    GVariantWrapper::from_glib_none(variant_ptr)
+                } else {
+                    GVariantWrapper::from_glib_full(variant_ptr)
+                };
+
+                Ok(Value::Object(ObjectId::new(Object::GVariant(variant))))
             }
             Type::Null | Type::Undefined => Ok(Value::Null),
             Type::Array(_) | Type::Ref(_) | Type::Callback(_) => {

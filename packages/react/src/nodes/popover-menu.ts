@@ -1,3 +1,5 @@
+import { getNativeObject } from "@gtkx/ffi";
+import * as Gio from "@gtkx/ffi/gio";
 import * as Gtk from "@gtkx/ffi/gtk";
 import type { Node } from "../node.js";
 import { registerNodeClass } from "../registry.js";
@@ -25,7 +27,16 @@ class PopoverMenuNode extends WidgetNode<Gtk.PopoverMenu | Gtk.PopoverMenuBar> {
         rootContainer?: Container,
     ) {
         super(typeName, props, container, rootContainer);
-        this.menu = new Menu("root", rootContainer instanceof Gtk.Application ? rootContainer : undefined);
+        const application = rootContainer instanceof Gtk.Application ? rootContainer : undefined;
+        this.menu = new Menu("root", application);
+
+        if (application) {
+            const actionMap = getNativeObject(application.id, Gio.ActionMap);
+            if (actionMap) {
+                this.menu.setActionMap(actionMap);
+            }
+        }
+
         this.container.setMenuModel(this.menu.getMenu());
     }
 

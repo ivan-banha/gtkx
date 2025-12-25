@@ -9,17 +9,20 @@ use std::ffi::c_void;
 use gtk4::glib::{self, object::ObjectType as _};
 use neon::prelude::*;
 
-use crate::{boxed::Boxed, gtk_dispatch, state::GtkThreadState};
+use crate::{boxed::Boxed, gvariant::GVariant, gtk_dispatch, state::GtkThreadState};
 
 /// A native object that can be tracked across the FFI boundary.
 ///
-/// Wraps either a GObject instance or a boxed type (struct allocated on heap).
+/// Wraps either a GObject instance, a boxed type, or a GVariant.
 #[derive(Debug)]
+#[allow(clippy::enum_variant_names)]
 pub enum Object {
     /// A GObject instance (reference-counted).
     GObject(glib::Object),
     /// A boxed type (copied or owned heap allocation).
     Boxed(Boxed),
+    /// A GVariant (reference-counted variant type).
+    GVariant(GVariant),
 }
 
 impl Clone for Object {
@@ -27,6 +30,7 @@ impl Clone for Object {
         match self {
             Object::GObject(obj) => Object::GObject(obj.clone()),
             Object::Boxed(boxed) => Object::Boxed(boxed.clone()),
+            Object::GVariant(variant) => Object::GVariant(variant.clone()),
         }
     }
 }
@@ -59,6 +63,7 @@ impl ObjectId {
             state.object_map.get(&self.0).map(|object| match object {
                 Object::GObject(obj) => obj.as_ptr() as *mut c_void,
                 Object::Boxed(boxed) => *boxed.as_ref(),
+                Object::GVariant(variant) => variant.as_ptr(),
             })
         })
     }

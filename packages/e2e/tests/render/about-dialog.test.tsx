@@ -1,5 +1,5 @@
-import * as Gtk from "@gtkx/ffi/gtk";
-import { GtkAboutDialog, GtkBox } from "@gtkx/react";
+import type * as Gtk from "@gtkx/ffi/gtk";
+import { GtkAboutDialog, GtkWindow } from "@gtkx/react";
 import { render } from "@gtkx/testing";
 import { createRef } from "react";
 import { describe, expect, it } from "vitest";
@@ -13,17 +13,18 @@ describe("render - AboutDialog", () => {
         expect(ref.current).not.toBeNull();
     });
 
-    it("does not attach to parent widget tree", async () => {
-        const boxRef = createRef<Gtk.Box>();
+    it("sets transientFor when child of Window but does not attach to widget tree", async () => {
+        const windowRef = createRef<Gtk.Window>();
         const dialogRef = createRef<Gtk.AboutDialog>();
 
         await render(
-            <GtkBox ref={boxRef} spacing={0} orientation={Gtk.Orientation.VERTICAL}>
+            <GtkWindow ref={windowRef} title="Parent">
                 <GtkAboutDialog ref={dialogRef} programName="Dialog" />
-            </GtkBox>,
+            </GtkWindow>,
             { wrapper: false },
         );
 
+        expect(dialogRef.current?.getTransientFor()?.id).toStrictEqual(windowRef.current?.id);
         expect(dialogRef.current?.getParent() ?? null).toBeNull();
     });
 

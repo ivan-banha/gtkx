@@ -1,4 +1,4 @@
-import { beginBatch, endBatch } from "@gtkx/ffi";
+import { beginBatch, endBatch, getObjectId } from "@gtkx/ffi";
 import type * as Gtk from "@gtkx/ffi/gtk";
 import React from "react";
 import type ReactReconciler from "react-reconciler";
@@ -6,6 +6,8 @@ import { createNode } from "./factory.js";
 import type { Node } from "./node.js";
 import { flushAfterCommit } from "./scheduler.js";
 import type { Container, ContainerClass, Props } from "./types.js";
+
+const containerNodeCache = new Map<number, Node>();
 
 type TextInstance = Node;
 type SuspenseInstance = never;
@@ -44,9 +46,17 @@ export type ReconcilerInstance = ReactReconciler.Reconciler<
     PublicInstance
 >;
 
-const createNodeWithContainer = (container: Container): Node => {
-    const type = (container.constructor as ContainerClass).glibTypeName;
-    return createNode(type, {}, container, container);
+const getOrCreateContainerNode = (container: Container): Node => {
+    const id = getObjectId(container.id);
+    let node = containerNodeCache.get(id);
+
+    if (!node) {
+        const type = (container.constructor as ContainerClass).glibTypeName;
+        node = createNode(type, {}, container, container);
+        containerNodeCache.set(id, node);
+    }
+
+    return node;
 };
 
 export function createHostConfig(): HostConfig {
@@ -90,15 +100,15 @@ export function createHostConfig(): HostConfig {
             parent.insertBefore(child, beforeChild);
         },
         removeChildFromContainer: (container, child) => {
-            const parent = createNodeWithContainer(container);
+            const parent = getOrCreateContainerNode(container);
             parent.removeChild(child);
         },
         appendChildToContainer: (container, child) => {
-            const parent = createNodeWithContainer(container);
+            const parent = getOrCreateContainerNode(container);
             parent.appendChild(child);
         },
         insertInContainerBefore: (container, child, beforeChild) => {
-            const parent = createNodeWithContainer(container);
+            const parent = getOrCreateContainerNode(container);
             parent.insertBefore(child, beforeChild);
         },
         prepareForCommit: () => {

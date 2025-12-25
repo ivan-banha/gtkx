@@ -2,6 +2,7 @@ import * as Adw from "@gtkx/ffi/adw";
 import * as Gtk from "@gtkx/ffi/gtk";
 import type { Node } from "../node.js";
 import { registerNodeClass } from "../registry.js";
+import { scheduleAfterCommit } from "../scheduler.js";
 import type { Container, ContainerClass } from "../types.js";
 import { filterProps, isContainerType } from "./internal/utils.js";
 import { StackPageNode } from "./stack-page.js";
@@ -42,7 +43,12 @@ class StackNode extends WidgetNode<Gtk.Stack | Adw.ViewStack, StackProps> {
 
     public override updateProps(oldProps: StackProps | null, newProps: StackProps): void {
         if (newProps.visibleChildName && this.container.getVisibleChildName() !== newProps.visibleChildName) {
-            this.container.setVisibleChildName(newProps.visibleChildName);
+            const visibleChildName = newProps.visibleChildName;
+            scheduleAfterCommit(() => {
+                if (this.container.getChildByName(visibleChildName)) {
+                    this.container.setVisibleChildName(visibleChildName);
+                }
+            });
         }
 
         super.updateProps(filterProps(oldProps ?? {}, PROPS), filterProps(newProps, PROPS));

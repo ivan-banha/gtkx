@@ -200,7 +200,7 @@ fn handle_call(
                 cif::Value::Ptr(ptr as *mut c_void)
             }
             Type::Boolean => cif::Value::U8(cif.call::<u8>(symbol_ptr, &ffi_args)),
-            Type::GObject(_) | Type::Boxed(_) => {
+            Type::GObject(_) | Type::Boxed(_) | Type::GVariant(_) => {
                 let ptr = cif.call::<*mut c_void>(symbol_ptr, &ffi_args);
                 cif::Value::Ptr(ptr)
             }

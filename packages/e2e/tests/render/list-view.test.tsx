@@ -1,6 +1,6 @@
 import * as Gtk from "@gtkx/ffi/gtk";
 import { GtkGridView, GtkLabel, GtkListView, ListItem } from "@gtkx/react";
-import { render } from "@gtkx/testing";
+import { render, userEvent } from "@gtkx/testing";
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -200,7 +200,9 @@ describe("render - ListView", () => {
                 { wrapper: false },
             );
 
-            expect(onSelectionChanged).toHaveBeenCalled();
+            await userEvent.selectOptions(ref.current as Gtk.ListView, 0);
+
+            expect(onSelectionChanged).toHaveBeenCalledWith(["1"]);
         });
 
         it("handles unselect (empty selection)", async () => {
@@ -272,7 +274,9 @@ describe("render - ListView", () => {
                 { wrapper: false },
             );
 
-            expect(onSelectionChanged).toHaveBeenCalledWith(expect.any(Array));
+            await userEvent.selectOptions(ref.current as Gtk.ListView, [0, 1]);
+
+            expect(onSelectionChanged).toHaveBeenCalledWith(["1", "2"]);
         });
     });
 

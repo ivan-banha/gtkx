@@ -7,7 +7,7 @@ export abstract class NativeObject {
     static readonly glibTypeName: string;
 
     /** The object type category. Must be overridden by subclasses. */
-    static readonly objectType: "gobject" | "interface" | "boxed";
+    static readonly objectType: "gobject" | "interface" | "boxed" | "gvariant";
 
     /** The native object id for the underlying GLib object */
     id: unknown;

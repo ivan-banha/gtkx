@@ -13,6 +13,7 @@ mod boxed;
 mod callback;
 mod float;
 mod gobject;
+mod gvariant;
 mod integer;
 mod r#ref;
 mod string;
@@ -22,6 +23,7 @@ pub use boxed::*;
 pub use callback::*;
 pub use float::*;
 pub use gobject::*;
+pub use gvariant::*;
 pub use integer::*;
 pub use r#ref::*;
 pub use string::*;
@@ -79,6 +81,8 @@ pub enum Type {
     GObject(GObjectType),
     /// Boxed (heap-allocated struct) type.
     Boxed(BoxedType),
+    /// GVariant type (reference-counted variant).
+    GVariant(GVariantType),
     /// Array type.
     Array(ArrayType),
     /// Callback function type.
@@ -115,6 +119,7 @@ impl Type {
             "undefined" => Ok(Type::Undefined),
             "gobject" => Ok(Type::GObject(GObjectType::from_js_value(cx, value)?)),
             "boxed" => Ok(Type::Boxed(BoxedType::from_js_value(cx, value)?)),
+            "gvariant" => Ok(Type::GVariant(GVariantType::from_js_value(cx, value)?)),
             "array" => Ok(Type::Array(ArrayType::from_js_value(cx, obj.upcast())?)),
             "callback" => {
                 let trampoline_handle: Option<Handle<JsString>> = obj.get_opt(cx, "trampoline")?;
@@ -181,6 +186,7 @@ impl From<&Type> for ffi::Type {
             Type::Null => ffi::Type::pointer(),
             Type::GObject(type_) => type_.into(),
             Type::Boxed(type_) => type_.into(),
+            Type::GVariant(type_) => type_.into(),
             Type::Array(type_) => type_.into(),
             Type::Callback(_) => ffi::Type::pointer(),
             Type::Ref(type_) => type_.into(),
